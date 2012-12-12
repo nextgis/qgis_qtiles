@@ -1,0 +1,20 @@
+[general]
+name=QTiles
+description=Generate tiles from QGIS project
+category=Plugins
+version=0.0.1
+qgisMinimumVersion=1.9.0
+
+author=Alexander Bruy (NextGIS)
+email=alexander.bruy@gmail.com
+
+icon=icons/qtiles.png
+
+tags=raster,tiles
+
+homepage=
+tracker=
+repository=
+
+experimental=True
+deprecated=False

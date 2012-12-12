@@ -1,0 +1,6 @@
+<RCC>
+  <qresource>
+    <file>icons/qtiles.png</file>
+    <file>icons/about.png</file>
+  </qresource>
+</RCC>

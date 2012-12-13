@@ -36,7 +36,7 @@ def getMapLayers():
     if layer.type() == QgsMapLayer.VectorLayer:
       if layer.id() not in layers.keys():
         layers[layer.id()] = unicode(layer.name())
-    if (layer.type() == QgsMapLayer.RasterLayer and layer.providerType() == "gdal"):
+    if layer.type() == QgsMapLayer.RasterLayer and layer.providerType() == "gdal":
       if layer.id() not in layers.keys():
         layers[layer.id()] = unicode(layer.name())
   return layers

@@ -26,6 +26,7 @@
 #******************************************************************************
 
 import locale
+import math
 import operator
 
 from PyQt4.QtCore import *
@@ -53,6 +54,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
     self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
     self.spnTileWidth.valueChanged.connect(self.__updateTileSize)
 
+    self.btnBrowse.clicked.connect(self.__selectOutput)
+
     self.manageGui()
 
   def manageGui(self):
@@ -61,7 +64,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
     relations = self.iface.legendInterface().groupLayerRelationship()
     for layer in sorted(layers.iteritems(), cmp=locale.strcoll, key=operator.itemgetter(1)):
       groupName = utils.getLayerGroup(relations, layer[0])
-      if groupName is None:
+      if groupName == "":
         self.cmbLayers.addItem(layer[1], layer[0])
       else:
         self.cmbLayers.addItem(QString("%1 - %2").arg(layer[1]).arg(groupName), layer[0])
@@ -76,6 +79,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
       self.leDirectoryName.setEnabled(False)
     else:
       self.leZipFileName.setEnabled(False)
+
+    self.cmbLayers.setEnabled(False)
 
     self.rbExtentCanvas.setChecked(settings.value("extentCanvas", True).toBool())
     self.rbExtentFull.setChecked(settings.value("extentFull", False).toBool())
@@ -92,6 +97,35 @@ class QTilesDialog(QDialog, Ui_Dialog):
     QDialog.reject(self)
 
   def accept(self):
+    if self.rbOutputZip.isChecked():
+      output = self.leZipFileName.text()
+    else:
+      output = self.leDirectoryName.text()
+
+    if output.isEmpty():
+      QMessageBox.warning(self,
+                          self.tr("No output"),
+                          self.tr("Output path is not set. Please enter correct path and try again.")
+                         )
+      return
+
+    fileInfo = QFileInfo(output)
+    if fileInfo.isDir() and not QDir(output).entryList().isEmpty():
+      res = QMessageBox.warning(self,
+                                self.tr("Directory not empty"),
+                                self.tr("Selected directory is not empty. Continue?"),
+                                QMessageBox.Yes | QMessageBox.No
+                               )
+      if res == QMessageBox.No:
+        return
+
+    if self.spnZoomMin.value() > self.spnZoomMax.value():
+      QMessageBox.warning(self,
+                          self.tr("Wrong zoom"),
+                          self.tr("Maximum zoom value is lower than minimum. Please correct this and try again.")
+                         )
+      return
+
     settings = QSettings("NextGIS", "QTiles")
 
     settings.setValue("outputToZip", self.rbOutputZip.isChecked())
@@ -107,6 +141,29 @@ class QTilesDialog(QDialog, Ui_Dialog):
     settings.setValue("keepRatio", self.chkLockRatio.isChecked())
     settings.setValue("tileWidth", self.spnTileWidth.value())
     settings.setValue("tileHeight", self.spnTileHeight.value())
+
+    canvas = self.iface.mapCanvas()
+
+    if self.rbExtentCanvas.isChecked():
+      extent = canvas.extent()
+    elif self.rbExtentFull.isChecked():
+      extent = canvas.fullExtent()
+    else:
+      layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()).toString())
+      extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
+
+    print "SELECTED EXTENT\n", extent.toString()
+
+    extent = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(),
+                                    QgsCoordinateReferenceSystem("EPSG:4326")).transform(extent)
+
+    print "EXTENT IN WGS84\n", extent.toString()
+
+    arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
+    print arctanSinhPi
+    extent = extent.intersect(QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
+
+    print "EXTENT AFTER INTERSECT\n", extent.toString()
 
     QDialog.accept(self)
 
@@ -130,3 +187,33 @@ class QTilesDialog(QDialog, Ui_Dialog):
   def __updateTileSize(self, value):
     if self.chkLockRatio.isChecked():
       self.spnTileHeight.setValue(value)
+
+  def __selectOutput(self):
+    settings = QSettings("NextGIS", "QTiles")
+    lastDirectory = settings.value("lastUsedDir", ".").toString()
+
+    if self.rbOutputZip.isChecked():
+      outPath = QFileDialog.getOpenFileName(self,
+                                            self.tr("Save to file"),
+                                            lastDirectory,
+                                            self.tr("ZIP archives (*.zip *.ZIP)")
+                                           )
+      if outPath.isEmpty():
+        return
+
+      if not outPath.toLower().endsWith(".zip"):
+        outPath += ".zip"
+
+      self.leZipFileName.setText(outPath)
+    else:
+      outPath = QFileDialog.getExistingDirectory(self,
+                                                 self.tr("Save to directory"),
+                                                 lastDirectory,
+                                                 QFileDialog.ShowDirsOnly
+                                                )
+      if outPath.isEmpty():
+        return
+
+      self.leDirectoryName.setText(outPath)
+
+    settings.setValue("lastUsedDir", QFileInfo(outPath).absoluteDir().absolutePath())

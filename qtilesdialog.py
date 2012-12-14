@@ -34,6 +34,8 @@ from PyQt4.QtGui import *
 
 from qgis.core import *
 
+import tilingthread
+
 from ui_qtilesdialogbase import Ui_Dialog
 
 import qtiles_utils as utils
@@ -110,7 +112,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
       return
 
     fileInfo = QFileInfo(output)
-    if fileInfo.isDir() and not QDir(output).entryList().isEmpty():
+    if fileInfo.isDir() and not QDir(output).entryList(QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot).isEmpty():
       res = QMessageBox.warning(self,
                                 self.tr("Directory not empty"),
                                 self.tr("Selected directory is not empty. Continue?"),
@@ -152,20 +154,63 @@ class QTilesDialog(QDialog, Ui_Dialog):
       layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()).toString())
       extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
 
-    print "SELECTED EXTENT\n", extent.toString()
-
     extent = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(),
                                     QgsCoordinateReferenceSystem("EPSG:4326")).transform(extent)
 
-    print "EXTENT IN WGS84\n", extent.toString()
-
     arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
-    print arctanSinhPi
     extent = extent.intersect(QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
 
-    print "EXTENT AFTER INTERSECT\n", extent.toString()
+    layers = []
+    for layer in canvas.layers():
+      layers.append(unicode(layer.id()))
 
-    QDialog.accept(self)
+    self.workThread = tilingthread.TilingThread(layers,
+                                                extent,
+                                                self.spnZoomMin.value(),
+                                                self.spnZoomMax.value(),
+                                                self.spnTileWidth.value(),
+                                                self.spnTileHeight.value(),
+                                                fileInfo
+                                               )
+    self.workThread.rangeChanged.connect(self.setProgressRange)
+    self.workThread.updateProgress.connect(self.updateProgress)
+    self.workThread.processFinished.connect(self.processFinished)
+    self.workThread.processInterrupted.connect(self.processInterrupted)
+
+    self.btnOk.setEnabled(False)
+    self.btnClose.setText(self.tr("Cancel"))
+    self.buttonBox.rejected.disconnect(self.reject)
+    self.btnClose.clicked.connect(self.stopProcessing)
+
+    self.workThread.start()
+
+  def setProgressRange(self, value):
+    self.progressBar.setRange(0, value)
+
+  def updateProgress(self):
+    self.progressBar.setValue(self.progressBar.value() + 1)
+
+  def processInterrupted(self):
+    self.restoreGui()
+
+  def processFinished(self):
+    self.stopProcessing()
+    self.restoreGui()
+
+  def stopProcessing(self):
+    if self.workThread != None:
+      self.workThread.stop()
+      self.workThread = None
+
+  def restoreGui(self):
+    self.progressBar.setFormat("%p%")
+    self.progressBar.setRange(0, 1)
+    self.progressBar.setValue(0)
+
+    self.buttonBox.rejected.connect(self.reject)
+    self.btnClose.clicked.disconnect(self.stopProcessing)
+    self.btnClose.setText(self.tr("Close"))
+    self.btnOk.setEnabled(True)
 
   def __toggleZipTarget(self, checked):
     self.leZipFileName.setEnabled(checked)

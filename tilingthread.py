@@ -63,11 +63,12 @@ class TilingThread(QThread):
                                             QgsCoordinateReferenceSystem("EPSG:3395")
                                            )
 
+    self.labeling = QgsPalLabeling()
     self.renderer = QgsMapRenderer()
-    QMessageLog.logMessage(QString("DPI: %1").arg(self.image.logicalDpiX()))
     self.renderer.setOutputSize(self.image.size(), self.image.logicalDpiX())
     self.renderer.setDestinationCrs(QgsCoordinateReferenceSystem("EPSG:3395"))
     self.renderer.setProjectionsEnabled(True)
+    self.renderer.setLabelingEngine(self.labeling)
     self.renderer.setLayerSet(self.layers)
 
   def run(self):

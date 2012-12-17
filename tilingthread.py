@@ -26,6 +26,7 @@
 #******************************************************************************
 
 import math
+import zipfile
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -79,8 +80,13 @@ class TilingThread(QThread):
     # prepare output
     if self.output.isDir():
       self.zip = None
+      self.tmp = None
     else:
       self.zip = zipfile.ZipFile(unicode(self.output.absoluteFilePath()), "w")
+      self.tmp = QTemporaryFile()
+      self.tmp.setAutoRemove(False)
+      self.tmp.open(QIODevice.WriteOnly)
+      self.tempFileName = self.tmp.fileName()
 
     self.rangeChanged.emit(0)
 
@@ -90,6 +96,10 @@ class TilingThread(QThread):
       if self.zip is not None:
         self.zip.close()
         self.zip = None
+
+        self.tmp.close()
+        self.tmp.remove()
+        self.tmp = None
 
       self.processInterrupted.emit()
 
@@ -158,4 +168,8 @@ class TilingThread(QThread):
       QDir().mkpath(dirPath)
       self.image.save(QString("%1/%2.png").arg(dirPath).arg(tile.y), "PNG")
     else:
-      pass
+      self.image.save(self.tempFileName, "PNG")
+      self.tmp.close()
+
+      tilePath = QString("%1/%2.png").arg(path).arg(tile.y)
+      self.zip.write(unicode(self.tempFileName), unicode(tilePath).encode("utf8"))

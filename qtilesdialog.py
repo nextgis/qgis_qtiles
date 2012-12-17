@@ -238,7 +238,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
     lastDirectory = settings.value("lastUsedDir", ".").toString()
 
     if self.rbOutputZip.isChecked():
-      outPath = QFileDialog.getOpenFileName(self,
+      outPath = QFileDialog.getSaveFileName(self,
                                             self.tr("Save to file"),
                                             lastDirectory,
                                             self.tr("ZIP archives (*.zip *.ZIP)")

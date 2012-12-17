@@ -184,7 +184,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
     self.workThread.start()
 
-  def setProgressRange(self, value):
+  def setProgressRange(self, message, value):
+    self.progressBar.setFormat(message)
     self.progressBar.setRange(0, value)
 
   def updateProgress(self):

@@ -36,7 +36,7 @@ from qgis.core import *
 from tile import Tile
 
 class TilingThread(QThread):
-  rangeChanged = pyqtSignal(int)
+  rangeChanged = pyqtSignal(str, int)
   updateProgress = pyqtSignal()
   processFinished = pyqtSignal()
   processInterrupted = pyqtSignal()
@@ -88,7 +88,7 @@ class TilingThread(QThread):
       self.tmp.open(QIODevice.WriteOnly)
       self.tempFileName = self.tmp.fileName()
 
-    self.rangeChanged.emit(0)
+    self.rangeChanged.emit(self.tr("Searching tiles..."), 0)
 
     self.__countTiles(Tile())
 
@@ -103,7 +103,7 @@ class TilingThread(QThread):
 
       self.processInterrupted.emit()
 
-    self.rangeChanged.emit(len(self.tiles))
+    self.rangeChanged.emit(self.tr("Rendering: %p%"), len(self.tiles))
 
     for t in self.tiles:
       self.__render(t)

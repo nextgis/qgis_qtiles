@@ -31,6 +31,7 @@ from PyQt4.QtGui import *
 from qgis.core import *
 
 import qtilesdialog
+import aboutdialog
 
 import resources_rc
 
@@ -74,7 +75,7 @@ class QTilesPlugin:
       return None
 
     self.actionRun = QAction(QCoreApplication.translate("QTiles", "QTiles"), self.iface.mainWindow())
-    self.iface.registerMainWindowAction(self.actionRun, "Shift+Q")
+    self.iface.registerMainWindowAction(self.actionRun, "Shift+T")
     self.actionRun.setIcon(QIcon(":/icons/qtiles.png"))
     self.actionRun.setWhatsThis("Generate tiles from current project")
     self.actionAbout = QAction(QCoreApplication.translate("QTiles", "About QTiles..."), self.iface.mainWindow())
@@ -101,4 +102,5 @@ class QTilesPlugin:
     d.exec_()
 
   def about(self):
-    pass
+    d = aboutdialog.AboutDialog()
+    d.exec_()

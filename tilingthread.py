@@ -155,7 +155,11 @@ class TilingThread(QThread):
 
   def __render(self, tile):
     self.renderer.setExtent(self.projector.transform(tile.toRectangle()))
-    self.renderer.setScale(1000)
+    latitude = math.degrees(math.atan(math.sinh(math.pi * (1.0 - 2.0 * float(tile.y) / float(math.pow(2, tile.z))))))
+    resolution = 156543.034 * math.cos(latitude) / float(math.pow(2, tile.z))
+    scale = self.image.logicalDpiX() * 39.37 * resolution
+    #QgsMessageLog.logMessage(QString("Scale: %1").arg(scale), "QTiles")
+    self.renderer.setScale(scale)
     self.image.fill(QColor(255, 255, 255, 0).rgb())
     painter = QPainter()
     painter.begin(self.image)

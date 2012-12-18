@@ -155,6 +155,7 @@ class TilingThread(QThread):
 
   def __render(self, tile):
     self.renderer.setExtent(self.projector.transform(tile.toRectangle()))
+    self.renderer.setScale(1000)
     self.image.fill(QColor(255, 255, 255, 0).rgb())
     painter = QPainter()
     painter.begin(self.image)

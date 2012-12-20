@@ -54,6 +54,7 @@ class TilingThread(QThread):
     self.minZoom = minZoom
     self.maxZoom = maxZoom
     self.output = outputPath
+    self.width = width
 
     self.interrupted = False
     self.tiles = []
@@ -63,6 +64,10 @@ class TilingThread(QThread):
     self.projector = QgsCoordinateTransform(QgsCoordinateReferenceSystem("EPSG:4326"),
                                             QgsCoordinateReferenceSystem("EPSG:3395")
                                            )
+
+    self.scaleCalc = QgsScaleCalculator()
+    self.scaleCalc.setDpi(self.image.logicalDpiX())
+    self.scaleCalc.setMapUnits(QgsCoordinateReferenceSystem("EPSG:3395").mapUnits())
 
     self.labeling = QgsPalLabeling()
     self.renderer = QgsMapRenderer()
@@ -157,8 +162,9 @@ class TilingThread(QThread):
     self.renderer.setExtent(self.projector.transform(tile.toRectangle()))
     latitude = math.degrees(math.atan(math.sinh(math.pi * (1.0 - 2.0 * float(tile.y) / float(math.pow(2, tile.z))))))
     resolution = 156543.034 * math.cos(latitude) / float(math.pow(2, tile.z))
-    scale = self.image.logicalDpiX() * 39.37 * resolution
-    #QgsMessageLog.logMessage(QString("Scale: %1").arg(scale), "QTiles")
+    scaleS = self.image.logicalDpiX() * 39.37 * resolution
+    scale = self.scaleCalc.calculate(self.renderer.extent(), self.width)
+    QgsMessageLog.logMessage(QString("Zoom: %1\nScale Slippy: %2\nScale QGIS: %3").arg(tile.z).arg(scaleS).arg(scale), "QTiles")
     self.renderer.setScale(scale)
     self.image.fill(QColor(255, 255, 255, 0).rgb())
     painter = QPainter()

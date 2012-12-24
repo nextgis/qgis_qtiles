@@ -108,7 +108,7 @@ class TilingThread(QThread):
 
       self.processInterrupted.emit()
 
-    self.rangeChanged.emit(self.tr("Rendering: %p%"), len(self.tiles))
+    self.rangeChanged.emit(self.tr("Rendering: %v from %m (%p%)"), len(self.tiles))
 
     for t in self.tiles:
       self.__render(t)

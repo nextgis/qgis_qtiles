@@ -152,7 +152,7 @@ p, li { white-space: pre-wrap; }
         <location filename="qtiles.py" line="71"/>
         <source>This version of QTiles requires at least QGIS version 1.8.0
 Plugin will not be enabled.</source>
-        <translation>Эта версия QTiles требует наличия QGIS 1.8.0
+        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 1.8.0
 Модуль не будет загружен.</translation>
     </message>
     <message>
@@ -164,6 +164,17 @@ Plugin will not be enabled.</source>
         <location filename="qtiles.py" line="81"/>
         <source>About QTiles...</source>
         <translation>О QTiles...</translation>
+    </message>
+    <message>
+        <location filename="qtiles.py" line="71"/>
+        <source>This version of QTiles requires at least QGIS version 1.9.0
+Plugin will not be enabled.</source>
+        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 1.9.0. Модуль не будет загружен.</translation>
+    </message>
+    <message>
+        <location filename="qtiles.py" line="71"/>
+        <source>This version of QTiles requires at least QGIS version 1.9.0. Plugin will not be enabled.</source>
+        <translation>Эта версия QTiles требует наличия QGIS 1.9.0. Модуль не будет загружен.</translation>
     </message>
 </context>
 <context>

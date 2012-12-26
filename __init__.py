@@ -35,7 +35,7 @@ def category():
   return "Plugins"
 
 def version():
-  return "0.0.1"
+  return "1.0.0"
 
 def qgisMinimumVersion():
   return "1.9.0"

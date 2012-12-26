@@ -71,7 +71,7 @@ class QTilesPlugin:
       QMessageBox.warning(self.iface.mainWindow(),
                            QCoreApplication.translate("QTiles", "Error"),
                            QCoreApplication.translate("QTiles", "Quantum GIS %1 detected.\n").arg(qgisVersion) +
-                           QCoreApplication.translate("QTiles", "This version of QTiles requires at least QGIS version 1.8.0\nPlugin will not be enabled."))
+                           QCoreApplication.translate("QTiles", "This version of QTiles requires at least QGIS version 1.9.0. Plugin will not be enabled."))
       return None
 
     self.actionRun = QAction(QCoreApplication.translate("QTiles", "QTiles"), self.iface.mainWindow())

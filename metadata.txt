@@ -12,8 +12,8 @@ icon=icons/qtiles.png
 
 tags=raster,tiles
 
-homepage=
-tracker=
+homepage=http://hub.qgis.org/projects/qtiles
+tracker=http://hub.qgis.org/projects/qtiles/issues
 repository=
 
 experimental=True

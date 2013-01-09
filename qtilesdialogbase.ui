@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>369</width>
-    <height>467</height>
+    <width>434</width>
+    <height>492</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -189,6 +189,13 @@
         </property>
         <property name="value">
          <number>256</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="3">
+       <widget class="QCheckBox" name="chkAntialiasing">
+        <property name="text">
+         <string>Make lines appear less jagged at the expence of some drawing performance</string>
         </property>
        </widget>
       </item>

@@ -43,7 +43,7 @@ class TilingThread(QThread):
 
   rootDir = "Mapnik"
 
-  def __init__(self, layers, extent, minZoom, maxZoom, width, height, outputPath):
+  def __init__(self, layers, extent, minZoom, maxZoom, width, height, outputPath, antialiasing):
     QThread.__init__(self, QThread.currentThread())
     self.mutex = QMutex()
     self.stopMe = 0
@@ -56,8 +56,15 @@ class TilingThread(QThread):
     self.output = outputPath
     self.width = width
 
+    self.antialias = antialiasing
+
     self.interrupted = False
     self.tiles = []
+
+    myRed = QgsProject.instance().readNumEntry("Gui", "/CanvasColorRedPart", 255)[0]
+    myGreen = QgsProject.instance().readNumEntry("Gui", "/CanvasColorGreenPart", 255)[0]
+    myBlue = QgsProject.instance().readNumEntry("Gui", "/CanvasColorBluePart", 255)[0]
+    self.color = QColor(myRed, myGreen, myBlue)
 
     self.image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
 
@@ -162,8 +169,11 @@ class TilingThread(QThread):
     self.renderer.setExtent(self.projector.transform(tile.toRectangle()))
     scale = self.scaleCalc.calculate(self.renderer.extent(), self.width)
     self.renderer.setScale(scale)
-    self.image.fill(QColor(255, 255, 255, 0).rgb())
+    self.image.fill(self.color)
+    #self.image.fill(QColor(255, 255, 255, 0).rgb())
     painter = QPainter()
+    if self.antialias:
+      painter.setRenderHint(QPainter.Antialiasing)
     painter.begin(self.image)
     self.renderer.render(painter)
     painter.end()

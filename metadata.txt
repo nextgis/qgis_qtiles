@@ -14,7 +14,7 @@ tags=raster,tiles
 
 homepage=http://hub.qgis.org/projects/qtiles
 tracker=http://hub.qgis.org/projects/qtiles/issues
-repository=
+repository=http://svn.gis-lab.info/qtiles
 
 experimental=True
 deprecated=False

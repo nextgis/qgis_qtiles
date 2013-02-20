@@ -117,6 +117,10 @@ class TilingThread(QThread):
 
     self.rangeChanged.emit(self.tr("Rendering: %v from %m (%p%)"), len(self.tiles))
 
+    self.painter = QPainter()
+    if self.antialias:
+      self.painter.setRenderHint(QPainter.Antialiasing)
+
     for t in self.tiles:
       self.__render(t)
 
@@ -170,13 +174,9 @@ class TilingThread(QThread):
     scale = self.scaleCalc.calculate(self.renderer.extent(), self.width)
     self.renderer.setScale(scale)
     self.image.fill(self.color)
-    #self.image.fill(QColor(255, 255, 255, 0).rgb())
-    painter = QPainter()
-    if self.antialias:
-      painter.setRenderHint(QPainter.Antialiasing)
-    painter.begin(self.image)
-    self.renderer.render(painter)
-    painter.end()
+    self.painter.begin(self.image)
+    self.renderer.render(self.painter)
+    self.painter.end()
 
     # save image
     path = QString("%1/%2/%3").arg(self.rootDir).arg(tile.z).arg(tile.x)

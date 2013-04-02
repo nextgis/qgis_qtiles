@@ -95,6 +95,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
     self.spnTileWidth.setValue(settings.value("tileWidth", 256).toInt()[0])
     self.spnTileHeight.setValue(settings.value("tileHeight", 256).toInt()[0])
 
+    self.chkAntialiasing.setChecked(settings.value("enable_antialiasing", False).toBool())
+
   def reject(self):
     QDialog.reject(self)
 
@@ -144,6 +146,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
     settings.setValue("tileWidth", self.spnTileWidth.value())
     settings.setValue("tileHeight", self.spnTileHeight.value())
 
+    settings.setValue("enable_antialiasing", self.chkAntialiasing.isChecked())
+
     canvas = self.iface.mapCanvas()
 
     if self.rbExtentCanvas.isChecked():
@@ -170,7 +174,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
                                                 self.spnZoomMax.value(),
                                                 self.spnTileWidth.value(),
                                                 self.spnTileHeight.value(),
-                                                fileInfo
+                                                fileInfo,
+                                                self.chkAntialiasing.isChecked()
                                                )
     self.workThread.rangeChanged.connect(self.setProgressRange)
     self.workThread.updateProgress.connect(self.updateProgress)

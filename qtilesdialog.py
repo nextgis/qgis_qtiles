@@ -48,6 +48,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
     self.iface = iface
     self.workThread = None
 
+    self.settings = QSettings("NextGIS", "QTiles")
+    self.grpParameters.setSettings(self.settings)
+
     self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
     self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
 
@@ -72,10 +75,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.cmbLayers.addItem(QString("%1 - %2").arg(layer[1]).arg(groupName), layer[0])
 
     # restore ui state from settings
-    settings = QSettings("NextGIS", "QTiles")
-
-    self.rbOutputZip.setChecked(settings.value("outputToZip", True).toBool())
-    self.rbOutputDir.setChecked(settings.value("outputToDir", False).toBool())
+    self.rbOutputZip.setChecked(self.settings.value("outputToZip", True).toBool())
+    self.rbOutputDir.setChecked(self.settings.value("outputToDir", False).toBool())
 
     if self.rbOutputZip.isChecked():
       self.leDirectoryName.setEnabled(False)
@@ -84,21 +85,24 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
     self.cmbLayers.setEnabled(False)
 
-    self.leRootDir.setText(settings.value("rootDir", "Mapnik").toString())
+    self.leRootDir.setText(self.settings.value("rootDir", "Mapnik").toString())
 
-    self.rbExtentCanvas.setChecked(settings.value("extentCanvas", True).toBool())
-    self.rbExtentFull.setChecked(settings.value("extentFull", False).toBool())
-    self.rbExtentLayer.setChecked(settings.value("extentLayer", False).toBool())
+    self.rbExtentCanvas.setChecked(self.settings.value("extentCanvas", True).toBool())
+    self.rbExtentFull.setChecked(self.settings.value("extentFull", False).toBool())
+    self.rbExtentLayer.setChecked(self.settings.value("extentLayer", False).toBool())
 
-    self.spnZoomMin.setValue(settings.value("minZoom", 0).toInt()[0])
-    self.spnZoomMax.setValue(settings.value("maxZoom", 18).toInt()[0])
+    self.spnZoomMin.setValue(self.settings.value("minZoom", 0).toInt()[0])
+    self.spnZoomMax.setValue(self.settings.value("maxZoom", 18).toInt()[0])
 
-    self.chkLockRatio.setChecked(settings.value("keepRatio", True).toBool())
-    self.spnTileWidth.setValue(settings.value("tileWidth", 256).toInt()[0])
-    self.spnTileHeight.setValue(settings.value("tileHeight", 256).toInt()[0])
+    self.chkLockRatio.setChecked(self.settings.value("keepRatio", True).toBool())
+    self.spnTileWidth.setValue(self.settings.value("tileWidth", 256).toInt()[0])
+    self.spnTileHeight.setValue(self.settings.value("tileHeight", 256).toInt()[0])
 
-    self.chkAntialiasing.setChecked(settings.value("enable_antialiasing", False).toBool())
-    self.chkTMSConvention.setChecked(settings.value("use_tms_filenames", False).toBool())
+    self.chkAntialiasing.setChecked(self.settings.value("enable_antialiasing", False).toBool())
+    self.chkTMSConvention.setChecked(self.settings.value("use_tms_filenames", False).toBool())
+
+    self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False).toBool())
+    self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False).toBool())
 
   def reject(self):
     QDialog.reject(self)
@@ -133,26 +137,27 @@ class QTilesDialog(QDialog, Ui_Dialog):
                          )
       return
 
-    settings = QSettings("NextGIS", "QTiles")
+    self.settings.setValue("rootDir", self.leRootDir.text())
 
-    settings.setValue("rootDir", self.leRootDir.text())
+    self.settings.setValue("outputToZip", self.rbOutputZip.isChecked())
+    self.settings.setValue("outputToDir", self.rbOutputDir.isChecked())
 
-    settings.setValue("outputToZip", self.rbOutputZip.isChecked())
-    settings.setValue("outputToDir", self.rbOutputDir.isChecked())
+    self.settings.setValue("extentCanvas", self.rbExtentCanvas.isChecked())
+    self.settings.setValue("extentFull", self.rbExtentFull.isChecked())
+    self.settings.setValue("extentLayer", self.rbExtentLayer.isChecked())
 
-    settings.setValue("extentCanvas", self.rbExtentCanvas.isChecked())
-    settings.setValue("extentFull", self.rbExtentFull.isChecked())
-    settings.setValue("extentLayer", self.rbExtentLayer.isChecked())
+    self.settings.setValue("minZoom", self.spnZoomMin.value())
+    self.settings.setValue("maxZoom", self.spnZoomMax.value())
 
-    settings.setValue("minZoom", self.spnZoomMin.value())
-    settings.setValue("maxZoom", self.spnZoomMax.value())
+    self.settings.setValue("keepRatio", self.chkLockRatio.isChecked())
+    self.settings.setValue("tileWidth", self.spnTileWidth.value())
+    self.settings.setValue("tileHeight", self.spnTileHeight.value())
 
-    settings.setValue("keepRatio", self.chkLockRatio.isChecked())
-    settings.setValue("tileWidth", self.spnTileWidth.value())
-    settings.setValue("tileHeight", self.spnTileHeight.value())
+    self.settings.setValue("enable_antialiasing", self.chkAntialiasing.isChecked())
+    self.settings.setValue("use_tms_filenames", self.chkTMSConvention.isChecked())
 
-    settings.setValue("enable_antialiasing", self.chkAntialiasing.isChecked())
-    settings.setValue("use_tms_filenames", self.chkTMSConvention.isChecked())
+    self.settings.setValue("write_mapurl", self.chkWriteMapurl.isChecked())
+    self.settings.setValue("write_viewer", self.chkWriteViewer.isChecked())
 
     canvas = self.iface.mapCanvas()
 
@@ -174,6 +179,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
     for layer in canvas.layers():
       layers.append(unicode(layer.id()))
 
+    writeMapurl = self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
+    writeViewer = self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
+
     self.workThread = tilingthread.TilingThread(layers,
                                                 extent,
                                                 self.spnZoomMin.value(),
@@ -183,7 +191,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
                                                 fileInfo,
                                                 self.leRootDir.text(),
                                                 self.chkAntialiasing.isChecked(),
-                                                self.chkTMSConvention.isChecked()
+                                                self.chkTMSConvention.isChecked(),
+                                                writeMapurl,
+                                                writeViewer
                                                )
     self.workThread.rangeChanged.connect(self.setProgressRange)
     self.workThread.updateProgress.connect(self.updateProgress)
@@ -229,6 +239,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
   def __toggleZipTarget(self, checked):
     self.leZipFileName.setEnabled(checked)
     self.leDirectoryName.setEnabled(not checked)
+    self.chkWriteMapurl.setEnabled(not checked)
+    self.chkWriteViewer.setEnabled(not checked)
 
   def __toggleLayerSelector(self, checked):
     self.cmbLayers.setEnabled(checked)
@@ -248,8 +260,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
       self.spnTileHeight.setValue(value)
 
   def __selectOutput(self):
-    settings = QSettings("NextGIS", "QTiles")
-    lastDirectory = settings.value("lastUsedDir", ".").toString()
+    lastDirectory = self.settings.value("lastUsedDir", ".").toString()
 
     if self.rbOutputZip.isChecked():
       outPath = QFileDialog.getSaveFileName(self,
@@ -275,4 +286,4 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
       self.leDirectoryName.setText(outPath)
 
-    settings.setValue("lastUsedDir", QFileInfo(outPath).absoluteDir().absolutePath())
+    self.settings.setValue("lastUsedDir", QFileInfo(outPath).absoluteDir().absolutePath())

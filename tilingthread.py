@@ -45,7 +45,7 @@ class TilingThread(QThread):
   processFinished = pyqtSignal()
   processInterrupted = pyqtSignal()
 
-  def __init__(self, layers, extent, minZoom, maxZoom, width, height, outputPath, rootDir, antialiasing, tmsConvention):
+  def __init__(self, layers, extent, minZoom, maxZoom, width, height, outputPath, rootDir, antialiasing, tmsConvention, mapUrl, viewer):
     QThread.__init__(self, QThread.currentThread())
     self.mutex = QMutex()
     self.stopMe = 0
@@ -61,6 +61,9 @@ class TilingThread(QThread):
 
     self.antialias = antialiasing
     self.tmsConvention = tmsConvention
+
+    self.mapurl = mapUrl
+    self.viewer = viewer
 
     self.interrupted = False
     self.tiles = []
@@ -101,8 +104,11 @@ class TilingThread(QThread):
     if self.output.isDir():
       self.zip = None
       self.tmp = None
-      self.writeMapurlFile()
-      self.writeLeafletViewer()
+      if self.mapurl:
+        self.writeMapurlFile()
+
+      if self.viewer:
+        self.writeLeafletViewer()
     else:
       self.zip = zipfile.ZipFile(unicode(self.output.absoluteFilePath()), "w")
       self.tmp = QTemporaryFile()
@@ -117,7 +123,6 @@ class TilingThread(QThread):
       useTMS = -1
 
     self.countTiles(Tile(0, 0, 0, useTMS))
-    print "count done", len(self.tiles)
 
     if self.interrupted:
       #del self.tiles[:]

@@ -17,9 +17,24 @@ specification. Output tiles can be saved in directory or as zip archive.&lt;/p&g
 &lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Please report bugs at &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
 </source>
-        <translation>&lt;p&gt;Создание тайлов из проектов QGIS.&lt;/p&gt;
+        <translation type="obsolete">&lt;p&gt;Создание тайлов из проектов QGIS.&lt;/p&gt;
 &lt;p&gt;Модуль создаёт растровые тайлы из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="aboutdialog.py" line="71"/>
+        <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;
+&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;
+specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Please report bugs at &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
+</source>
+        <translation>&lt;p&gt;Создание тайлов из проектов QGIS.&lt;/p&gt;
+&lt;p&gt;Модуль создаёт растровые тайлы из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov и Giovanni Allegri.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
@@ -32,77 +47,77 @@ specification. Output tiles can be saved in directory or as zip archive.&lt;/p&g
         <translation></translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="20"/>
+        <location filename="qtilesdialogbase.ui" line="41"/>
         <source>Output</source>
         <translation>Результат</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="26"/>
+        <location filename="qtilesdialogbase.ui" line="47"/>
         <source>Zip archive</source>
         <translation>ZIP архив</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="36"/>
+        <location filename="qtilesdialogbase.ui" line="57"/>
         <source>Browse...</source>
         <translation>Обзор...</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="43"/>
+        <location filename="qtilesdialogbase.ui" line="64"/>
         <source>Directory</source>
         <translation>Каталог</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="56"/>
+        <location filename="qtilesdialogbase.ui" line="87"/>
         <source>Extent</source>
         <translation>Охват</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="62"/>
+        <location filename="qtilesdialogbase.ui" line="93"/>
         <source>Canvas extent</source>
         <translation>Охват карты</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="69"/>
+        <location filename="qtilesdialogbase.ui" line="100"/>
         <source>Full extent</source>
         <translation>Полный охват</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="76"/>
+        <location filename="qtilesdialogbase.ui" line="107"/>
         <source>Layer extent</source>
         <translation>Охват слоя</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="96"/>
+        <location filename="qtilesdialogbase.ui" line="127"/>
         <source>Zoom</source>
         <translation>Масштаб</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="102"/>
+        <location filename="qtilesdialogbase.ui" line="133"/>
         <source>Minimum zoom</source>
         <translation>Минимальный масштаб</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="116"/>
+        <location filename="qtilesdialogbase.ui" line="147"/>
         <source>Maximum zoom</source>
         <translation>Максимальный масштаб</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="139"/>
+        <location filename="qtilesdialogbase.ui" line="170"/>
         <source>Parameters</source>
         <translation>Параметры</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="145"/>
+        <location filename="qtilesdialogbase.ui" line="182"/>
         <source>Tile width</source>
         <translation>Ширина тайла</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="152"/>
+        <location filename="qtilesdialogbase.ui" line="189"/>
         <source>Lock 1:1 ratio</source>
         <translation>Зафискировать соотношение сторон 1:1</translation>
     </message>
     <message>
-        <location filename="qtilesdialogbase.ui" line="162"/>
+        <location filename="qtilesdialogbase.ui" line="199"/>
         <source>Tile height</source>
         <translation>Высота тайла</translation>
     </message>
@@ -133,6 +148,36 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Droid Sans&apos;; font-size:8pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:&apos;Sans Serif&apos;; font-size:9pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation></translation>
+    </message>
+    <message>
+        <location filename="qtilesdialogbase.ui" line="74"/>
+        <source>Tileset name</source>
+        <translation>Название набора</translation>
+    </message>
+    <message>
+        <location filename="qtilesdialogbase.ui" line="235"/>
+        <source>Make lines appear less jagged at the expence of some drawing performance</source>
+        <translation>Рисовать сглаженные линии (снижает скорость отрисовки)</translation>
+    </message>
+    <message>
+        <location filename="qtilesdialogbase.ui" line="242"/>
+        <source>Use TMS tiles convention (OSM by default)</source>
+        <translation type="obsolete">Использовать спецификацию TMS (по умолчанию Slippy Maps)</translation>
+    </message>
+    <message>
+        <location filename="qtilesdialogbase.ui" line="249"/>
+        <source>Write .mapurl file</source>
+        <translation>Создать файл .mapurl</translation>
+    </message>
+    <message>
+        <location filename="qtilesdialogbase.ui" line="256"/>
+        <source>Write Leaflet-based viewer</source>
+        <translation>Создать просмотрщик на Leaflet</translation>
+    </message>
+    <message>
+        <location filename="qtilesdialogbase.ui" line="242"/>
+        <source>Use TMS tiles convention (Slippy Map by default)</source>
+        <translation>Использовать спецификацию TMS (по умолчанию Slippy Map)</translation>
     </message>
 </context>
 <context>
@@ -180,57 +225,57 @@ Plugin will not be enabled.</source>
 <context>
     <name>QTilesDialog</name>
     <message>
-        <location filename="qtilesdialog.py" line="108"/>
+        <location filename="qtilesdialog.py" line="117"/>
         <source>No output</source>
         <translation>Не указан путь</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="108"/>
+        <location filename="qtilesdialog.py" line="117"/>
         <source>Output path is not set. Please enter correct path and try again.</source>
         <translation>Не указан путь назначения. Пожалуйста, введите правильный путь и попробуйте ещё раз.</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="116"/>
+        <location filename="qtilesdialog.py" line="125"/>
         <source>Directory not empty</source>
         <translation>Каталог не пуст</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="116"/>
+        <location filename="qtilesdialog.py" line="125"/>
         <source>Selected directory is not empty. Continue?</source>
         <translation>Каталог назначения не пуст. Продолжить?</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="125"/>
+        <location filename="qtilesdialog.py" line="134"/>
         <source>Wrong zoom</source>
         <translation>Неверный масштаб</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="125"/>
+        <location filename="qtilesdialog.py" line="134"/>
         <source>Maximum zoom value is lower than minimum. Please correct this and try again.</source>
         <translation>Значение максимального масштаба меньше минимального. Пожалуйста, исправьте ошибку и попробуйте ещё раз.</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="181"/>
+        <location filename="qtilesdialog.py" line="204"/>
         <source>Cancel</source>
         <translation>Отменить</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="213"/>
+        <location filename="qtilesdialog.py" line="236"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="242"/>
+        <location filename="qtilesdialog.py" line="266"/>
         <source>Save to file</source>
         <translation>Сохранить файл</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="242"/>
+        <location filename="qtilesdialog.py" line="266"/>
         <source>ZIP archives (*.zip *.ZIP)</source>
         <translation>ZIP архивы (*.zip *.ZIP)</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="255"/>
+        <location filename="qtilesdialog.py" line="279"/>
         <source>Save to directory</source>
         <translation>Выбрать каталог</translation>
     </message>
@@ -238,12 +283,12 @@ Plugin will not be enabled.</source>
 <context>
     <name>TilingThread</name>
     <message>
-        <location filename="tilingthread.py" line="96"/>
+        <location filename="tilingthread.py" line="119"/>
         <source>Searching tiles...</source>
         <translation>Поиск тайлов...</translation>
     </message>
     <message>
-        <location filename="tilingthread.py" line="111"/>
+        <location filename="tilingthread.py" line="141"/>
         <source>Rendering: %v from %m (%p%)</source>
         <translation>Отрисовка: %v из %m (%p%)</translation>
     </message>

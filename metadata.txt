@@ -2,7 +2,7 @@
 name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
-version=1.1.0
+version=1.2.0
 qgisMinimumVersion=1.9.0
 
 author=Alexander Bruy (NextGIS)
@@ -14,7 +14,7 @@ tags=raster,tiles
 
 homepage=http://hub.qgis.org/projects/qtiles
 tracker=http://hub.qgis.org/projects/qtiles/issues
-repository=http://svn.gis-lab.info/qtiles
+repository=http://github.com/nextgis/QTiles
 
 experimental=True
 deprecated=False

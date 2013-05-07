@@ -26,6 +26,7 @@
 #******************************************************************************
 
 import math
+import time
 import zipfile
 from string import Template
 
@@ -44,9 +45,7 @@ class TilingThread(QThread):
   processFinished = pyqtSignal()
   processInterrupted = pyqtSignal()
 
-  rootDir = "Mapnik"
-
-  def __init__(self, layers, extent, minZoom, maxZoom, width, height, outputPath, antialiasing, tmsConvention):
+  def __init__(self, layers, extent, minZoom, maxZoom, width, height, outputPath, rootDir, antialiasing, tmsConvention):
     QThread.__init__(self, QThread.currentThread())
     self.mutex = QMutex()
     self.stopMe = 0
@@ -58,6 +57,7 @@ class TilingThread(QThread):
     self.maxZoom = maxZoom
     self.output = outputPath
     self.width = width
+    self.rootDir = rootDir if not rootDir.isEmpty() else QString("tileset_%1").arg(unicode(time.time()).split(".")[0])
 
     self.antialias = antialiasing
     self.tmsConvention = tmsConvention

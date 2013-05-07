@@ -84,6 +84,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
     self.cmbLayers.setEnabled(False)
 
+    self.leRootDir.setText(settings.value("rootDir", "Mapnik").toString())
+
     self.rbExtentCanvas.setChecked(settings.value("extentCanvas", True).toBool())
     self.rbExtentFull.setChecked(settings.value("extentFull", False).toBool())
     self.rbExtentLayer.setChecked(settings.value("extentLayer", False).toBool())
@@ -133,6 +135,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
     settings = QSettings("NextGIS", "QTiles")
 
+    settings.setValue("rootDir", self.leRootDir.text())
+
     settings.setValue("outputToZip", self.rbOutputZip.isChecked())
     settings.setValue("outputToDir", self.rbOutputDir.isChecked())
 
@@ -177,6 +181,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
                                                 self.spnTileWidth.value(),
                                                 self.spnTileHeight.value(),
                                                 fileInfo,
+                                                self.leRootDir.text(),
                                                 self.chkAntialiasing.isChecked(),
                                                 self.chkTMSConvention.isChecked()
                                                )

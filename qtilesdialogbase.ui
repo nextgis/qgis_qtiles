@@ -47,6 +47,16 @@
       <item row="1" column="1">
        <widget class="QLineEdit" name="leDirectoryName"/>
       </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Tileset name</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1" colspan="2">
+       <widget class="QLineEdit" name="leRootDir"/>
+      </item>
      </layout>
     </widget>
    </item>

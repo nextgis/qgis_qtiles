@@ -43,7 +43,7 @@ class TilingThread(QThread):
 
   rootDir = "Mapnik"
 
-  def __init__(self, layers, extent, minZoom, maxZoom, width, height, outputPath, antialiasing):
+  def __init__(self, layers, extent, minZoom, maxZoom, width, height, outputPath, antialiasing, tmsConvention):
     QThread.__init__(self, QThread.currentThread())
     self.mutex = QMutex()
     self.stopMe = 0
@@ -57,6 +57,7 @@ class TilingThread(QThread):
     self.width = width
 
     self.antialias = antialiasing
+    self.tmsConvetion = tmsConvention
 
     self.interrupted = False
     self.tiles = []
@@ -102,9 +103,16 @@ class TilingThread(QThread):
 
     self.rangeChanged.emit(self.tr("Searching tiles..."), 0)
 
-    self.__countTiles(Tile())
+    useTMS = 1
+    if self.tmsConvention:
+      useTMS = -1
+
+    self.countTiles(Tile(tms=useTMS))
 
     if self.interrupted:
+      del self.tiles[:]
+      self.tiles = None
+
       if self.zip is not None:
         self.zip.close()
         self.zip = None
@@ -122,7 +130,7 @@ class TilingThread(QThread):
       self.painter.setRenderHint(QPainter.Antialiasing)
 
     for t in self.tiles:
-      self.__render(t)
+      self.render(t)
 
       self.updateProgress.emit()
 
@@ -149,7 +157,7 @@ class TilingThread(QThread):
 
     QThread.wait(self)
 
-  def __countTiles(self, tile):
+  def countTiles(self, tile):
     if self.interrupted or not self.extent.intersects(tile.toRectangle()):
       return
 
@@ -166,10 +174,10 @@ class TilingThread(QThread):
             self.interrupted = True
             return
 
-          subTile = Tile(x, y, tile.z +1)
-          self.__countTiles(subTile)
+          subTile = Tile(x, y, tile.z +1, tile.tms)
+          self.countTiles(subTile)
 
-  def __render(self, tile):
+  def render(self, tile):
     self.renderer.setExtent(self.projector.transform(tile.toRectangle()))
     scale = self.scaleCalc.calculate(self.renderer.extent(), self.width)
     self.renderer.setScale(scale)

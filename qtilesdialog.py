@@ -96,6 +96,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
     self.spnTileHeight.setValue(settings.value("tileHeight", 256).toInt()[0])
 
     self.chkAntialiasing.setChecked(settings.value("enable_antialiasing", False).toBool())
+    self.chkTMSConvention.setChecked(settings.value("use_tms_filenames", False).toBool())
 
   def reject(self):
     QDialog.reject(self)
@@ -147,6 +148,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
     settings.setValue("tileHeight", self.spnTileHeight.value())
 
     settings.setValue("enable_antialiasing", self.chkAntialiasing.isChecked())
+    settings.setValue("use_tms_filenames", self.chkTMSConvention.isChecked())
 
     canvas = self.iface.mapCanvas()
 
@@ -175,7 +177,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
                                                 self.spnTileWidth.value(),
                                                 self.spnTileHeight.value(),
                                                 fileInfo,
-                                                self.chkAntialiasing.isChecked()
+                                                self.chkAntialiasing.isChecked(),
+                                                self.chkTMSConvention.isChecked()
                                                )
     self.workThread.rangeChanged.connect(self.setProgressRange)
     self.workThread.updateProgress.connect(self.updateProgress)

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>434</width>
-    <height>492</height>
+    <width>481</width>
+    <height>521</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -196,6 +196,13 @@
        <widget class="QCheckBox" name="chkAntialiasing">
         <property name="text">
          <string>Make lines appear less jagged at the expence of some drawing performance</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="3">
+       <widget class="QCheckBox" name="chkTMSConvention">
+        <property name="text">
+         <string>Use TMS tiles convention (OSM by default)</string>
         </property>
        </widget>
       </item>

@@ -27,6 +27,7 @@
 
 import math
 import zipfile
+from string import Template
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -34,6 +35,8 @@ from PyQt4.QtGui import *
 from qgis.core import *
 
 from tile import Tile
+
+import resources_rc
 
 class TilingThread(QThread):
   rangeChanged = pyqtSignal(str, int)
@@ -57,7 +60,7 @@ class TilingThread(QThread):
     self.width = width
 
     self.antialias = antialiasing
-    self.tmsConvetion = tmsConvention
+    self.tmsConvention = tmsConvention
 
     self.interrupted = False
     self.tiles = []
@@ -98,6 +101,8 @@ class TilingThread(QThread):
     if self.output.isDir():
       self.zip = None
       self.tmp = None
+      self.writeMapurlFile()
+      self.writeLeafletViewer()
     else:
       self.zip = zipfile.ZipFile(unicode(self.output.absoluteFilePath()), "w")
       self.tmp = QTemporaryFile()
@@ -111,11 +116,12 @@ class TilingThread(QThread):
     if self.tmsConvention:
       useTMS = -1
 
-    self.countTiles(Tile(tms=useTMS))
+    self.countTiles(Tile(0, 0, 0, useTMS))
+    print "count done", len(self.tiles)
 
     if self.interrupted:
-      del self.tiles[:]
-      self.tiles = None
+      #del self.tiles[:]
+      #self.tiles = None
 
       if self.zip is not None:
         self.zip.close()
@@ -161,6 +167,37 @@ class TilingThread(QThread):
 
     QThread.wait(self)
 
+  def writeMapurlFile(self):
+    filePath = QString("%1/%2.mapurl").arg(self.output.absoluteFilePath()).arg(self.rootDir)
+    tileServer = "tms" if self.tmsConvention else "google"
+    with open(filePath, "w") as mapurl:
+      mapurl.write("%s=%s\n" % ("url", self.rootDir + "/ZZZ/XXX/YYY.png"))
+      mapurl.write("%s=%s\n" % ("minzoom", self.minZoom))
+      mapurl.write("%s=%s\n" % ("maxzoom", self.maxZoom))
+      mapurl.write("%s=%f %f\n" % ("center", self.extent.center().x(), self.extent.center().y()))
+      mapurl.write("%s=%s\n" % ("type", tileServer))
+
+  def writeLeafletViewer(self):
+    templateFile = QFile(":/resources/viewer.html")
+    if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
+      viewer = MyTemplate(unicode(templateFile.readAll()))
+      tilesDir = unicode(QString("%1/%2").arg(self.output.absoluteFilePath()).arg(self.rootDir))
+      useTMS = "true" if self.tmsConvention else "false"
+      substitutions = {"tilesdir"    : tilesDir,
+                       "tilesetname" : self.rootDir,
+                       "tms"         : useTMS,
+                       "centerx"     : self.extent.center().x(),
+                       "centery"     : self.extent.center().y(),
+                       "avgzoom"     : (self.maxZoom + self.minZoom) / 2,
+                       "maxzoom"     : self.maxZoom
+                      }
+
+      filePath = QString("%1/%2.html").arg(self.output.absoluteFilePath()).arg(self.rootDir)
+      with open(filePath, "w") as fOut:
+        fOut.write(viewer.substitute(substitutions))
+
+      templateFile.close()
+
   def countTiles(self, tile):
     if self.interrupted or not self.extent.intersects(tile.toRectangle()):
       return
@@ -202,3 +239,9 @@ class TilingThread(QThread):
 
       tilePath = QString("%1/%2.png").arg(path).arg(tile.y)
       self.zip.write(unicode(self.tempFileName), unicode(tilePath).encode("utf8"))
+
+class MyTemplate(Template):
+  delimiter = "@"
+
+  def __init__(self, templateString):
+      Template.__init__(self, templateString)

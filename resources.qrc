@@ -2,5 +2,6 @@
   <qresource>
     <file>icons/qtiles.png</file>
     <file>icons/about.png</file>
+    <file>resources/viewer.html</file>
   </qresource>
 </RCC>

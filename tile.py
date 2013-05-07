@@ -43,4 +43,4 @@ class Tile:
     return QgsPoint(longitude, latitude)
 
   def toRectangle(self):
-    return QgsRectangle(self.toPoint(), Tile(self.x + 1, self.y + 1, self.z).toPoint())
+    return QgsRectangle(self.toPoint(), Tile(self.x + 1, self.y + 1, self.z, self.tms).toPoint())

@@ -41,7 +41,7 @@ clean:
 	rm -f *.zip
 
 package:
-	cd .. && rm -f *.zip && zip -r qtiles.zip qtiles -x \*.pyc \*.ts \*.ui \*.qrc \*.pro \*~ \*.git\* \*Makefile*
+	cd .. && rm -f *.zip && zip -r qtiles.zip qtiles -x \*.pyc \*.ts \*.ui \*.qrc \*.pro \*~ \*.git\* \resources\* \*Makefile*
 	mv ../qtiles.zip .
 
 upload:

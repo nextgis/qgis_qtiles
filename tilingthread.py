@@ -65,7 +65,11 @@ class TilingThread(QThread):
     myRed = QgsProject.instance().readNumEntry("Gui", "/CanvasColorRedPart", 255)[0]
     myGreen = QgsProject.instance().readNumEntry("Gui", "/CanvasColorGreenPart", 255)[0]
     myBlue = QgsProject.instance().readNumEntry("Gui", "/CanvasColorBluePart", 255)[0]
-    self.color = QColor(myRed, myGreen, myBlue)
+
+    if int(QT_VERSION_STR[2]) >= 8:
+      self.color = QColor(myRed, myGreen, myBlue)
+    else:
+      self.color = qRgb(myRed, myGreen, myBlue)
 
     self.image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
 

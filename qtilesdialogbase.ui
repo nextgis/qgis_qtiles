@@ -29,7 +29,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
+        <y>-162</y>
         <width>486</width>
         <height>522</height>
        </rect>
@@ -239,7 +239,7 @@
           <item row="3" column="0" colspan="3">
            <widget class="QCheckBox" name="chkTMSConvention">
             <property name="text">
-             <string>Use TMS tiles convention (OSM by default)</string>
+             <string>Use TMS tiles convention (Slippy Map by default)</string>
             </property>
            </widget>
           </item>

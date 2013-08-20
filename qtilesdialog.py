@@ -113,7 +113,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
     else:
       output = self.leDirectoryName.text()
 
-    if output.isEmpty():
+    if output:
       QMessageBox.warning(self,
                           self.tr("No output"),
                           self.tr("Output path is not set. Please enter correct path and try again.")
@@ -121,7 +121,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
       return
 
     fileInfo = QFileInfo(output)
-    if fileInfo.isDir() and not QDir(output).entryList(QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot).isEmpty():
+    if fileInfo.isDir() and not QDir(output).entryList(QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot):
       res = QMessageBox.warning(self,
                                 self.tr("Directory not empty"),
                                 self.tr("Selected directory is not empty. Continue?"),
@@ -268,10 +268,10 @@ class QTilesDialog(QDialog, Ui_Dialog):
                                             lastDirectory,
                                             self.tr("ZIP archives (*.zip *.ZIP)")
                                            )
-      if outPath.isEmpty():
+      if outPath:
         return
 
-      if not outPath.toLower().endsWith(".zip"):
+      if not outPath.endsWith(".zip"):
         outPath += ".zip"
 
       self.leZipFileName.setText(outPath)
@@ -281,7 +281,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
                                                  lastDirectory,
                                                  QFileDialog.ShowDirsOnly
                                                 )
-      if outPath.isEmpty():
+      if outPath:
         return
 
       self.leDirectoryName.setText(outPath)

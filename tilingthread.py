@@ -57,7 +57,7 @@ class TilingThread(QThread):
     self.maxZoom = maxZoom
     self.output = outputPath
     self.width = width
-    self.rootDir = rootDir if not rootDir.isEmpty() else QString("tileset_%1").arg(unicode(time.time()).split(".")[0])
+    self.rootDir = rootDir if not rootDir else QString("tileset_%1").arg(unicode(time.time()).split(".")[0])
 
     self.antialias = antialiasing
     self.tmsConvention = tmsConvention

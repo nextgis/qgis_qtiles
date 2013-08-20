@@ -2,8 +2,8 @@
 name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
-version=1.2.0
-qgisMinimumVersion=1.9.0
+version=1.2.1
+qgisMinimumVersion=2.0
 
 author=Alexander Bruy (NextGIS)
 email=alexander.bruy@gmail.com

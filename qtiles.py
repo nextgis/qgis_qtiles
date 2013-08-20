@@ -48,11 +48,11 @@ class QTilesPlugin:
     userPluginPath = QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/qtiles"
     systemPluginPath = QgsApplication.prefixPath() + "/python/plugins/qtiles"
 
-    overrideLocale = QSettings().value("locale/overrideFlag", QVariant(False)).toBool()
+    overrideLocale = QSettings().value("locale/overrideFlag", False)
     if not overrideLocale:
       localeFullName = QLocale.system().name()
     else:
-      localeFullName = QSettings().value("locale/userLocale", QVariant("")).toString()
+      localeFullName = QSettings().value("locale/userLocale", "")
 
     if QFileInfo(userPluginPath).exists():
       translationPath = userPluginPath + "/i18n/qtiles_" + localeFullName + ".qm"

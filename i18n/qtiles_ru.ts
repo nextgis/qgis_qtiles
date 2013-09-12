@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="2.0" language="ru_RU" sourcelanguage="">
+<!DOCTYPE TS>
+<TS version="2.0" language="ru_RU">
 <context>
     <name>AboutDialog</name>
     <message>
@@ -40,7 +41,7 @@ specification. Output tiles can be saved in directory or as zip archive.&lt;/p&g
     <message>
         <location filename="aboutdialog.py" line="53"/>
         <source>Version: %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Версия: %s</translation>
     </message>
     <message>
         <location filename="aboutdialog.py" line="78"/>
@@ -51,7 +52,11 @@ specification. Output tiles can be saved in directory or as zip archive.&lt;/p&g
     &lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
     &lt;p&gt;Please report bugs at &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
     </source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Создание тайлов из проектов QGIS.&lt;/p&gt;
+&lt;p&gt;Модуль создаёт растровые тайлы из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov и Giovanni Allegri.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -240,12 +245,12 @@ Plugin will not be enabled.</source>
         <location filename="qtiles.py" line="70"/>
         <source>QGIS %s detected.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Обнаружена QGIS %s.</translation>
     </message>
     <message>
         <location filename="qtiles.py" line="70"/>
         <source>This version of QTiles requires at least QGIS version 2.0. Plugin will not be enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Эта версия QTiles требует наличия QGIS 2.0. Модуль не будет загружен.</translation>
     </message>
 </context>
 <context>

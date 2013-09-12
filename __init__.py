@@ -6,7 +6,7 @@
 # ---------------------------------------------------------
 # Generates tiles from QGIS project
 #
-# Copyright (C) 2012 Alexander Bruy (alexander.bruy@gmail.com)
+# Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
 #
 # This source is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -25,30 +25,39 @@
 #
 #******************************************************************************
 
+
 def name():
-  return "QTiles"
+    return "QTiles"
+
 
 def description():
-  return "Generate tiles from QGIS project"
+    return "Generate tiles from QGIS project"
+
 
 def category():
-  return "Plugins"
+    return "Plugins"
+
 
 def version():
-  return "1.2.0"
+    return "1.2.0"
+
 
 def qgisMinimumVersion():
-  return "1.9.0"
+    return "1.9.0"
+
 
 def author():
-  return "Alexander Bruy (NextGIS)"
+    return "Alexander Bruy (NextGIS)"
+
 
 def email():
-  return "alexander.bruy@gmail.com"
+    return "alexander.bruy@gmail.com"
+
 
 def icon():
-  return "icons/qtiles.png"
+    return "icons/qtiles.png"
 
-def classFactory( iface ):
-  from qtiles import QTilesPlugin
-  return QTilesPlugin( iface )
+
+def classFactory(iface):
+    from qtiles import QTilesPlugin
+    return QTilesPlugin(iface)

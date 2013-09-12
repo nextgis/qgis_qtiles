@@ -6,7 +6,7 @@
 # ---------------------------------------------------------
 # Generates tiles from QGIS project
 #
-# Copyright (C) 2012 Alexander Bruy (alexander.bruy@gmail.com)
+# Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
 #
 # This source is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -25,6 +25,7 @@
 #
 #******************************************************************************
 
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -35,72 +36,73 @@ import aboutdialog
 
 import resources_rc
 
+
 class QTilesPlugin:
-  def __init__(self, iface):
-    self.iface = iface
+    def __init__(self, iface):
+        self.iface = iface
 
-    try:
-      self.QgisVersion = unicode(QGis.QGIS_VERSION_INT)
-    except:
-      self.QgisVersion = unicode(QGis.qgisVersion)[ 0 ]
+        try:
+            self.QgisVersion = unicode(QGis.QGIS_VERSION_INT)
+        except:
+            self.QgisVersion = unicode(QGis.qgisVersion)[0]
 
-    # For i18n support
-    userPluginPath = QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/qtiles"
-    systemPluginPath = QgsApplication.prefixPath() + "/python/plugins/qtiles"
+        # For i18n support
+        userPluginPath = QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/qtiles"
+        systemPluginPath = QgsApplication.prefixPath() + "/python/plugins/qtiles"
 
-    overrideLocale = QSettings().value("locale/overrideFlag", QVariant(False)).toBool()
-    if not overrideLocale:
-      localeFullName = QLocale.system().name()
-    else:
-      localeFullName = QSettings().value("locale/userLocale", QVariant("")).toString()
+        overrideLocale = QSettings().value("locale/overrideFlag", QVariant(False)).toBool()
+        if not overrideLocale:
+            localeFullName = QLocale.system().name()
+        else:
+            localeFullName = QSettings().value("locale/userLocale", QVariant("")).toString()
 
-    if QFileInfo(userPluginPath).exists():
-      translationPath = userPluginPath + "/i18n/qtiles_" + localeFullName + ".qm"
-    else:
-      translationPath = systemPluginPath + "/i18n/qtiles_" + localeFullName + ".qm"
+        if QFileInfo(userPluginPath).exists():
+            translationPath = userPluginPath + "/i18n/qtiles_" + localeFullName + ".qm"
+        else:
+            translationPath = systemPluginPath + "/i18n/qtiles_" + localeFullName + ".qm"
 
-    self.localePath = translationPath
-    if QFileInfo(self.localePath).exists():
-      self.translator = QTranslator()
-      self.translator.load(self.localePath)
-      QCoreApplication.installTranslator(self.translator)
+        self.localePath = translationPath
+        if QFileInfo(self.localePath).exists():
+            self.translator = QTranslator()
+            self.translator.load(self.localePath)
+            QCoreApplication.installTranslator(self.translator)
 
-  def initGui(self):
-    if int(self.QgisVersion) < 10900:
-      qgisVersion = str(self.QgisVersion[ 0 ]) + "." + str(self.QgisVersion[ 2 ]) + "." + str(self.QgisVersion[ 3 ])
-      QMessageBox.warning(self.iface.mainWindow(),
-                           QCoreApplication.translate("QTiles", "Error"),
-                           QCoreApplication.translate("QTiles", "Quantum GIS %1 detected.\n").arg(qgisVersion) +
-                           QCoreApplication.translate("QTiles", "This version of QTiles requires at least QGIS version 1.9.0. Plugin will not be enabled."))
-      return None
+    def initGui(self):
+        if int(self.QgisVersion) < 10900:
+            qgisVersion = str(self.QgisVersion[0]) + "." + str(self.QgisVersion[2]) + "." + str(self.QgisVersion[3])
+            QMessageBox.warning(self.iface.mainWindow(),
+                                QCoreApplication.translate("QTiles", "Error"),
+                                QCoreApplication.translate("QTiles", "Quantum GIS %1 detected.\n").arg(qgisVersion) +
+                                QCoreApplication.translate("QTiles", "This version of QTiles requires at least QGIS version 1.9.0. Plugin will not be enabled."))
+            return None
 
-    self.actionRun = QAction(QCoreApplication.translate("QTiles", "QTiles"), self.iface.mainWindow())
-    self.iface.registerMainWindowAction(self.actionRun, "Shift+T")
-    self.actionRun.setIcon(QIcon(":/icons/qtiles.png"))
-    self.actionRun.setWhatsThis("Generate tiles from current project")
-    self.actionAbout = QAction(QCoreApplication.translate("QTiles", "About QTiles..."), self.iface.mainWindow())
-    self.actionAbout.setIcon(QIcon(":/icons/about.png"))
-    self.actionAbout.setWhatsThis("About QTiles")
+        self.actionRun = QAction(QCoreApplication.translate("QTiles", "QTiles"), self.iface.mainWindow())
+        self.iface.registerMainWindowAction(self.actionRun, "Shift+T")
+        self.actionRun.setIcon(QIcon(":/icons/qtiles.png"))
+        self.actionRun.setWhatsThis("Generate tiles from current project")
+        self.actionAbout = QAction(QCoreApplication.translate("QTiles", "About QTiles..."), self.iface.mainWindow())
+        self.actionAbout.setIcon(QIcon(":/icons/about.png"))
+        self.actionAbout.setWhatsThis("About QTiles")
 
-    self.iface.addPluginToMenu(QCoreApplication.translate("QTiles", "QTiles"), self.actionRun)
-    self.iface.addPluginToMenu(QCoreApplication.translate("QTiles", "QTiles"), self.actionAbout)
-    self.iface.addToolBarIcon(self.actionRun)
+        self.iface.addPluginToMenu(QCoreApplication.translate("QTiles", "QTiles"), self.actionRun)
+        self.iface.addPluginToMenu(QCoreApplication.translate("QTiles", "QTiles"), self.actionAbout)
+        self.iface.addToolBarIcon(self.actionRun)
 
-    self.actionRun.triggered.connect(self.run)
-    self.actionAbout.triggered.connect(self.about)
+        self.actionRun.triggered.connect(self.run)
+        self.actionAbout.triggered.connect(self.about)
 
-  def unload(self):
-    self.iface.unregisterMainWindowAction(self.actionRun)
+    def unload(self):
+        self.iface.unregisterMainWindowAction(self.actionRun)
 
-    self.iface.removeToolBarIcon(self.actionRun)
-    self.iface.removePluginMenu(QCoreApplication.translate("QTiles", "QTiles"), self.actionRun)
-    self.iface.removePluginMenu(QCoreApplication.translate("QTiles", "QTiles"), self.actionAbout)
+        self.iface.removeToolBarIcon(self.actionRun)
+        self.iface.removePluginMenu(QCoreApplication.translate("QTiles", "QTiles"), self.actionRun)
+        self.iface.removePluginMenu(QCoreApplication.translate("QTiles", "QTiles"), self.actionAbout)
 
-  def run(self):
-    d = qtilesdialog.QTilesDialog(self.iface)
-    d.show()
-    d.exec_()
+    def run(self):
+        d = qtilesdialog.QTilesDialog(self.iface)
+        d.show()
+        d.exec_()
 
-  def about(self):
-    d = aboutdialog.AboutDialog()
-    d.exec_()
+    def about(self):
+        d = aboutdialog.AboutDialog()
+        d.exec_()

@@ -8,4 +8,4 @@ SOURCES = __init__.py \
 FORMS = ui/qtilesdialogbase.ui \
         ui/aboutdialogbase.ui
 
-TRANSLATIONS = i18n/qtiles_ru_RU.ts
+TRANSLATIONS = i18n/qtiles_ru.ts

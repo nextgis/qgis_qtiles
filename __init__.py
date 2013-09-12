@@ -26,38 +26,6 @@
 #******************************************************************************
 
 
-def name():
-    return "QTiles"
-
-
-def description():
-    return "Generate tiles from QGIS project"
-
-
-def category():
-    return "Plugins"
-
-
-def version():
-    return "1.2.0"
-
-
-def qgisMinimumVersion():
-    return "1.9.0"
-
-
-def author():
-    return "Alexander Bruy (NextGIS)"
-
-
-def email():
-    return "alexander.bruy@gmail.com"
-
-
-def icon():
-    return "icons/qtiles.png"
-
-
 def classFactory(iface):
     from qtiles import QTilesPlugin
     return QTilesPlugin(iface)

@@ -3,7 +3,7 @@ name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
 version=1.2.0
-qgisMinimumVersion=1.9.0
+qgisMinimumVersion=2.0
 
 author=Alexander Bruy (NextGIS)
 email=alexander.bruy@gmail.com
@@ -12,7 +12,7 @@ icon=icons/qtiles.png
 
 tags=raster,tiles
 
-homepage=http://hub.qgis.org/projects/qtiles
+homepage=http://hub.qgis.org/projects/qtiles/wiki
 tracker=http://hub.qgis.org/projects/qtiles/issues
 repository=http://github.com/nextgis/QTiles
 

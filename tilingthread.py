@@ -61,7 +61,7 @@ class TilingThread(QThread):
         self.maxZoom = maxZoom
         self.output = outputPath
         self.width = width
-        self.rootDir = rootDir if not rootDir.isEmpty() else QString("tileset_%1").arg(unicode(time.time()).split(".")[0])
+        self.rootDir = rootDir if rootDir else "tileset_%s" % unicode(time.time()).split(".")[0]
 
         self.antialias = antialiasing
         self.tmsConvention = tmsConvention
@@ -177,7 +177,7 @@ class TilingThread(QThread):
         QThread.wait(self)
 
     def writeMapurlFile(self):
-        filePath = QString("%1/%2.mapurl").arg(self.output.absoluteFilePath()).arg(self.rootDir)
+        filePath = "%s/%s.mapurl" % (self.output.absoluteFilePath(), self.rootDir)
         tileServer = "tms" if self.tmsConvention else "google"
         with open(filePath, "w") as mapurl:
             mapurl.write("%s=%s\n" % ("url", self.rootDir + "/ZZZ/XXX/YYY.png"))
@@ -190,7 +190,7 @@ class TilingThread(QThread):
         templateFile = QFile(":/resources/viewer.html")
         if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
             viewer = MyTemplate(unicode(templateFile.readAll()))
-            tilesDir = unicode(QString("%1/%2").arg(self.output.absoluteFilePath()).arg(self.rootDir))
+            tilesDir = "%s/%s" % (self.output.absoluteFilePath(), self.rootDir)
             useTMS = "true" if self.tmsConvention else "false"
             substitutions = {"tilesdir"    : tilesDir,
                              "tilesetname" : self.rootDir,
@@ -199,9 +199,9 @@ class TilingThread(QThread):
                              "centery"     : self.extent.center().y(),
                              "avgzoom"     : (self.maxZoom + self.minZoom) / 2,
                              "maxzoom"     : self.maxZoom
-                           }
+                            }
 
-            filePath = QString("%1/%2.html").arg(self.output.absoluteFilePath()).arg(self.rootDir)
+            filePath = "%s/%s.html" % (self.output.absoluteFilePath(), self.rootDir)
             with open(filePath, "w") as fOut:
                 fOut.write(viewer.substitute(substitutions))
 
@@ -237,16 +237,16 @@ class TilingThread(QThread):
         self.painter.end()
 
         # save image
-        path = QString("%1/%2/%3").arg(self.rootDir).arg(tile.z).arg(tile.x)
+        path = "%s/%s/%s" % (self.rootDir, tile.z, tile.x)
         if self.output.isDir():
-            dirPath = QString("%1/%2").arg(self.output.absoluteFilePath()).arg(path)
+            dirPath = "%s/%s" % (self.output.absoluteFilePath(), path)
             QDir().mkpath(dirPath)
-            self.image.save(QString("%1/%2.png").arg(dirPath).arg(tile.y), "PNG")
+            self.image.save("%s/%s.png" % (dirPath, tile.y), "PNG")
         else:
             self.image.save(self.tempFileName, "PNG")
             self.tmp.close()
 
-            tilePath = QString("%1/%2.png").arg(path).arg(tile.y)
+            tilePath = "%s/%s.png" % (path, tile.y)
             self.zip.write(unicode(self.tempFileName), unicode(tilePath).encode("utf8"))
 
 

@@ -41,20 +41,17 @@ class QTilesPlugin:
     def __init__(self, iface):
         self.iface = iface
 
-        try:
-            self.QgisVersion = unicode(QGis.QGIS_VERSION_INT)
-        except:
-            self.QgisVersion = unicode(QGis.qgisVersion)[0]
+        self.qgsVersion = unicode(QGis.QGIS_VERSION_INT)
 
         # For i18n support
         userPluginPath = QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + "/python/plugins/qtiles"
         systemPluginPath = QgsApplication.prefixPath() + "/python/plugins/qtiles"
 
-        overrideLocale = QSettings().value("locale/overrideFlag", QVariant(False)).toBool()
+        overrideLocale = QSettings().value("locale/overrideFlag", False, type=bool)
         if not overrideLocale:
             localeFullName = QLocale.system().name()
         else:
-            localeFullName = QSettings().value("locale/userLocale", QVariant("")).toString()
+            localeFullName = QSettings().value("locale/userLocale", "")
 
         if QFileInfo(userPluginPath).exists():
             translationPath = userPluginPath + "/i18n/qtiles_" + localeFullName + ".qm"
@@ -68,12 +65,13 @@ class QTilesPlugin:
             QCoreApplication.installTranslator(self.translator)
 
     def initGui(self):
-        if int(self.QgisVersion) < 10900:
-            qgisVersion = str(self.QgisVersion[0]) + "." + str(self.QgisVersion[2]) + "." + str(self.QgisVersion[3])
+        if int(self.qgsVersion) < 20000:
+            qgisVersion = self.qgsVersion[0] + "." + self.qgsVersion[2] + "." + self.qgsVersion[3]
             QMessageBox.warning(self.iface.mainWindow(),
                                 QCoreApplication.translate("QTiles", "Error"),
-                                QCoreApplication.translate("QTiles", "Quantum GIS %1 detected.\n").arg(qgisVersion) +
-                                QCoreApplication.translate("QTiles", "This version of QTiles requires at least QGIS version 1.9.0. Plugin will not be enabled."))
+                                QCoreApplication.translate("QTiles", "QGIS %s detected.\n") % (qgisVersion) +
+                                QCoreApplication.translate("QTiles", "This version of QTiles requires at least QGIS version 2.0. Plugin will not be enabled.")
+                               )
             return None
 
         self.actionRun = QAction(QCoreApplication.translate("QTiles", "QTiles"), self.iface.mainWindow())

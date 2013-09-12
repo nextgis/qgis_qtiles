@@ -74,11 +74,11 @@ class QTilesDialog(QDialog, Ui_Dialog):
             if groupName == "":
                 self.cmbLayers.addItem(layer[1], layer[0])
             else:
-                self.cmbLayers.addItem(QString("%1 - %2").arg(layer[1]).arg(groupName), layer[0])
+                self.cmbLayers.addItem("%s - %s" % (layer[1], groupName), layer[0])
 
         # restore ui state from settings
-        self.rbOutputZip.setChecked(self.settings.value("outputToZip", True).toBool())
-        self.rbOutputDir.setChecked(self.settings.value("outputToDir", False).toBool())
+        self.rbOutputZip.setChecked(self.settings.value("outputToZip", True, type=bool))
+        self.rbOutputDir.setChecked(self.settings.value("outputToDir", False, type=bool))
 
         if self.rbOutputZip.isChecked():
             self.leDirectoryName.setEnabled(False)
@@ -87,24 +87,24 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
         self.cmbLayers.setEnabled(False)
 
-        self.leRootDir.setText(self.settings.value("rootDir", "Mapnik").toString())
+        self.leRootDir.setText(self.settings.value("rootDir", "Mapnik"))
 
-        self.rbExtentCanvas.setChecked(self.settings.value("extentCanvas", True).toBool())
-        self.rbExtentFull.setChecked(self.settings.value("extentFull", False).toBool())
-        self.rbExtentLayer.setChecked(self.settings.value("extentLayer", False).toBool())
+        self.rbExtentCanvas.setChecked(self.settings.value("extentCanvas", True, type=bool))
+        self.rbExtentFull.setChecked(self.settings.value("extentFull", False, type=bool))
+        self.rbExtentLayer.setChecked(self.settings.value("extentLayer", False, type=bool))
 
-        self.spnZoomMin.setValue(self.settings.value("minZoom", 0).toInt()[0])
-        self.spnZoomMax.setValue(self.settings.value("maxZoom", 18).toInt()[0])
+        self.spnZoomMin.setValue(self.settings.value("minZoom", 0, type=int))
+        self.spnZoomMax.setValue(self.settings.value("maxZoom", 18, type=int))
 
-        self.chkLockRatio.setChecked(self.settings.value("keepRatio", True).toBool())
-        self.spnTileWidth.setValue(self.settings.value("tileWidth", 256).toInt()[0])
-        self.spnTileHeight.setValue(self.settings.value("tileHeight", 256).toInt()[0])
+        self.chkLockRatio.setChecked(self.settings.value("keepRatio", True, type=bool))
+        self.spnTileWidth.setValue(self.settings.value("tileWidth", 256, type=int))
+        self.spnTileHeight.setValue(self.settings.value("tileHeight", 256, type=int))
 
-        self.chkAntialiasing.setChecked(self.settings.value("enable_antialiasing", False).toBool())
-        self.chkTMSConvention.setChecked(self.settings.value("use_tms_filenames", False).toBool())
+        self.chkAntialiasing.setChecked(self.settings.value("enable_antialiasing", False, type=bool))
+        self.chkTMSConvention.setChecked(self.settings.value("use_tms_filenames", False, type=bool))
 
-        self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False).toBool())
-        self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False).toBool())
+        self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False, type=bool))
+        self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False, type=bool))
 
     def reject(self):
         QDialog.reject(self)
@@ -115,15 +115,15 @@ class QTilesDialog(QDialog, Ui_Dialog):
         else:
             output = self.leDirectoryName.text()
 
-        if output.isEmpty():
+        if not output:
             QMessageBox.warning(self,
                                 self.tr("No output"),
                                 self.tr("Output path is not set. Please enter correct path and try again.")
-                              )
+                               )
             return
 
         fileInfo = QFileInfo(output)
-        if fileInfo.isDir() and not QDir(output).entryList(QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot).isEmpty():
+        if fileInfo.isDir() and not len(QDir(output).entryList(QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot)) == 0:
             res = QMessageBox.warning(self,
                                       self.tr("Directory not empty"),
                                       self.tr("Selected directory is not empty. Continue?"),
@@ -136,7 +136,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
             QMessageBox.warning(self,
                                 self.tr("Wrong zoom"),
                                 self.tr("Maximum zoom value is lower than minimum. Please correct this and try again.")
-                              )
+                               )
             return
 
         self.settings.setValue("rootDir", self.leRootDir.text())
@@ -168,7 +168,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         elif self.rbExtentFull.isChecked():
             extent = canvas.fullExtent()
         else:
-            layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()).toString())
+            layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()))
             extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
 
         extent = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(),
@@ -196,7 +196,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
                                                     self.chkTMSConvention.isChecked(),
                                                     writeMapurl,
                                                     writeViewer
-                                                  )
+                                                   )
         self.workThread.rangeChanged.connect(self.setProgressRange)
         self.workThread.updateProgress.connect(self.updateProgress)
         self.workThread.processFinished.connect(self.processFinished)
@@ -262,18 +262,18 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.spnTileHeight.setValue(value)
 
     def __selectOutput(self):
-        lastDirectory = self.settings.value("lastUsedDir", ".").toString()
+        lastDirectory = self.settings.value("lastUsedDir", ".")
 
         if self.rbOutputZip.isChecked():
             outPath = QFileDialog.getSaveFileName(self,
                                                   self.tr("Save to file"),
                                                   lastDirectory,
                                                   self.tr("ZIP archives (*.zip *.ZIP)")
-                                                )
-            if outPath.isEmpty():
+                                                 )
+            if not outPath:
                 return
 
-            if not outPath.toLower().endsWith(".zip"):
+            if not outPath.lower().endswith(".zip"):
                 outPath += ".zip"
 
             self.leZipFileName.setText(outPath)
@@ -282,8 +282,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
                                                        self.tr("Save to directory"),
                                                        lastDirectory,
                                                        QFileDialog.ShowDirsOnly
-                                                     )
-            if outPath.isEmpty():
+                                                      )
+            if not outPath:
                 return
 
             self.leDirectoryName.setText(outPath)

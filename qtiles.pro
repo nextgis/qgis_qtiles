@@ -5,7 +5,7 @@ SOURCES = __init__.py \
           tile.py \
           tilingthread.py
 
-FORMS = qtilesdialogbase.ui \
-        aboutdialogbase.ui
+FORMS = ui/qtilesdialogbase.ui \
+        ui/aboutdialogbase.ui
 
 TRANSLATIONS = i18n/qtiles_ru_RU.ts

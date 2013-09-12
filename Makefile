@@ -1,4 +1,4 @@
-UI_PATH=.
+UI_PATH=ui
 UI_SOURCES=$(wildcard $(UI_PATH)/*.ui)
 UI_FILES=$(patsubst $(UI_PATH)/%.ui, $(UI_PATH)/ui_%.py, $(UI_SOURCES))
 

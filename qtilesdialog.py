@@ -36,7 +36,7 @@ from qgis.core import *
 
 import tilingthread
 
-from ui_qtilesdialogbase import Ui_Dialog
+from ui.ui_qtilesdialogbase import Ui_Dialog
 
 import qtiles_utils as utils
 

@@ -28,7 +28,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from ui_aboutdialogbase import Ui_Dialog
+from ui.ui_aboutdialogbase import Ui_Dialog
 
 from __init__ import version
 

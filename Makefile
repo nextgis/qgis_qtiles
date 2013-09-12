@@ -52,4 +52,4 @@ package:
 	mv ../qtiles.zip .
 
 upload:
-	plugin_uploader.py qtiles.zip
+	plugin_uploaderNG.py qtiles.zip

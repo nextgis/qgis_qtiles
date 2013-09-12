@@ -35,9 +35,16 @@ $(LANG_FILES): $(LANG_PATH)/%.qm: $(LANG_PATH)/%.ts
 $(RES_FILES): $(RES_PATH)/%_rc.py: $(RES_PATH)/%.qrc
 	pyrcc4 -o $@ $<
 
+pep8:
+	@echo
+	@echo "-----------"
+	@echo "PEP8 issues"
+	@echo "-----------"
+	@pep8 --repeat --ignore=E203,E121,E122,E123,E124,E125,E126,E127,E128 --exclude exiftool.py,resources_rc.py . || true
+
 clean:
 	rm -f $(ALL_FILES)
-	rm -f *.pyc
+	find -name "*.pyc" -exec rm -f {} \;
 	rm -f *.zip
 
 package:

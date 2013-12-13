@@ -61,7 +61,10 @@ class TilingThread(QThread):
         self.maxZoom = maxZoom
         self.output = outputPath
         self.width = width
-        self.rootDir = rootDir if rootDir else "tileset_%s" % unicode(time.time()).split(".")[0]
+        if rootDir:
+            self.rootDir = rootDir
+        else:
+            self.rootDir = 'tileset_%s' % unicode(time.time()).split('.')[0]
 
         self.antialias = antialiasing
         self.tmsConvention = tmsConvention
@@ -72,9 +75,12 @@ class TilingThread(QThread):
         self.interrupted = False
         self.tiles = []
 
-        myRed = QgsProject.instance().readNumEntry("Gui", "/CanvasColorRedPart", 255)[0]
-        myGreen = QgsProject.instance().readNumEntry("Gui", "/CanvasColorGreenPart", 255)[0]
-        myBlue = QgsProject.instance().readNumEntry("Gui", "/CanvasColorBluePart", 255)[0]
+        myRed = QgsProject.instance().readNumEntry(
+                'Gui', '/CanvasColorRedPart', 255)[0]
+        myGreen = QgsProject.instance().readNumEntry(
+                'Gui', '/CanvasColorGreenPart', 255)[0]
+        myBlue = QgsProject.instance().readNumEntry(
+                'Gui', '/CanvasColorBluePart', 255)[0]
 
         if int(QT_VERSION_STR[2]) >= 8:
             self.color = QColor(myRed, myGreen, myBlue)
@@ -83,18 +89,21 @@ class TilingThread(QThread):
 
         self.image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
 
-        self.projector = QgsCoordinateTransform(QgsCoordinateReferenceSystem("EPSG:4326"),
-                                                QgsCoordinateReferenceSystem("EPSG:3395")
-                                               )
+        self.projector = QgsCoordinateTransform(
+                QgsCoordinateReferenceSystem('EPSG:4326'),
+                QgsCoordinateReferenceSystem('EPSG:3395'))
 
         self.scaleCalc = QgsScaleCalculator()
         self.scaleCalc.setDpi(self.image.logicalDpiX())
-        self.scaleCalc.setMapUnits(QgsCoordinateReferenceSystem("EPSG:3395").mapUnits())
+        self.scaleCalc.setMapUnits(
+                QgsCoordinateReferenceSystem('EPSG:3395').mapUnits())
 
         self.labeling = QgsPalLabeling()
         self.renderer = QgsMapRenderer()
-        self.renderer.setOutputSize(self.image.size(), self.image.logicalDpiX())
-        self.renderer.setDestinationCrs(QgsCoordinateReferenceSystem("EPSG:3395"))
+        self.renderer.setOutputSize(
+                self.image.size(), self.image.logicalDpiX())
+        self.renderer.setDestinationCrs(
+                QgsCoordinateReferenceSystem('EPSG:3395'))
         self.renderer.setProjectionsEnabled(True)
         self.renderer.setLabelingEngine(self.labeling)
         self.renderer.setLayerSet(self.layers)
@@ -114,13 +123,14 @@ class TilingThread(QThread):
             if self.viewer:
                 self.writeLeafletViewer()
         else:
-            self.zip = zipfile.ZipFile(unicode(self.output.absoluteFilePath()), "w")
+            self.zip = zipfile.ZipFile(
+                    unicode(self.output.absoluteFilePath()), 'w')
             self.tmp = QTemporaryFile()
             self.tmp.setAutoRemove(False)
             self.tmp.open(QIODevice.WriteOnly)
             self.tempFileName = self.tmp.fileName()
 
-        self.rangeChanged.emit(self.tr("Searching tiles..."), 0)
+        self.rangeChanged.emit(self.tr('Searching tiles...'), 0)
 
         useTMS = 1
         if self.tmsConvention:
@@ -142,7 +152,8 @@ class TilingThread(QThread):
 
             self.processInterrupted.emit()
 
-        self.rangeChanged.emit(self.tr("Rendering: %v from %m (%p%)"), len(self.tiles))
+        self.rangeChanged.emit(
+                self.tr('Rendering: %v from %m (%p%)'), len(self.tiles))
 
         self.painter = QPainter()
         if self.antialias:
@@ -177,32 +188,37 @@ class TilingThread(QThread):
         QThread.wait(self)
 
     def writeMapurlFile(self):
-        filePath = "%s/%s.mapurl" % (self.output.absoluteFilePath(), self.rootDir)
-        tileServer = "tms" if self.tmsConvention else "google"
-        with open(filePath, "w") as mapurl:
-            mapurl.write("%s=%s\n" % ("url", self.rootDir + "/ZZZ/XXX/YYY.png"))
-            mapurl.write("%s=%s\n" % ("minzoom", self.minZoom))
-            mapurl.write("%s=%s\n" % ("maxzoom", self.maxZoom))
-            mapurl.write("%s=%f %f\n" % ("center", self.extent.center().x(), self.extent.center().y()))
-            mapurl.write("%s=%s\n" % ("type", tileServer))
+        filePath = '%s/%s.mapurl' % (
+                self.output.absoluteFilePath(), self.rootDir)
+        tileServer = 'tms' if self.tmsConvention else 'google'
+        with open(filePath, 'w') as mapurl:
+            mapurl.write('%s=%s\n' %
+                         ('url', self.rootDir + '/ZZZ/XXX/YYY.png'))
+            mapurl.write('%s=%s\n' % ('minzoom', self.minZoom))
+            mapurl.write('%s=%s\n' % ('maxzoom', self.maxZoom))
+            mapurl.write('%s=%f %f\n' % (
+                    'center', self.extent.center().x(),
+                    self.extent.center().y()))
+            mapurl.write('%s=%s\n' % ('type', tileServer))
 
     def writeLeafletViewer(self):
-        templateFile = QFile(":/resources/viewer.html")
+        templateFile = QFile(':/resources/viewer.html')
         if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
             viewer = MyTemplate(unicode(templateFile.readAll()))
-            tilesDir = "%s/%s" % (self.output.absoluteFilePath(), self.rootDir)
-            useTMS = "true" if self.tmsConvention else "false"
-            substitutions = {"tilesdir"    : tilesDir,
-                             "tilesetname" : self.rootDir,
-                             "tms"         : useTMS,
-                             "centerx"     : self.extent.center().x(),
-                             "centery"     : self.extent.center().y(),
-                             "avgzoom"     : (self.maxZoom + self.minZoom) / 2,
-                             "maxzoom"     : self.maxZoom
+            tilesDir = '%s/%s' % (self.output.absoluteFilePath(), self.rootDir)
+            useTMS = 'true' if self.tmsConvention else 'false'
+            substitutions = {'tilesdir'    : tilesDir,
+                             'tilesetname' : self.rootDir,
+                             'tms'         : useTMS,
+                             'centerx'     : self.extent.center().x(),
+                             'centery'     : self.extent.center().y(),
+                             'avgzoom'     : (self.maxZoom + self.minZoom) / 2,
+                             'maxzoom'     : self.maxZoom
                             }
 
-            filePath = "%s/%s.html" % (self.output.absoluteFilePath(), self.rootDir)
-            with open(filePath, "w") as fOut:
+            filePath = '%s/%s.html' % (
+                    self.output.absoluteFilePath(), self.rootDir)
+            with open(filePath, 'w') as fOut:
                 fOut.write(viewer.substitute(substitutions))
 
             templateFile.close()
@@ -237,21 +253,22 @@ class TilingThread(QThread):
         self.painter.end()
 
         # save image
-        path = "%s/%s/%s" % (self.rootDir, tile.z, tile.x)
+        path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
         if self.output.isDir():
-            dirPath = "%s/%s" % (self.output.absoluteFilePath(), path)
+            dirPath = '%s/%s' % (self.output.absoluteFilePath(), path)
             QDir().mkpath(dirPath)
-            self.image.save("%s/%s.png" % (dirPath, tile.y), "PNG")
+            self.image.save('%s/%s.png' % (dirPath, tile.y), 'PNG')
         else:
-            self.image.save(self.tempFileName, "PNG")
+            self.image.save(self.tempFileName, 'PNG')
             self.tmp.close()
 
-            tilePath = "%s/%s.png" % (path, tile.y)
-            self.zip.write(unicode(self.tempFileName), unicode(tilePath).encode("utf8"))
+            tilePath = '%s/%s.png' % (path, tile.y)
+            self.zip.write(unicode(self.tempFileName),
+                           unicode(tilePath).encode('utf8'))
 
 
 class MyTemplate(Template):
-    delimiter = "@"
+    delimiter = '@'
 
     def __init__(self, templateString):
         Template.__init__(self, templateString)

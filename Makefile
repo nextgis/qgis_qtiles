@@ -40,7 +40,7 @@ pep8:
 	@echo "-----------"
 	@echo "PEP8 issues"
 	@echo "-----------"
-	@pep8 --repeat --ignore=E203,E121,E122,E123,E124,E125,E126,E127,E128 --exclude exiftool.py,resources_rc.py . || true
+	@pep8 --repeat --ignore=E203,E121,E122,E123,E124,E125,E126,E127,E128 --exclude mbutils.py,resources_rc.py . || true
 
 clean:
 	rm -f $(ALL_FILES)

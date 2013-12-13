@@ -44,13 +44,13 @@ class AboutDialog(QDialog, Ui_Dialog):
 
         self.btnHelp = self.buttonBox.button(QDialogButtonBox.Help)
 
-        self.lblLogo.setPixmap(QPixmap(":/icons/qtiles.png"))
+        self.lblLogo.setPixmap(QPixmap(':/icons/qtiles.png'))
 
         cfg = ConfigParser.SafeConfigParser()
-        cfg.read(os.path.join(os.path.dirname(__file__), "metadata.txt"))
-        version = cfg.get("general", "version")
+        cfg.read(os.path.join(os.path.dirname(__file__), 'metadata.txt'))
+        version = cfg.get('general', 'version')
 
-        self.lblVersion.setText(self.tr("Version: %s") % (version))
+        self.lblVersion.setText(self.tr('Version: %s') % version)
         doc = QTextDocument()
         doc.setHtml(self.getAboutText())
         self.textBrowser.setDocument(doc)
@@ -62,23 +62,36 @@ class AboutDialog(QDialog, Ui_Dialog):
         QDialog.reject(self)
 
     def openHelp(self):
-        overrideLocale = QSettings().value("locale/overrideFlag", False, type=bool)
+        overrideLocale = QSettings().value('locale/overrideFlag', False,
+                                           type=bool)
         if not overrideLocale:
             localeFullName = QLocale.system().name()
         else:
-            localeFullName = QSettings().value("locale/userLocale", "")
+            localeFullName = QSettings().value('locale/userLocale', '')
 
         localeShortName = localeFullName[0:2]
-        if localeShortName in ["ru", "uk"]:
-            QDesktopServices.openUrl(QUrl("http://hub.qgis.org/projects/qtiles/wiki"))
+        if localeShortName in ['ru', 'uk']:
+            QDesktopServices.openUrl(
+                QUrl('http://hub.qgis.org/projects/qtiles/wiki'))
         else:
-            QDesktopServices.openUrl(QUrl("http://hub.qgis.org/projects/qtiles/wiki"))
+            QDesktopServices.openUrl(
+                QUrl('http://hub.qgis.org/projects/qtiles/wiki'))
 
     def getAboutText(self):
-        return self.tr("""<p>Generate tiles from QGIS project.</p>
-    <p>Plugin generates raster tiles from QGIS project corresponding to <a href="http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames">Slippy Map</a>
-    specification. Output tiles can be saved in directory or as zip archive.</p>
-    <p><strong>Developers</strong>: Alexander Bruy (<a href="http://nextgis.org">NextGIS</a>), portions of code by Andrew Naplavkov and Giovanni Allegri.</p>
-    <p><strong>Homepage</strong>: <a href="http://hub.qgis.org/projects/qtiles">http://hub.qgis.org/projects/qtiles</a></p>
-    <p>Please report bugs at <a href="http://hub.qgis.org/projects/qtiles/issues">bugtracker</a></p>
-    """)
+        return self.tr('<p>Generate tiles from QGIS project.</p>'
+            '<p>Plugin generates raster tiles from QGIS project corresponding '
+            'to <a '
+            'href="http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames">'
+            'Slippy Map</a>'
+            'specification. Output tiles can be saved in directory or as zip '
+            'archive.</p>'
+            '<p><strong>Developers</strong>: Alexander Bruy '
+            '(<a href="http://nextgis.org">NextGIS</a>), portions of code by '
+            'Andrew Naplavkov and Giovanni Allegri.</p>'
+            '<p><strong>Homepage</strong>: '
+            '<a href="http://hub.qgis.org/projects/qtiles">'
+            'http://hub.qgis.org/projects/qtiles</a></p>'
+            '<p>Please report bugs at '
+            '<a href="http://hub.qgis.org/projects/qtiles/issues">'
+            'bugtracker</a></p>'
+            )

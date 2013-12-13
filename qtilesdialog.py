@@ -50,7 +50,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.iface = iface
         self.workThread = None
 
-        self.settings = QSettings("NextGIS", "QTiles")
+        self.settings = QSettings('NextGIS', 'QTiles')
         self.grpParameters.setSettings(self.settings)
 
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
@@ -69,16 +69,20 @@ class QTilesDialog(QDialog, Ui_Dialog):
         # populate combobox with layers
         layers = utils.getMapLayers()
         relations = self.iface.legendInterface().groupLayerRelationship()
-        for layer in sorted(layers.iteritems(), cmp=locale.strcoll, key=operator.itemgetter(1)):
+        for layer in sorted(layers.iteritems(), cmp=locale.strcoll,
+                            key=operator.itemgetter(1)):
             groupName = utils.getLayerGroup(relations, layer[0])
-            if groupName == "":
+            if groupName == '':
                 self.cmbLayers.addItem(layer[1], layer[0])
             else:
-                self.cmbLayers.addItem("%s - %s" % (layer[1], groupName), layer[0])
+                self.cmbLayers.addItem('%s - %s' % (layer[1], groupName),
+                                       layer[0])
 
         # restore ui state from settings
-        self.rbOutputZip.setChecked(self.settings.value("outputToZip", True, type=bool))
-        self.rbOutputDir.setChecked(self.settings.value("outputToDir", False, type=bool))
+        self.rbOutputZip.setChecked(self.settings.value('outputToZip', True,
+                                    type=bool))
+        self.rbOutputDir.setChecked(self.settings.value('outputToDir', False,
+                                    type=bool))
 
         if self.rbOutputZip.isChecked():
             self.leDirectoryName.setEnabled(False)
@@ -87,24 +91,34 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
         self.cmbLayers.setEnabled(False)
 
-        self.leRootDir.setText(self.settings.value("rootDir", "Mapnik"))
+        self.leRootDir.setText(self.settings.value('rootDir', 'Mapnik'))
 
-        self.rbExtentCanvas.setChecked(self.settings.value("extentCanvas", True, type=bool))
-        self.rbExtentFull.setChecked(self.settings.value("extentFull", False, type=bool))
-        self.rbExtentLayer.setChecked(self.settings.value("extentLayer", False, type=bool))
+        self.rbExtentCanvas.setChecked(
+                self.settings.value('extentCanvas', True, type=bool))
+        self.rbExtentFull.setChecked(
+                self.settings.value('extentFull', False, type=bool))
+        self.rbExtentLayer.setChecked(
+                self.settings.value('extentLayer', False, type=bool))
 
-        self.spnZoomMin.setValue(self.settings.value("minZoom", 0, type=int))
-        self.spnZoomMax.setValue(self.settings.value("maxZoom", 18, type=int))
+        self.spnZoomMin.setValue(self.settings.value('minZoom', 0, type=int))
+        self.spnZoomMax.setValue(self.settings.value('maxZoom', 18, type=int))
 
-        self.chkLockRatio.setChecked(self.settings.value("keepRatio", True, type=bool))
-        self.spnTileWidth.setValue(self.settings.value("tileWidth", 256, type=int))
-        self.spnTileHeight.setValue(self.settings.value("tileHeight", 256, type=int))
+        self.chkLockRatio.setChecked(
+                self.settings.value('keepRatio', True, type=bool))
+        self.spnTileWidth.setValue(
+                self.settings.value('tileWidth', 256, type=int))
+        self.spnTileHeight.setValue(
+                self.settings.value('tileHeight', 256, type=int))
 
-        self.chkAntialiasing.setChecked(self.settings.value("enable_antialiasing", False, type=bool))
-        self.chkTMSConvention.setChecked(self.settings.value("use_tms_filenames", False, type=bool))
+        self.chkAntialiasing.setChecked(
+                self.settings.value('enable_antialiasing', False, type=bool))
+        self.chkTMSConvention.setChecked(
+                self.settings.value('use_tms_filenames', False, type=bool))
 
-        self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False, type=bool))
-        self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False, type=bool))
+        self.chkWriteMapurl.setChecked(
+                self.settings.value("write_mapurl", False, type=bool))
+        self.chkWriteViewer.setChecked(
+                self.settings.value("write_viewer", False, type=bool))
 
     def reject(self):
         QDialog.reject(self)
@@ -116,17 +130,20 @@ class QTilesDialog(QDialog, Ui_Dialog):
             output = self.leDirectoryName.text()
 
         if not output:
-            QMessageBox.warning(self,
-                                self.tr("No output"),
-                                self.tr("Output path is not set. Please enter correct path and try again.")
-                               )
+            QMessageBox.warning(
+                    self,
+                    self.tr('No output'),
+                    self.tr('Output path is not set. Please enter correct '
+                            'path and try again.'))
             return
 
         fileInfo = QFileInfo(output)
-        if fileInfo.isDir() and not len(QDir(output).entryList(QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot)) == 0:
+        if fileInfo.isDir() and not len(QDir(output).entryList(
+                QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot)) == 0:
             res = QMessageBox.warning(self,
-                                      self.tr("Directory not empty"),
-                                      self.tr("Selected directory is not empty. Continue?"),
+                                      self.tr('Directory not empty'),
+                                      self.tr('Selected directory is not '
+                                              'empty. Continue?'),
                                       QMessageBox.Yes | QMessageBox.No
                                     )
             if res == QMessageBox.No:
@@ -134,32 +151,35 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
         if self.spnZoomMin.value() > self.spnZoomMax.value():
             QMessageBox.warning(self,
-                                self.tr("Wrong zoom"),
-                                self.tr("Maximum zoom value is lower than minimum. Please correct this and try again.")
+                                self.tr('Wrong zoom'),
+                                self.tr('Maximum zoom value is lower than '
+                                'minimum. Please correct this and try again.')
                                )
             return
 
-        self.settings.setValue("rootDir", self.leRootDir.text())
+        self.settings.setValue('rootDir', self.leRootDir.text())
 
-        self.settings.setValue("outputToZip", self.rbOutputZip.isChecked())
-        self.settings.setValue("outputToDir", self.rbOutputDir.isChecked())
+        self.settings.setValue('outputToZip', self.rbOutputZip.isChecked())
+        self.settings.setValue('outputToDir', self.rbOutputDir.isChecked())
 
-        self.settings.setValue("extentCanvas", self.rbExtentCanvas.isChecked())
-        self.settings.setValue("extentFull", self.rbExtentFull.isChecked())
-        self.settings.setValue("extentLayer", self.rbExtentLayer.isChecked())
+        self.settings.setValue('extentCanvas', self.rbExtentCanvas.isChecked())
+        self.settings.setValue('extentFull', self.rbExtentFull.isChecked())
+        self.settings.setValue('extentLayer', self.rbExtentLayer.isChecked())
 
-        self.settings.setValue("minZoom", self.spnZoomMin.value())
-        self.settings.setValue("maxZoom", self.spnZoomMax.value())
+        self.settings.setValue('minZoom', self.spnZoomMin.value())
+        self.settings.setValue('maxZoom', self.spnZoomMax.value())
 
-        self.settings.setValue("keepRatio", self.chkLockRatio.isChecked())
-        self.settings.setValue("tileWidth", self.spnTileWidth.value())
-        self.settings.setValue("tileHeight", self.spnTileHeight.value())
+        self.settings.setValue('keepRatio', self.chkLockRatio.isChecked())
+        self.settings.setValue('tileWidth', self.spnTileWidth.value())
+        self.settings.setValue('tileHeight', self.spnTileHeight.value())
 
-        self.settings.setValue("enable_antialiasing", self.chkAntialiasing.isChecked())
-        self.settings.setValue("use_tms_filenames", self.chkTMSConvention.isChecked())
+        self.settings.setValue('enable_antialiasing',
+                               self.chkAntialiasing.isChecked())
+        self.settings.setValue('use_tms_filenames',
+                               self.chkTMSConvention.isChecked())
 
-        self.settings.setValue("write_mapurl", self.chkWriteMapurl.isChecked())
-        self.settings.setValue("write_viewer", self.chkWriteViewer.isChecked())
+        self.settings.setValue('write_mapurl', self.chkWriteMapurl.isChecked())
+        self.settings.setValue('write_viewer', self.chkWriteViewer.isChecked())
 
         canvas = self.iface.mapCanvas()
 
@@ -168,42 +188,48 @@ class QTilesDialog(QDialog, Ui_Dialog):
         elif self.rbExtentFull.isChecked():
             extent = canvas.fullExtent()
         else:
-            layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()))
-            extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
+            layer = utils.getLayerById(
+                    self.cmbLayers.itemData(self.cmbLayers.currentIndex()))
+            extent = canvas.mapRenderer().layerExtentToOutputExtent(layer,
+                    layer.extent())
 
-        extent = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(),
-                                        QgsCoordinateReferenceSystem("EPSG:4326")).transform(extent)
+        extent = QgsCoordinateTransform(
+                canvas.mapRenderer().destinationCrs(),
+                QgsCoordinateReferenceSystem('EPSG:4326')).transform(extent)
 
         arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
-        extent = extent.intersect(QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
+        extent = extent.intersect(
+                QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
 
         layers = []
         for layer in canvas.layers():
             layers.append(unicode(layer.id()))
 
-        writeMapurl = self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
-        writeViewer = self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
+        writeMapurl = self.chkWriteMapurl.isEnabled() and \
+                      self.chkWriteMapurl.isChecked()
+        writeViewer = self.chkWriteViewer.isEnabled() and \
+                      self.chkWriteViewer.isChecked()
 
-        self.workThread = tilingthread.TilingThread(layers,
-                                                    extent,
-                                                    self.spnZoomMin.value(),
-                                                    self.spnZoomMax.value(),
-                                                    self.spnTileWidth.value(),
-                                                    self.spnTileHeight.value(),
-                                                    fileInfo,
-                                                    self.leRootDir.text(),
-                                                    self.chkAntialiasing.isChecked(),
-                                                    self.chkTMSConvention.isChecked(),
-                                                    writeMapurl,
-                                                    writeViewer
-                                                   )
+        self.workThread = tilingthread.TilingThread(
+                layers,
+                extent,
+                self.spnZoomMin.value(),
+                self.spnZoomMax.value(),
+                self.spnTileWidth.value(),
+                self.spnTileHeight.value(),
+                fileInfo,
+                self.leRootDir.text(),
+                self.chkAntialiasing.isChecked(),
+                self.chkTMSConvention.isChecked(),
+                writeMapurl,
+                writeViewer)
         self.workThread.rangeChanged.connect(self.setProgressRange)
         self.workThread.updateProgress.connect(self.updateProgress)
         self.workThread.processFinished.connect(self.processFinished)
         self.workThread.processInterrupted.connect(self.processInterrupted)
 
         self.btnOk.setEnabled(False)
-        self.btnClose.setText(self.tr("Cancel"))
+        self.btnClose.setText(self.tr('Cancel'))
         self.buttonBox.rejected.disconnect(self.reject)
         self.btnClose.clicked.connect(self.stopProcessing)
 
@@ -229,13 +255,13 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.workThread = None
 
     def restoreGui(self):
-        self.progressBar.setFormat("%p%")
+        self.progressBar.setFormat('%p%')
         self.progressBar.setRange(0, 1)
         self.progressBar.setValue(0)
 
         self.buttonBox.rejected.connect(self.reject)
         self.btnClose.clicked.disconnect(self.stopProcessing)
-        self.btnClose.setText(self.tr("Close"))
+        self.btnClose.setText(self.tr('Close'))
         self.btnOk.setEnabled(True)
 
     def __toggleZipTarget(self, checked):
@@ -262,30 +288,31 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.spnTileHeight.setValue(value)
 
     def __selectOutput(self):
-        lastDirectory = self.settings.value("lastUsedDir", ".")
+        lastDirectory = self.settings.value('lastUsedDir', '.')
 
         if self.rbOutputZip.isChecked():
-            outPath = QFileDialog.getSaveFileName(self,
-                                                  self.tr("Save to file"),
-                                                  lastDirectory,
-                                                  self.tr("ZIP archives (*.zip *.ZIP)")
-                                                 )
+            outPath = QFileDialog.getSaveFileName(
+                    self,
+                    self.tr('Save to file'),
+                    lastDirectory,
+                    self.tr('ZIP archives (*.zip *.ZIP)'))
             if not outPath:
                 return
 
-            if not outPath.lower().endswith(".zip"):
-                outPath += ".zip"
+            if not outPath.lower().endswith('.zip'):
+                outPath += '.zip'
 
             self.leZipFileName.setText(outPath)
         else:
-            outPath = QFileDialog.getExistingDirectory(self,
-                                                       self.tr("Save to directory"),
-                                                       lastDirectory,
-                                                       QFileDialog.ShowDirsOnly
-                                                      )
+            outPath = QFileDialog.getExistingDirectory(
+                    self,
+                    self.tr('Save to directory'),
+                    lastDirectory,
+                    QFileDialog.ShowDirsOnly)
             if not outPath:
                 return
 
             self.leDirectoryName.setText(outPath)
 
-        self.settings.setValue("lastUsedDir", QFileInfo(outPath).absoluteDir().absolutePath())
+        self.settings.setValue('lastUsedDir',
+                               QFileInfo(outPath).absoluteDir().absolutePath())

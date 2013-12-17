@@ -28,6 +28,7 @@
 
 import math
 import time
+import sqlite3
 import zipfile
 from string import Template
 
@@ -36,12 +37,15 @@ from PyQt4.QtGui import *
 
 from qgis.core import *
 
+from mbutils import *
+
 from tile import Tile
 
 import resources_rc
 
 
 class TilingThread(QThread):
+
     rangeChanged = pyqtSignal(str, int)
     updateProgress = pyqtSignal()
     processFinished = pyqtSignal()
@@ -115,20 +119,14 @@ class TilingThread(QThread):
 
         # prepare output
         if self.output.isDir():
-            self.zip = None
-            self.tmp = None
+            self.writer = DirectoryWriter(self.output, self.rootDir)
             if self.mapurl:
                 self.writeMapurlFile()
 
             if self.viewer:
                 self.writeLeafletViewer()
         else:
-            self.zip = zipfile.ZipFile(
-                    unicode(self.output.absoluteFilePath()), 'w')
-            self.tmp = QTemporaryFile()
-            self.tmp.setAutoRemove(False)
-            self.tmp.open(QIODevice.WriteOnly)
-            self.tempFileName = self.tmp.fileName()
+            self.writer = ZipWriter(self.output, self.rootDir)
 
         self.rangeChanged.emit(self.tr('Searching tiles...'), 0)
 
@@ -141,14 +139,6 @@ class TilingThread(QThread):
         if self.interrupted:
             #del self.tiles[:]
             #self.tiles = None
-
-            if self.zip is not None:
-                self.zip.close()
-                self.zip = None
-
-                self.tmp.close()
-                self.tmp.remove()
-                self.tmp = None
 
             self.processInterrupted.emit()
 
@@ -171,9 +161,9 @@ class TilingThread(QThread):
                 self.interrupted = True
                 break
 
-        if self.zip is not None:
-            self.zip.close()
-            self.zip = None
+        # if zipwriter used then finalize
+        if isinstance(self.writer, ZipWriter):
+            self.writer.closeArchive()
 
         if not self.interrupted:
             self.processFinished.emit()
@@ -253,18 +243,7 @@ class TilingThread(QThread):
         self.painter.end()
 
         # save image
-        path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
-        if self.output.isDir():
-            dirPath = '%s/%s' % (self.output.absoluteFilePath(), path)
-            QDir().mkpath(dirPath)
-            self.image.save('%s/%s.png' % (dirPath, tile.y), 'PNG')
-        else:
-            self.image.save(self.tempFileName, 'PNG')
-            self.tmp.close()
-
-            tilePath = '%s/%s.png' % (path, tile.y)
-            self.zip.write(unicode(self.tempFileName),
-                           unicode(tilePath).encode('utf8'))
+        self.writer.writeTile(tile, self.image)
 
 
 class MyTemplate(Template):
@@ -272,3 +251,42 @@ class MyTemplate(Template):
 
     def __init__(self, templateString):
         Template.__init__(self, templateString)
+
+
+class DirectoryWriter:
+    def __init__(self, outputPath, rootDir):
+        self.output = outputPath
+        self.rootDir = rootDir
+
+    def writeTile(self, tile, image):
+        path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
+        dirPath = '%s/%s' % (self.output.absoluteFilePath(), path)
+        QDir().mkpath(dirPath)
+        image.save('%s/%s.png' % (dirPath, tile.y), 'PNG')
+
+
+class ZipWriter:
+    def __init__(self, outputPath, rootDir):
+        self.output = outputPath
+        self.rootDir = rootDir
+
+        self.zipFile = zipfile.ZipFile(
+            unicode(self.output.absoluteFilePath()), 'w')
+        self.tempFile = QTemporaryFile()
+        self.tempFile.setAutoRemove(False)
+        self.tempFile.open(QIODevice.WriteOnly)
+        self.tempFileName = self.tempFile.fileName()
+        self.tempFile.close()
+
+    def writeTile(self, tile, image):
+        path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
+
+        image.save(self.tempFileName, 'PNG')
+        tilePath = '%s/%s.png' % (path, tile.y)
+        self.zipFile.write(
+            unicode(self.tempFileName), unicode(tilePath).encode('utf8'))
+
+    def closeArchive(self):
+        self.tempFile.close()
+        self.tempFile.remove()
+        self.zipFile.close()

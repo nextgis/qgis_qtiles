@@ -43,12 +43,17 @@ import qtiles_utils as utils
 
 
 class QTilesDialog(QDialog, Ui_Dialog):
+
     def __init__(self, iface):
         QDialog.__init__(self)
         self.setupUi(self)
 
         self.iface = iface
         self.workThread = None
+
+        self.FILE_TYPES = {
+            self.tr('ZIP archives (*.zip *.ZIP)') : '.zip',
+            self.tr('MBTiles databases (*.mbtiles *.MBTILES)') : '.mbtiles'}
 
         self.settings = QSettings('NextGIS', 'QTiles')
         self.grpParameters.setSettings(self.settings)
@@ -291,16 +296,19 @@ class QTilesDialog(QDialog, Ui_Dialog):
         lastDirectory = self.settings.value('lastUsedDir', '.')
 
         if self.rbOutputZip.isChecked():
-            outPath = QFileDialog.getSaveFileName(
+            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(
                     self,
                     self.tr('Save to file'),
                     lastDirectory,
-                    self.tr('ZIP archives (*.zip *.ZIP)'))
+                    ';;'.join(self.FILE_TYPES.iterkeys()))
+
             if not outPath:
                 return
 
-            if not outPath.lower().endswith('.zip'):
-                outPath += '.zip'
+            if not outPath.lower().endswith(self.FILE_TYPES[outFilter]):
+                outPath += self.FILE_TYPES[outFilter]
+
+            print outPath
 
             self.leZipFileName.setText(outPath)
         else:

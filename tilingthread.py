@@ -67,19 +67,19 @@ class TilingThread(QThread):
         else:
             self.rootDir = 'tileset_%s' % unicode(time.time()).split('.')[0]
 
-        #self.mode = None
+        self.antialias = antialiasing
+        self.tmsConvention = tmsConvention
+
+        self.mapurl = mapUrl
+        self.viewer = viewer
+
         if self.output.isDir():
             self.mode = 'DIR'
         elif self.output.suffix().lower() == "zip":
             self.mode = 'ZIP'
         elif self.output.suffix().lower() == 'mbtiles':
             self.mode = 'MBTILES'
-
-        self.antialias = antialiasing
-        self.tmsConvention = tmsConvention
-
-        self.mapurl = mapUrl
-        self.viewer = viewer
+            self.tmsConvention = True
 
         self.interrupted = False
         self.tiles = []

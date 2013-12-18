@@ -300,7 +300,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
                     self,
                     self.tr('Save to file'),
                     lastDirectory,
-                    ';;'.join(self.FILE_TYPES.iterkeys()))
+                    ';;'.join(self.FILE_TYPES.iterkeys()),
+                    self.FILE_TYPES.keys()[self.FILE_TYPES.values().index('.zip')])
 
             if not outPath:
                 return

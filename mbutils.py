@@ -36,7 +36,7 @@ def mbtiles_setup(cur):
 
 def mbtiles_connect(mbtiles_file):
     try:
-        con = sqlite3.connect(mbtiles_file)
+        con = sqlite3.connect(mbtiles_file, check_same_thread=False)
         return con
     except Exception, e:
         logger.error("Could not connect to database")

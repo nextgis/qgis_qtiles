@@ -28,8 +28,6 @@
 
 import math
 import time
-import sqlite3
-import zipfile
 from string import Template
 
 from PyQt4.QtCore import *
@@ -37,9 +35,8 @@ from PyQt4.QtGui import *
 
 from qgis.core import *
 
-from mbutils import *
-
 from tile import Tile
+from writers import *
 
 import resources_rc
 
@@ -69,6 +66,14 @@ class TilingThread(QThread):
             self.rootDir = rootDir
         else:
             self.rootDir = 'tileset_%s' % unicode(time.time()).split('.')[0]
+
+        #self.mode = None
+        if self.output.isDir():
+            self.mode = 'DIR'
+        elif self.output.suffix().lower() == "zip":
+            self.mode = 'ZIP'
+        elif self.output.suffix().lower() == 'mbtiles':
+            self.mode = 'MBTILES'
 
         self.antialias = antialiasing
         self.tmsConvention = tmsConvention
@@ -118,15 +123,17 @@ class TilingThread(QThread):
         self.mutex.unlock()
 
         # prepare output
-        if self.output.isDir():
+        if self.mode == 'DIR':
             self.writer = DirectoryWriter(self.output, self.rootDir)
             if self.mapurl:
                 self.writeMapurlFile()
 
             if self.viewer:
                 self.writeLeafletViewer()
-        else:
+        elif self.mode == 'ZIP':
             self.writer = ZipWriter(self.output, self.rootDir)
+        elif self.mode == 'MBTILES':
+            self.writer = MBTilesWriter(self.output, self.rootDir)
 
         self.rangeChanged.emit(self.tr('Searching tiles...'), 0)
 
@@ -161,9 +168,7 @@ class TilingThread(QThread):
                 self.interrupted = True
                 break
 
-        # if zipwriter used then finalize
-        if isinstance(self.writer, ZipWriter):
-            self.writer.closeArchive()
+        self.writer.finalize()
 
         if not self.interrupted:
             self.processFinished.emit()
@@ -251,42 +256,3 @@ class MyTemplate(Template):
 
     def __init__(self, templateString):
         Template.__init__(self, templateString)
-
-
-class DirectoryWriter:
-    def __init__(self, outputPath, rootDir):
-        self.output = outputPath
-        self.rootDir = rootDir
-
-    def writeTile(self, tile, image):
-        path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
-        dirPath = '%s/%s' % (self.output.absoluteFilePath(), path)
-        QDir().mkpath(dirPath)
-        image.save('%s/%s.png' % (dirPath, tile.y), 'PNG')
-
-
-class ZipWriter:
-    def __init__(self, outputPath, rootDir):
-        self.output = outputPath
-        self.rootDir = rootDir
-
-        self.zipFile = zipfile.ZipFile(
-            unicode(self.output.absoluteFilePath()), 'w')
-        self.tempFile = QTemporaryFile()
-        self.tempFile.setAutoRemove(False)
-        self.tempFile.open(QIODevice.WriteOnly)
-        self.tempFileName = self.tempFile.fileName()
-        self.tempFile.close()
-
-    def writeTile(self, tile, image):
-        path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
-
-        image.save(self.tempFileName, 'PNG')
-        tilePath = '%s/%s.png' % (path, tile.y)
-        self.zipFile.write(
-            unicode(self.tempFileName), unicode(tilePath).encode('utf8'))
-
-    def closeArchive(self):
-        self.tempFile.close()
-        self.tempFile.remove()
-        self.zipFile.close()

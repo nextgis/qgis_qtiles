@@ -6,7 +6,5 @@ Plugin generates raster tiles from QGIS project using selected zoom levels and
 tile naming conventions (Slippy Map or TMS). Also it can write .mapurl file for
 GeoPaparazzi and simple Leaflet-based viewer.
 
-Please fill the bugs at http://hub.qgis.org/projects/qtiles/issues
-
         NextGIS - Open source geospatial solutions
                     http://nextgis.org

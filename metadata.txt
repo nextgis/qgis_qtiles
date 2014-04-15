@@ -5,16 +5,16 @@ category=Plugins
 version=1.3.0
 qgisMinimumVersion=2.0
 
-author=Alexander Bruy (NextGIS)
-email=alexander.bruy@gmail.com
+author=NextGIS
+email=info@nextgis.org
 
 icon=icons/qtiles.png
 
 tags=raster,tiles
 
-homepage=http://hub.qgis.org/projects/qtiles/wiki
-tracker=http://hub.qgis.org/projects/qtiles/issues
-repository=http://github.com/nextgis/QTiles
+homepage=https://github.com/nextgis/QTiles
+tracker=https://github.com/nextgis/QTiles/issues
+repository=https://github.com/nextgis/QTiles
 
 experimental=True
 deprecated=False

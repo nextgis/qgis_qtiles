@@ -6,7 +6,7 @@
 # ---------------------------------------------------------
 # Generates tiles from QGIS project
 #
-# Copyright (C) 2012-2013 Alexander Bruy (alexander.bruy@gmail.com)
+# Copyright (C) 2012-2014 NextGIS (info@nextgis.org)
 #
 # This source is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -85,13 +85,13 @@ class AboutDialog(QDialog, Ui_Dialog):
             'Slippy Map</a>'
             'specification. Output tiles can be saved in directory or as zip '
             'archive.</p>'
-            '<p><strong>Developers</strong>: Alexander Bruy '
+            '<p><strong>Developers</strong>: '
             '(<a href="http://nextgis.org">NextGIS</a>), portions of code by '
             'Andrew Naplavkov and Giovanni Allegri.</p>'
             '<p><strong>Homepage</strong>: '
-            '<a href="http://hub.qgis.org/projects/qtiles">'
-            'http://hub.qgis.org/projects/qtiles</a></p>'
+            '<a href="https://github.com/nextgis/QTiles">'
+            'https://github.com/nextgis/QTiles/issues</a></p>'
             '<p>Please report bugs at '
-            '<a href="http://hub.qgis.org/projects/qtiles/issues">'
+            '<a href="https://github.com/nextgis/QTiles/issues">'
             'bugtracker</a></p>'
             )

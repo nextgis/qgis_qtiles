@@ -115,6 +115,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.spnTileHeight.setValue(
                 self.settings.value('tileHeight', 256, type=int))
 
+        self.spnTransparency.setValue(
+                self.settings.value('transparency', 255, type=int))
         self.chkAntialiasing.setChecked(
                 self.settings.value('enable_antialiasing', False, type=bool))
         self.chkTMSConvention.setChecked(
@@ -178,6 +180,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.settings.setValue('tileWidth', self.spnTileWidth.value())
         self.settings.setValue('tileHeight', self.spnTileHeight.value())
 
+        self.settings.setValue('transparency', self.spnTransparency.value())
         self.settings.setValue('enable_antialiasing',
                                self.chkAntialiasing.isChecked())
         self.settings.setValue('use_tms_filenames',
@@ -222,6 +225,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.spnZoomMax.value(),
                 self.spnTileWidth.value(),
                 self.spnTileHeight.value(),
+                self.spnTransparency.value(),
                 fileInfo,
                 self.leRootDir.text(),
                 self.chkAntialiasing.isChecked(),

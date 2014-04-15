@@ -48,7 +48,7 @@ class TilingThread(QThread):
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
 
-    def __init__(self, layers, extent, minZoom, maxZoom, width, height,
+    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp,
                  outputPath, rootDir, antialiasing, tmsConvention, mapUrl,
                  viewer):
         QThread.__init__(self, QThread.currentThread())
@@ -92,9 +92,9 @@ class TilingThread(QThread):
                 'Gui', '/CanvasColorBluePart', 255)[0]
 
         if int(QT_VERSION_STR[2]) >= 8:
-            self.color = QColor(myRed, myGreen, myBlue)
+            self.color = QColor(myRed, myGreen, myBlue, transp)
         else:
-            self.color = qRgb(myRed, myGreen, myBlue)
+            self.color = qRgb(myRed, myGreen, myBlue, transp)
 
         self.image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
 

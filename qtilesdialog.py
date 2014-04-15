@@ -51,7 +51,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.iface = iface
         self.workThread = None
 
-        self.FILE_TYPES = {
+        self.FORMATS = {
             self.tr('ZIP archives (*.zip *.ZIP)') : '.zip',
             self.tr('MBTiles databases (*.mbtiles *.MBTILES)') : '.mbtiles'}
 
@@ -300,14 +300,14 @@ class QTilesDialog(QDialog, Ui_Dialog):
                     self,
                     self.tr('Save to file'),
                     lastDirectory,
-                    ';;'.join(self.FILE_TYPES.iterkeys()),
-                    self.FILE_TYPES.keys()[self.FILE_TYPES.values().index('.zip')])
+                    ';;'.join(self.FORMATS.iterkeys()),
+                    self.FORMATS.keys()[self.FORMATS.values().index('.zip')])
 
             if not outPath:
                 return
 
-            if not outPath.lower().endswith(self.FILE_TYPES[outFilter]):
-                outPath += self.FILE_TYPES[outFilter]
+            if not outPath.lower().endswith(self.FORMATS[outFilter]):
+                outPath += self.FORMATS[outFilter]
 
             print outPath
 

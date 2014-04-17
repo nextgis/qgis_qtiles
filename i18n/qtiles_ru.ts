@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="ru_RU">
+<!DOCTYPE TS><TS version="2.0" language="ru_RU" sourcelanguage="">
 <context>
     <name>AboutDialog</name>
     <message>
@@ -52,11 +51,16 @@ specification. Output tiles can be saved in directory or as zip archive.&lt;/p&g
     &lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
     &lt;p&gt;Please report bugs at &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
     </source>
-        <translation>&lt;p&gt;Создание тайлов из проектов QGIS.&lt;/p&gt;
+        <translation type="obsolete">&lt;p&gt;Создание тайлов из проектов QGIS.&lt;/p&gt;
 &lt;p&gt;Модуль создаёт растровые тайлы из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov и Giovanni Allegri.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="aboutdialog.py" line="81"/>
+        <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt; specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles/issues&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Please report bugs at &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -74,7 +78,7 @@ specification. Output tiles can be saved in directory or as zip archive.&lt;/p&g
     <message>
         <location filename="ui/qtilesdialogbase.ui" line="47"/>
         <source>Zip archive</source>
-        <translation>ZIP архив</translation>
+        <translation type="obsolete">ZIP архив</translation>
     </message>
     <message>
         <location filename="ui/qtilesdialogbase.ui" line="57"/>
@@ -199,11 +203,26 @@ p, li { white-space: pre-wrap; }
         <source>Use TMS tiles convention (Slippy Map by default)</source>
         <translation>Использовать спецификацию TMS (по умолчанию Slippy Map)</translation>
     </message>
+    <message>
+        <location filename="ui/qtilesdialogbase.ui" line="47"/>
+        <source>File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="ui/qtilesdialogbase.ui" line="263"/>
+        <source>Background transparency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="ui/qtilesdialogbase.ui" line="280"/>
+        <source>Suffix</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QTiles</name>
     <message>
-        <location filename="qtiles.py" line="70"/>
+        <location filename="qtiles.py" line="76"/>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
@@ -221,12 +240,12 @@ Plugin will not be enabled.</source>
 Модуль не будет загружен.</translation>
     </message>
     <message>
-        <location filename="qtiles.py" line="97"/>
+        <location filename="qtiles.py" line="110"/>
         <source>QTiles</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="qtiles.py" line="81"/>
+        <location filename="qtiles.py" line="90"/>
         <source>About QTiles...</source>
         <translation>О QTiles...</translation>
     </message>
@@ -242,7 +261,7 @@ Plugin will not be enabled.</source>
         <translation type="obsolete">Эта версия QTiles требует наличия QGIS 1.9.0. Модуль не будет загружен.</translation>
     </message>
     <message>
-        <location filename="qtiles.py" line="70"/>
+        <location filename="qtiles.py" line="76"/>
         <source>QGIS %s detected.
 </source>
         <translation>Обнаружена QGIS %s.</translation>
@@ -250,76 +269,86 @@ Plugin will not be enabled.</source>
     <message>
         <location filename="qtiles.py" line="70"/>
         <source>This version of QTiles requires at least QGIS version 2.0. Plugin will not be enabled.</source>
-        <translation>Эта версия QTiles требует наличия QGIS 2.0. Модуль не будет загружен.</translation>
+        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 2.0. Модуль не будет загружен.</translation>
+    </message>
+    <message>
+        <location filename="qtiles.py" line="76"/>
+        <source>This version of QTiles requires at least QGIS 2.0. Plugin will not be enabled.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QTilesDialog</name>
     <message>
-        <location filename="qtilesdialog.py" line="119"/>
+        <location filename="qtilesdialog.py" line="141"/>
         <source>No output</source>
         <translation>Не указан путь</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="119"/>
+        <location filename="qtilesdialog.py" line="141"/>
         <source>Output path is not set. Please enter correct path and try again.</source>
         <translation>Не указан путь назначения. Пожалуйста, введите правильный путь и попробуйте ещё раз.</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="127"/>
+        <location filename="qtilesdialog.py" line="151"/>
         <source>Directory not empty</source>
         <translation>Каталог не пуст</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="127"/>
+        <location filename="qtilesdialog.py" line="151"/>
         <source>Selected directory is not empty. Continue?</source>
         <translation>Каталог назначения не пуст. Продолжить?</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="136"/>
+        <location filename="qtilesdialog.py" line="161"/>
         <source>Wrong zoom</source>
         <translation>Неверный масштаб</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="136"/>
+        <location filename="qtilesdialog.py" line="161"/>
         <source>Maximum zoom value is lower than minimum. Please correct this and try again.</source>
         <translation>Значение максимального масштаба меньше минимального. Пожалуйста, исправьте ошибку и попробуйте ещё раз.</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="206"/>
+        <location filename="qtilesdialog.py" line="244"/>
         <source>Cancel</source>
         <translation>Отменить</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="238"/>
+        <location filename="qtilesdialog.py" line="276"/>
         <source>Close</source>
         <translation>Закрыть</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="268"/>
+        <location filename="qtilesdialog.py" line="306"/>
         <source>Save to file</source>
         <translation>Сохранить файл</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="268"/>
+        <location filename="qtilesdialog.py" line="55"/>
         <source>ZIP archives (*.zip *.ZIP)</source>
         <translation>ZIP архивы (*.zip *.ZIP)</translation>
     </message>
     <message>
-        <location filename="qtilesdialog.py" line="281"/>
+        <location filename="qtilesdialog.py" line="323"/>
         <source>Save to directory</source>
         <translation>Выбрать каталог</translation>
+    </message>
+    <message>
+        <location filename="qtilesdialog.py" line="56"/>
+        <source>MBTiles databases (*.mbtiles *.MBTILES)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>TilingThread</name>
     <message>
-        <location filename="tilingthread.py" line="123"/>
+        <location filename="tilingthread.py" line="139"/>
         <source>Searching tiles...</source>
         <translation>Поиск тайлов...</translation>
     </message>
     <message>
-        <location filename="tilingthread.py" line="145"/>
+        <location filename="tilingthread.py" line="153"/>
         <source>Rendering: %v from %m (%p%)</source>
         <translation>Отрисовка: %v из %m (%p%)</translation>
     </message>

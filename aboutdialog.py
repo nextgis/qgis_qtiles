@@ -82,7 +82,7 @@ class AboutDialog(QDialog, Ui_Dialog):
             '<p>Plugin generates raster tiles from QGIS project corresponding '
             'to <a '
             'href="http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames">'
-            'Slippy Map</a>'
+            'Slippy Map</a> '
             'specification. Output tiles can be saved in directory or as zip '
             'archive.</p>'
             '<p><strong>Developers</strong>: '

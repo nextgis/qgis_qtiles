@@ -95,7 +95,7 @@ class TilingThread(QThread):
         if int(QT_VERSION_STR[2]) >= 8:
             self.color = QColor(myRed, myGreen, myBlue, transp)
         else:
-            self.color = qRgb(myRed, myGreen, myBlue, transp)
+            self.color = qRgba(myRed, myGreen, myBlue, transp)
 
         self.image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
 

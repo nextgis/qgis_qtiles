@@ -138,7 +138,7 @@ specification. Output tiles can be saved in directory or as zip archive.&lt;/p&g
     <message>
         <location filename="ui/qtilesdialogbase.ui" line="189"/>
         <source>Lock 1:1 ratio</source>
-        <translation>Зафискировать соотношение сторон 1:1</translation>
+        <translation>Зафиксировать соотношение сторон 1:1</translation>
     </message>
     <message>
         <location filename="ui/qtilesdialogbase.ui" line="199"/>

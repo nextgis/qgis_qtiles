@@ -51,16 +51,16 @@ specification. Output tiles can be saved in directory or as zip archive.&lt;/p&g
     &lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
     &lt;p&gt;Please report bugs at &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
     </source>
-        <translation type="obsolete">&lt;p&gt;Создание тайлов из проектов QGIS.&lt;/p&gt;
-&lt;p&gt;Модуль создаёт растровые тайлы из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
+        <translation type="obsolete">&lt;p&gt;Создание набора тайлов из проектов QGIS.&lt;/p&gt;
+&lt;p&gt;Модуль создаёт набор растровых тайлов из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov и Giovanni Allegri.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
+&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="aboutdialog.py" line="81"/>
         <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt; specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles/issues&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Please report bugs at &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Создание набора тайлов из проектов QGIS.&lt;/p&gt;&lt;p&gt;Модуль создаёт набор растровых тайлов из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles/issues&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Please report bugs at &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -206,17 +206,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="ui/qtilesdialogbase.ui" line="47"/>
         <source>File</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл</translation>
     </message>
     <message>
         <location filename="ui/qtilesdialogbase.ui" line="263"/>
         <source>Background transparency</source>
-        <translation type="unfinished"></translation>
+        <translation>Прозрачность фона</translation>
     </message>
     <message>
         <location filename="ui/qtilesdialogbase.ui" line="280"/>
         <source>Suffix</source>
-        <translation type="unfinished"></translation>
+        <translation>Суффикс</translation>
     </message>
 </context>
 <context>
@@ -236,7 +236,7 @@ p, li { white-space: pre-wrap; }
         <location filename="qtiles.py" line="71"/>
         <source>This version of QTiles requires at least QGIS version 1.8.0
 Plugin will not be enabled.</source>
-        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 1.8.0
+        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 1.8.0 и выше. 
 Модуль не будет загружен.</translation>
     </message>
     <message>
@@ -253,7 +253,7 @@ Plugin will not be enabled.</source>
         <location filename="qtiles.py" line="71"/>
         <source>This version of QTiles requires at least QGIS version 1.9.0
 Plugin will not be enabled.</source>
-        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 1.9.0. Модуль не будет загружен.</translation>
+        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 1.9.0 и выше. Модуль не будет загружен.</translation>
     </message>
     <message>
         <location filename="qtiles.py" line="71"/>
@@ -274,7 +274,7 @@ Plugin will not be enabled.</source>
     <message>
         <location filename="qtiles.py" line="76"/>
         <source>This version of QTiles requires at least QGIS 2.0. Plugin will not be enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Эта версия QTiles требует наличия QGIS 2.0 и выше. Модуль не может быть загружен.</translation>
     </message>
 </context>
 <context>
@@ -337,7 +337,7 @@ Plugin will not be enabled.</source>
     <message>
         <location filename="qtilesdialog.py" line="56"/>
         <source>MBTiles databases (*.mbtiles *.MBTILES)</source>
-        <translation type="unfinished"></translation>
+        <translation>База MBTiles (*.mbtiles *.MBTILES)</translation>
     </message>
 </context>
 <context>

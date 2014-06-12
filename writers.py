@@ -40,11 +40,11 @@ class DirectoryWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
-    def writeTile(self, tile, image, suffix):
+    def writeTile(self, tile, image, format, quality):
         path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
         dirPath = '%s/%s' % (self.output.absoluteFilePath(), path)
         QDir().mkpath(dirPath)
-        image.save('%s/%s.%s' % (dirPath, tile.y, suffix), 'PNG')
+        image.save('%s/%s.%s' % (dirPath, tile.y, format.lower()), format, quality)
 
     def finalize(self):
         pass
@@ -63,11 +63,11 @@ class ZipWriter:
         self.tempFileName = self.tempFile.fileName()
         self.tempFile.close()
 
-    def writeTile(self, tile, image, suffix):
+    def writeTile(self, tile, image, format, quality):
         path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
 
-        image.save(self.tempFileName, 'PNG')
-        tilePath = '%s/%s.%s' % (path, tile.y, suffix)
+        image.save(self.tempFileName, format, quality)
+        tilePath = '%s/%s.%s' % (path, tile.y, format.lower())
         self.zipFile.write(
             unicode(self.tempFileName), unicode(tilePath).encode('utf8'))
 
@@ -88,10 +88,10 @@ class MBTilesWriter:
         optimize_connection(self.cursor)
         mbtiles_setup(self.cursor)
 
-    def writeTile(self, tile, image, suffix):
+    def writeTile(self, tile, image, format, quality):
         data = QByteArray()
         buff = QBuffer(data)
-        image.save(buff, 'PNG')
+        image.save(buff, format, quality)
 
         self.cursor.execute('''INSERT INTO tiles(zoom_level, tile_column,
             tile_row, tile_data) VALUES (?, ?, ?, ?);''',

@@ -68,7 +68,17 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
         self.btnBrowse.clicked.connect(self.__selectOutput)
 
+        self.cmbFormat.activated.connect(self.formatChanged)
+
         self.manageGui()
+
+    def formatChanged(self):
+        if self.cmbFormat.currentText()=='JPG':
+            self.spnTransparency.setEnabled(False)
+            self.spnQuality.setEnabled(True)
+        else:
+            self.spnTransparency.setEnabled(True)
+            self.spnQuality.setEnabled(False)
 
     def manageGui(self):
         # populate combobox with layers
@@ -117,7 +127,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
         self.spnTransparency.setValue(
                 self.settings.value('transparency', 255, type=int))
-        self.leSuffix.setText(self.settings.value('suffix', 'png'))
+        self.spnQuality.setValue(
+                self.settings.value('quality', 70, type=int))
+        self.cmbFormat.setCurrentIndex (self.settings.value('format', 0))
         self.chkAntialiasing.setChecked(
                 self.settings.value('enable_antialiasing', False, type=bool))
         self.chkTMSConvention.setChecked(
@@ -127,6 +139,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.settings.value("write_mapurl", False, type=bool))
         self.chkWriteViewer.setChecked(
                 self.settings.value("write_viewer", False, type=bool))
+
+        self.formatChanged()
 
     def reject(self):
         QDialog.reject(self)
@@ -181,8 +195,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.settings.setValue('tileWidth', self.spnTileWidth.value())
         self.settings.setValue('tileHeight', self.spnTileHeight.value())
 
-        self.settings.setValue('suffix', self.leSuffix.text())
+        self.settings.setValue('format', self.cmbFormat.currentIndex ())
         self.settings.setValue('transparency', self.spnTransparency.value())
+        self.settings.setValue('quality', self.spnQuality.value())
         self.settings.setValue('enable_antialiasing',
                                self.chkAntialiasing.isChecked())
         self.settings.setValue('use_tms_filenames',
@@ -228,7 +243,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.spnTileWidth.value(),
                 self.spnTileHeight.value(),
                 self.spnTransparency.value(),
-                self.leSuffix.text(),
+                self.spnQuality.value(),
+                self.cmbFormat.currentText(),
                 fileInfo,
                 self.leRootDir.text(),
                 self.chkAntialiasing.isChecked(),

@@ -49,7 +49,7 @@ class TilingThread(QThread):
     processInterrupted = pyqtSignal()
 
     def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp,
-                 suffix, outputPath, rootDir, antialiasing, tmsConvention,
+                 quality, format, outputPath, rootDir, antialiasing, tmsConvention,
                  mapUrl, viewer):
         QThread.__init__(self, QThread.currentThread())
         self.mutex = QMutex()
@@ -70,7 +70,8 @@ class TilingThread(QThread):
         self.antialias = antialiasing
         self.tmsConvention = tmsConvention
 
-        self.suffix = suffix
+        self.format = format
+        self.quality = quality
         self.mapurl = mapUrl
         self.viewer = viewer
 
@@ -249,7 +250,7 @@ class TilingThread(QThread):
         self.painter.end()
 
         # save image
-        self.writer.writeTile(tile, self.image, self.suffix)
+        self.writer.writeTile(tile, self.image, self.format, self.quality)
 
 
 class MyTemplate(Template):

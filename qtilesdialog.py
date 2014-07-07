@@ -129,7 +129,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.settings.value('transparency', 255, type=int))
         self.spnQuality.setValue(
                 self.settings.value('quality', 70, type=int))
-        self.cmbFormat.setCurrentIndex (self.settings.value('format', 0))
+        self.cmbFormat.setCurrentIndex (int(self.settings.value('format', 0)))
         self.chkAntialiasing.setChecked(
                 self.settings.value('enable_antialiasing', False, type=bool))
         self.chkTMSConvention.setChecked(

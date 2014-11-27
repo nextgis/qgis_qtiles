@@ -11,3 +11,7 @@ Manual: http://gis-lab.info/qa/qtiles.html
 
         NextGIS - Open source geospatial solutions
                     http://nextgis.org
+
+Notes:
+
+* Use http://jsfiddle.net/4zcys/ to convert from lat/lon to Tile url.

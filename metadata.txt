@@ -2,7 +2,7 @@
 name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
-version=1.4.0
+version=1.4.3
 qgisMinimumVersion=2.0
 
 author=NextGIS

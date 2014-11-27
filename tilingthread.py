@@ -86,45 +86,41 @@ class TilingThread(QThread):
         self.interrupted = False
         self.tiles = []
 
-        myRed = QgsProject.instance().readNumEntry(
-                'Gui', '/CanvasColorRedPart', 255)[0]
-        myGreen = QgsProject.instance().readNumEntry(
-                'Gui', '/CanvasColorGreenPart', 255)[0]
-        myBlue = QgsProject.instance().readNumEntry(
-                'Gui', '/CanvasColorBluePart', 255)[0]
+        myRed = QgsProject.instance().readNumEntry('Gui', '/CanvasColorRedPart', 255)[0]
+        myGreen = QgsProject.instance().readNumEntry('Gui', '/CanvasColorGreenPart', 255)[0]
+        myBlue = QgsProject.instance().readNumEntry('Gui', '/CanvasColorBluePart', 255)[0]
 
         if int(QT_VERSION_STR[2]) >= 8:
             self.color = QColor(myRed, myGreen, myBlue, transp)
         else:
             self.color = qRgba(myRed, myGreen, myBlue, transp)
 
-        self.image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
+        image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
 
-        self.projector = QgsCoordinateTransform(
-                QgsCoordinateReferenceSystem('EPSG:4326'),
-                QgsCoordinateReferenceSystem('EPSG:3395'))
+        self.projector = QgsCoordinateTransform(QgsCoordinateReferenceSystem('EPSG:4326'), QgsCoordinateReferenceSystem('EPSG:3395'))
 
         self.scaleCalc = QgsScaleCalculator()
-        self.scaleCalc.setDpi(self.image.logicalDpiX())
-        self.scaleCalc.setMapUnits(
-                QgsCoordinateReferenceSystem('EPSG:3395').mapUnits())
+        self.scaleCalc.setDpi(image.logicalDpiX())
+        self.scaleCalc.setMapUnits(QgsCoordinateReferenceSystem('EPSG:3395').mapUnits())
 
-        self.labeling = QgsPalLabeling()
-        self.renderer = QgsMapRenderer()
-        self.renderer.setOutputSize(
-                self.image.size(), self.image.logicalDpiX())
-        self.renderer.setDestinationCrs(
-                QgsCoordinateReferenceSystem('EPSG:3395'))
-        self.renderer.setProjectionsEnabled(True)
-        self.renderer.setLabelingEngine(self.labeling)
-        self.renderer.setLayerSet(self.layers)
+        self.settings = QgsMapSettings()
+        self.settings.setLayers(self.layers)
+        self.settings.setBackgroundColor(self.color)
+        self.settings.setCrsTransformEnabled(True)
+        self.settings.setOutputDpi(image.logicalDpiX())
+        self.settings.setOutputImageFormat(QImage.Format_ARGB32_Premultiplied)
+        self.settings.setDestinationCrs(QgsCoordinateReferenceSystem('EPSG:3395'))
+        self.settings.setOutputSize(image.size())
+        self.settings.setLayers(self.layers)
+        self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
+        if self.antialias:
+            self.settings.setFlag(QgsMapSettings.Antialiasing, True)
 
     def run(self):
         self.mutex.lock()
         self.stopMe = 0
         self.mutex.unlock()
 
-        # prepare output
         if self.mode == 'DIR':
             self.writer = DirectoryWriter(self.output, self.rootDir)
             if self.mapurl:
@@ -146,17 +142,12 @@ class TilingThread(QThread):
         self.countTiles(Tile(0, 0, 0, useTMS))
 
         if self.interrupted:
-            #del self.tiles[:]
-            #self.tiles = None
+            del self.tiles[:]
+            self.tiles = None
 
             self.processInterrupted.emit()
 
-        self.rangeChanged.emit(
-                self.tr('Rendering: %v from %m (%p%)'), len(self.tiles))
-
-        self.painter = QPainter()
-        if self.antialias:
-            self.painter.setRenderHint(QPainter.Antialiasing)
+        self.rangeChanged.emit(self.tr('Rendering: %v from %m (%p%)'), len(self.tiles))
 
         for t in self.tiles:
             self.render(t)
@@ -185,17 +176,13 @@ class TilingThread(QThread):
         QThread.wait(self)
 
     def writeMapurlFile(self):
-        filePath = '%s/%s.mapurl' % (
-                self.output.absoluteFilePath(), self.rootDir)
+        filePath = '%s/%s.mapurl' % (self.output.absoluteFilePath(), self.rootDir)
         tileServer = 'tms' if self.tmsConvention else 'google'
         with open(filePath, 'w') as mapurl:
-            mapurl.write('%s=%s\n' %
-                         ('url', self.rootDir + '/ZZZ/XXX/YYY.png'))
+            mapurl.write('%s=%s\n' % ('url', self.rootDir + '/ZZZ/XXX/YYY.png'))
             mapurl.write('%s=%s\n' % ('minzoom', self.minZoom))
             mapurl.write('%s=%s\n' % ('maxzoom', self.maxZoom))
-            mapurl.write('%s=%f %f\n' % (
-                    'center', self.extent.center().x(),
-                    self.extent.center().y()))
+            mapurl.write('%s=%f %f\n' % ('center', self.extent.center().x(), self.extent.center().y()))
             mapurl.write('%s=%s\n' % ('type', tileServer))
 
     def writeLeafletViewer(self):
@@ -213,8 +200,7 @@ class TilingThread(QThread):
                              'maxzoom'     : self.maxZoom
                             }
 
-            filePath = '%s/%s.html' % (
-                    self.output.absoluteFilePath(), self.rootDir)
+            filePath = '%s/%s.html' % (self.output.absoluteFilePath(), self.rootDir)
             with open(filePath, 'w') as fOut:
                 fOut.write(viewer.substitute(substitutions))
 
@@ -241,17 +227,13 @@ class TilingThread(QThread):
                     self.countTiles(subTile)
 
     def render(self, tile):
-        self.renderer.setExtent(self.projector.transform(tile.toRectangle()))
-        scale = self.scaleCalc.calculate(self.renderer.extent(), self.width)
-        self.renderer.setScale(scale)
-        self.image.fill(self.color)
-        self.painter.begin(self.image)
-        self.renderer.render(self.painter)
-        self.painter.end()
-
-        # save image
-        self.writer.writeTile(tile, self.image, self.format, self.quality)
-
+        scale = self.scaleCalc.calculate(self.projector.transform(tile.toRectangle()), self.width)
+        self.settings.setExtent(self.projector.transform(tile.toRectangle()))
+        job = QgsMapRendererSequentialJob(self.settings)
+        job.start()
+        job.waitForFinished()
+        image = job.renderedImage()
+        self.writer.writeTile(tile, image, self.format, self.quality)
 
 class MyTemplate(Template):
     delimiter = '@'

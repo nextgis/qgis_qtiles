@@ -41,12 +41,8 @@ class Tile:
     def toPoint(self):
         n = math.pow(2, self.z)
         longitude = float(self.x) / n * 360.0 - 180.0
-        latitude = self.tms * math.degrees(
-                math.atan(math.sinh(
-                        math.pi * (1.0 - 2.0 * float(self.y) / n))))
+        latitude = self.tms * math.degrees(math.atan(math.sinh(math.pi * (1.0 - 2.0 * float(self.y) / n))))
         return QgsPoint(longitude, latitude)
 
     def toRectangle(self):
-        return QgsRectangle(self.toPoint(),
-                            Tile(self.x + 1, self.y + 1, self.z,
-                                 self.tms).toPoint())
+        return QgsRectangle(self.toPoint(), Tile(self.x + 1, self.y + 1, self.z, self.tms).toPoint())

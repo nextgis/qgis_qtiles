@@ -55,8 +55,7 @@ class ZipWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
-        self.zipFile = zipfile.ZipFile(
-            unicode(self.output.absoluteFilePath()), 'w')
+        self.zipFile = zipfile.ZipFile(unicode(self.output.absoluteFilePath()), 'w')
         self.tempFile = QTemporaryFile()
         self.tempFile.setAutoRemove(False)
         self.tempFile.open(QIODevice.WriteOnly)
@@ -68,8 +67,7 @@ class ZipWriter:
 
         image.save(self.tempFileName, format, quality)
         tilePath = '%s/%s.%s' % (path, tile.y, format.lower())
-        self.zipFile.write(
-            unicode(self.tempFileName), unicode(tilePath).encode('utf8'))
+        self.zipFile.write(unicode(self.tempFileName), unicode(tilePath).encode('utf8'))
 
     def finalize(self):
         self.tempFile.close()
@@ -82,8 +80,7 @@ class MBTilesWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
-        self.connection = mbtiles_connect(
-            unicode(self.output.absoluteFilePath()))
+        self.connection = mbtiles_connect(unicode(self.output.absoluteFilePath()))
         self.cursor = self.connection.cursor()
         optimize_connection(self.cursor)
         mbtiles_setup(self.cursor)
@@ -93,9 +90,7 @@ class MBTilesWriter:
         buff = QBuffer(data)
         image.save(buff, format, quality)
 
-        self.cursor.execute('''INSERT INTO tiles(zoom_level, tile_column,
-            tile_row, tile_data) VALUES (?, ?, ?, ?);''',
-            (tile.z, tile.x, tile.y, sqlite3.Binary(buff.data())))
+        self.cursor.execute('''INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?);''', (tile.z, tile.x, tile.y, sqlite3.Binary(buff.data())))
         buff.close()
 
     def finalize(self):

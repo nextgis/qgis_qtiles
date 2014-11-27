@@ -62,8 +62,7 @@ class AboutDialog(QDialog, Ui_Dialog):
         QDialog.reject(self)
 
     def openHelp(self):
-        overrideLocale = QSettings().value('locale/overrideFlag', False,
-                                           type=bool)
+        overrideLocale = QSettings().value('locale/overrideFlag', False, type=bool)
         if not overrideLocale:
             localeFullName = QLocale.system().name()
         else:
@@ -71,11 +70,9 @@ class AboutDialog(QDialog, Ui_Dialog):
 
         localeShortName = localeFullName[0:2]
         if localeShortName in ['ru', 'uk']:
-            QDesktopServices.openUrl(
-                QUrl('http://hub.qgis.org/projects/qtiles/wiki'))
+            QDesktopServices.openUrl(QUrl('http://hub.qgis.org/projects/qtiles/wiki'))
         else:
-            QDesktopServices.openUrl(
-                QUrl('http://hub.qgis.org/projects/qtiles/wiki'))
+            QDesktopServices.openUrl(QUrl('http://hub.qgis.org/projects/qtiles/wiki'))
 
     def getAboutText(self):
         return self.tr('<p>Generate tiles from QGIS project.</p>'

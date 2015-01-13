@@ -161,6 +161,7 @@ class TilingThread(QThread):
                 self.interrupted = True
                 break
 
+        self.writer.write_metadata(self.format)
         self.writer.finalize()
 
         if not self.interrupted:

@@ -160,7 +160,8 @@ class TilingThread(QThread):
             if s == 1:
                 self.interrupted = True
                 break
-
+        if self.mode == 'MBTILES':
+            self.writer.write_metadata(self.format)
         self.writer.finalize()
 
         if not self.interrupted:

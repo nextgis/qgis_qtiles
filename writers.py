@@ -93,6 +93,21 @@ class MBTilesWriter:
         self.cursor.execute('''INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?);''', (tile.z, tile.x, tile.y, sqlite3.Binary(buff.data())))
         buff.close()
 
+    def write_metadata(self,format):
+
+        metadata = {
+            'name':'qtiles',
+            'type':'baselayer',
+            'version': '1.0.0',
+            'description':'Created with QTiles',
+            'format': format.lower()
+        }
+
+        for key, value in metadata.iteritems():
+            self.cursor.execute('''INSERT INTO metadata(name,value) VALUES (?, ?);''',
+                                (key, value))
+
+
     def finalize(self):
         optimize_database(self.connection)
         self.connection.commit()

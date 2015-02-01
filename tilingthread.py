@@ -148,7 +148,7 @@ class TilingThread(QThread):
             viewer = MyTemplate(unicode(templateFile.readAll()))
             tilesDir = '%s/%s' % (self.output.absoluteFilePath(), self.rootDir)
             useTMS = 'true' if self.tmsConvention else 'false'
-            substitutions = {'tilesdir': tilesDir, 'tilesetname': self.rootDir, 'tms': useTMS, 'centerx': self.extent.center().x(),'centery': self.extent.center().y(),'avgzoom': (self.maxZoom + self.minZoom) / 2,'maxzoom': self.maxZoom}
+            substitutions = {'tilesdir': tilesDir, 'tilesext': self.format.lower(), 'tilesetname': self.rootDir, 'tms': useTMS, 'centerx': self.extent.center().x(),'centery': self.extent.center().y(),'avgzoom': (self.maxZoom + self.minZoom) / 2,'maxzoom': self.maxZoom}
             filePath = '%s/%s.html' % (self.output.absoluteFilePath(), self.rootDir)
             with open(filePath, 'w') as fOut:
                 fOut.write(viewer.substitute(substitutions))

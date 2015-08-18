@@ -87,7 +87,7 @@ class AboutDialog(QDialog, Ui_Dialog):
             'Andrew Naplavkov and Giovanni Allegri.</p>'
             '<p><strong>Homepage</strong>: '
             '<a href="https://github.com/nextgis/QTiles">'
-            'https://github.com/nextgis/QTiles/issues</a></p>'
+            'https://github.com/nextgis/QTiles</a></p>'
             '<p>Please report bugs at '
             '<a href="https://github.com/nextgis/QTiles/issues">'
             'bugtracker</a></p>'

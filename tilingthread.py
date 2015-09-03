@@ -103,7 +103,7 @@ class TilingThread(QThread):
         elif self.mode == 'ZIP':
             self.writer = ZipWriter(self.output, self.rootDir)
         elif self.mode == 'MBTILES':
-            self.writer = MBTilesWriter(self.output, self.rootDir)
+            self.writer = MBTilesWriter(self.output, self.rootDir,self.format,self.minZoom,self.maxZoom,self.extent)
         self.rangeChanged.emit(self.tr('Searching tiles...'), 0)
         useTMS = 1
         if self.tmsConvention:

@@ -79,7 +79,6 @@ class TilingThread(QThread):
         self.scaleCalc.setDpi(image.logicalDpiX())
         self.scaleCalc.setMapUnits(QgsCoordinateReferenceSystem('EPSG:3395').mapUnits())
         self.settings = QgsMapSettings()
-        self.settings.setLayers(self.layers)
         self.settings.setBackgroundColor(self.color)
         self.settings.setCrsTransformEnabled(True)
         self.settings.setOutputDpi(image.logicalDpiX())
@@ -87,9 +86,11 @@ class TilingThread(QThread):
         self.settings.setDestinationCrs(QgsCoordinateReferenceSystem('EPSG:3395'))
         self.settings.setOutputSize(image.size())
         self.settings.setLayers(self.layers)
-        self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
+        self.settings.setMapUnits(QgsCoordinateReferenceSystem('EPSG:3395').mapUnits())
         if self.antialias:
             self.settings.setFlag(QgsMapSettings.Antialiasing, True)
+        else:
+            self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
     def run(self):
         self.mutex.lock()
         self.stopMe = 0
@@ -170,7 +171,6 @@ class TilingThread(QThread):
                     subTile = Tile(x, y, tile.z + 1, tile.tms)
                     self.countTiles(subTile)
     def render(self, tile):
-        scale = self.scaleCalc.calculate(self.projector.transform(tile.toRectangle()), self.width)
         self.settings.setExtent(self.projector.transform(tile.toRectangle()))
         job = QgsMapRendererSequentialJob(self.settings)
         job.start()

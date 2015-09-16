@@ -76,14 +76,23 @@ class ZipWriter:
 
 
 class MBTilesWriter:
-    def __init__(self, outputPath, rootDir):
+    def __init__(self, outputPath, rootDir, formatext, minZoom,maxZoom,extent):
         self.output = outputPath
         self.rootDir = rootDir
-
+        s = str(extent.xMinimum()) + ',' + str(extent.yMinimum()) + ',' + str(extent.xMaximum()) + ','+ str(extent.yMaximum())
         self.connection = mbtiles_connect(unicode(self.output.absoluteFilePath()))
         self.cursor = self.connection.cursor()
         optimize_connection(self.cursor)
         mbtiles_setup(self.cursor)
+        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''',('name',rootDir))
+        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''',('description',rootDir))
+        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''',('format',formatext))
+        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''',('minZoom',str(minZoom)))
+        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''',('maxZoom',str(maxZoom)))
+        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''',('type','baselayer'))
+        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''',('version','1.1'))
+        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''',('bounds',s))
+        self.connection.commit()
 
     def writeTile(self, tile, image, format, quality):
         data = QByteArray()

@@ -26,6 +26,7 @@
 #******************************************************************************
 import math
 import time
+import codecs
 from string import Template
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -147,11 +148,25 @@ class TilingThread(QThread):
         templateFile = QFile(':/resources/viewer.html')
         if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
             viewer = MyTemplate(unicode(templateFile.readAll()))
+
+            QgsMessageLog.logMessage("{0}".format(type(self.output.absoluteFilePath())), u'qtiles', QgsMessageLog.INFO)
+            QgsMessageLog.logMessage("{0}".format(type(self.rootDir)), u'qtiles', QgsMessageLog.INFO)
+
             tilesDir = '%s/%s' % (self.output.absoluteFilePath(), self.rootDir)
             useTMS = 'true' if self.tmsConvention else 'false'
-            substitutions = {'tilesdir': tilesDir, 'tilesext': self.format.lower(), 'tilesetname': self.rootDir, 'tms': useTMS, 'centerx': self.extent.center().x(),'centery': self.extent.center().y(),'avgzoom': (self.maxZoom + self.minZoom) / 2,'maxzoom': self.maxZoom}
+            substitutions = {
+                'tilesdir': tilesDir,
+                'tilesext': self.format.lower(),
+                'tilesetname': self.rootDir,
+                'tms': useTMS,
+                'centerx': self.extent.center().x(),
+                'centery': self.extent.center().y(),
+                'avgzoom': (self.maxZoom + self.minZoom) / 2,
+                'maxzoom': self.maxZoom
+            }
+
             filePath = '%s/%s.html' % (self.output.absoluteFilePath(), self.rootDir)
-            with open(filePath, 'w') as fOut:
+            with codecs.open(filePath, 'w', 'utf-8') as fOut:
                 fOut.write(viewer.substitute(substitutions))
             templateFile.close()
     def countTiles(self, tile):

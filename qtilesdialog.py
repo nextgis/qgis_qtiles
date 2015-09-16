@@ -144,7 +144,24 @@ class QTilesDialog(QDialog, Ui_Dialog):
         layers = canvas.mapSettings().layers()
         writeMapurl = self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
         writeViewer = self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
-        self.workThread = tilingthread.TilingThread(layers,extent,self.spnZoomMin.value(),self.spnZoomMax.value(),self.spnTileWidth.value(),self.spnTileHeight.value(), self.spnTransparency.value(),self.spnQuality.value(),self.cmbFormat.currentText(),fileInfo,self.leRootDir.text(),self.chkAntialiasing.isChecked(),self.chkTMSConvention.isChecked(),writeMapurl,writeViewer)
+        self.workThread = tilingthread.TilingThread(
+            layers,
+            extent,
+            self.spnZoomMin.value(),
+            self.spnZoomMax.value(),
+            self.spnTileWidth.value(),
+            self.spnTileHeight.value(),
+            self.spnTransparency.value(),
+            self.spnQuality.value(),
+            self.cmbFormat.currentText(),
+            fileInfo,
+            self.leRootDir.text(),
+            self.chkAntialiasing.isChecked(),
+            self.chkTMSConvention.isChecked(),
+            writeMapurl,
+            writeViewer
+        )
+
         self.workThread.rangeChanged.connect(self.setProgressRange)
         self.workThread.updateProgress.connect(self.updateProgress)
         self.workThread.processFinished.connect(self.processFinished)
@@ -203,7 +220,6 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 return
             if not outPath.lower().endswith(self.FORMATS[outFilter]):
                 outPath += self.FORMATS[outFilter]
-            print outPath
             self.leZipFileName.setText(outPath)
         else:
             outPath = QFileDialog.getExistingDirectory(self, self.tr('Save to directory'), lastDirectory, QFileDialog.ShowDirsOnly)

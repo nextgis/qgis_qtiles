@@ -34,6 +34,7 @@ import tilingthread
 from ui.ui_qtilesdialogbase import Ui_Dialog
 import qtiles_utils as utils
 
+
 class QTilesDialog(QDialog, Ui_Dialog):
     def __init__(self, iface):
         QDialog.__init__(self)
@@ -54,6 +55,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.btnBrowse.clicked.connect(self.__selectOutput)
         self.cmbFormat.activated.connect(self.formatChanged)
         self.manageGui()
+
     def formatChanged(self):
         if self.cmbFormat.currentText()=='JPG':
             self.spnTransparency.setEnabled(False)
@@ -61,7 +63,10 @@ class QTilesDialog(QDialog, Ui_Dialog):
         else:
             self.spnTransparency.setEnabled(True)
             self.spnQuality.setEnabled(False)
+
     def manageGui(self):
+        self.leDirectoryName.setText(self.settings.value('lastUsedDir', '.'))
+
         layers = utils.getMapLayers()
         relations = self.iface.legendInterface().groupLayerRelationship()
         for layer in sorted(layers.iteritems(), cmp=locale.strcoll, key=operator.itemgetter(1)):
@@ -94,6 +99,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False, type=bool))
         self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False, type=bool))
         self.formatChanged()
+
     def reject(self):
         QDialog.reject(self)
     def accept(self):
@@ -213,7 +219,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         if self.chkLockRatio.isChecked():
             self.spnTileHeight.setValue(value)
     def __selectOutput(self):
-        lastDirectory = self.settings.value('lastUsedDir', '.')
+        lastDirectory = QFileInfo(self.settings.value('lastUsedDir', '.')).absoluteDir().absolutePath()
         if self.rbOutputZip.isChecked():
             outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), lastDirectory, ';;'.join(self.FORMATS.iterkeys()), self.FORMATS.keys()[self.FORMATS.values().index('.zip')])
             if not outPath:
@@ -226,4 +232,4 @@ class QTilesDialog(QDialog, Ui_Dialog):
             if not outPath:
                 return
             self.leDirectoryName.setText(outPath)
-        self.settings.setValue('lastUsedDir', QFileInfo(outPath).absoluteDir().absolutePath())
+        self.settings.setValue('lastUsedDir', QFileInfo(outPath).absoluteFilePath())

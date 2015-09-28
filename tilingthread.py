@@ -185,12 +185,29 @@ class TilingThread(QThread):
                         return
                     subTile = Tile(x, y, tile.z + 1, tile.tms)
                     self.countTiles(subTile)
+
     def render(self, tile):
+        # scale = self.scaleCalc.calculate(
+        #    self.projector.transform(tile.toRectangle()), self.width)
+
         self.settings.setExtent(self.projector.transform(tile.toRectangle()))
-        job = QgsMapRendererSequentialJob(self.settings)
-        job.start()
-        job.waitForFinished()
-        image = job.renderedImage()
+
+        image = QImage(self.settings.outputSize(), QImage.Format_ARGB32)
+        image.fill(Qt.transparent)
+
+        dpm = self.settings.outputDpi() / 25.4 * 1000
+        image.setDotsPerMeterX(dpm)
+        image.setDotsPerMeterY(dpm)
+
+        # job = QgsMapRendererSequentialJob(self.settings)
+        # job.start()
+        # job.waitForFinished()
+        # image = job.renderedImage()
+
+        painter = QPainter(image)
+        job = QgsMapRendererCustomPainterJob(self.settings, painter)
+        job.renderSynchronously()
+        painter.end()
         self.writer.writeTile(tile, image, self.format, self.quality)
 
 class MyTemplate(Template):

@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>526</width>
-    <height>441</height>
+    <width>724</width>
+    <height>671</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>QTiles</string>
@@ -29,9 +35,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-197</y>
-        <width>510</width>
-        <height>600</height>
+        <y>0</y>
+        <width>724</width>
+        <height>607</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -169,10 +175,10 @@
          <property name="title">
           <string>Parameters</string>
          </property>
-         <property name="collapsed" stdset="0">
+         <property name="collapsed">
           <bool>true</bool>
          </property>
-         <property name="saveCollapsedState" stdset="0">
+         <property name="saveCollapsedState">
           <bool>true</bool>
          </property>
          <layout class="QGridLayout">
@@ -352,7 +358,7 @@
   <customwidget>
    <class>QgsCollapsibleGroupBox</class>
    <extends>QGroupBox</extends>
-   <header>qgis.gui</header>
+   <header>qgscollapsiblegroupbox.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

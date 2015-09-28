@@ -149,9 +149,6 @@ class TilingThread(QThread):
         if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
             viewer = MyTemplate(unicode(templateFile.readAll()))
 
-            QgsMessageLog.logMessage("{0}".format(type(self.output.absoluteFilePath())), u'qtiles', QgsMessageLog.INFO)
-            QgsMessageLog.logMessage("{0}".format(type(self.rootDir)), u'qtiles', QgsMessageLog.INFO)
-
             tilesDir = '%s/%s' % (self.output.absoluteFilePath(), self.rootDir)
             useTMS = 'true' if self.tmsConvention else 'false'
             substitutions = {

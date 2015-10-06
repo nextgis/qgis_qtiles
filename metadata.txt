@@ -9,7 +9,10 @@ author=NextGIS
 email=info@nextgis.com
 
 changelog=1.5.0
-        * change MBTiles parameters velues: format in lower case, description is 'Created with QTiles'
+        * change MBTiles parameters vаlues: format in lower case, description is 'Created with QTiles'
+        * tiles are now produced correctly when transparency is set
+        * geojson is now rendered correctly
+        * CRS shift when using 3857 is fixed
     1.4.6:
         * works fine now with non-english characters in folder names
         * add MBTiles initialize arguments for Geopaparazzi4

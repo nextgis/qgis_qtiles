@@ -2,16 +2,18 @@
 name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
-version=1.4.6
+version=1.5.0
 qgisMinimumVersion=2.0
 
 author=NextGIS
 email=info@nextgis.com
 
-changelog=1.4.6:
+changelog=1.5.0
+        * change MBTiles parameters velues: format in lower case, description is 'Created with QTiles'
+    1.4.6:
         * works fine now with non-english characters in folder names
         * add MBTiles initialize arguments for Geopaparazzi4
-        * take into account the actual zoom level when generating tiles 
+        * take into account the actual zoom level when generating tiles
 
 icon=icons/qtiles.png
 

@@ -96,6 +96,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.cmbFormat.setCurrentIndex(int(self.settings.value('format', 0)))
         self.chkAntialiasing.setChecked(self.settings.value('enable_antialiasing', False, type=bool))
         self.chkTMSConvention.setChecked(self.settings.value('use_tms_filenames', False, type=bool))
+        self.chkMBTilesCompression.setChecked(self.settings.value('use_mbtiles_compression', False, type=bool))
+        self.chkWriteJson.setChecked(self.settings.value("write_json", False, type=bool))
+        self.chkWriteOverview.setChecked(self.settings.value("write_overview", False, type=bool))
         self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False, type=bool))
         self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False, type=bool))
         self.formatChanged()
@@ -134,6 +137,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.settings.setValue('quality', self.spnQuality.value())
         self.settings.setValue('enable_antialiasing', self.chkAntialiasing.isChecked())
         self.settings.setValue('use_tms_filenames', self.chkTMSConvention.isChecked())
+        self.settings.setValue('use_mbtiles_compression', self.chkMBTilesCompression.isChecked())
+        self.settings.setValue('write_json', self.chkWriteJson.isChecked())
+        self.settings.setValue('write_overview', self.chkWriteOverview.isChecked())
         self.settings.setValue('write_mapurl', self.chkWriteMapurl.isChecked())
         self.settings.setValue('write_viewer', self.chkWriteViewer.isChecked())
         canvas = self.iface.mapCanvas()
@@ -164,6 +170,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.leRootDir.text(),
             self.chkAntialiasing.isChecked(),
             self.chkTMSConvention.isChecked(),
+            self.chkMBTilesCompression.isChecked(),
+            self.chkWriteJson.isChecked(),
+            self.chkWriteOverview.isChecked(),
             writeMapurl,
             writeViewer
         )

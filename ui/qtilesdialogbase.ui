@@ -250,13 +250,34 @@
            </widget>
           </item>
           <item row="8" column="0" colspan="3">
+           <widget class="QCheckBox" name="chkMBTilesCompression">
+            <property name="text">
+             <string>Use MBTiles compression</string>
+            </property>
+           </widget>
+          </item>
+          <item row="9" column="0" colspan="3">
+           <widget class="QCheckBox" name="chkWriteJson">
+            <property name="text">
+             <string>Write .json metadata</string>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="0" colspan="3">
+           <widget class="QCheckBox" name="chkWriteOverview">
+            <property name="text">
+             <string>Write overview image file</string>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="0" colspan="3">
            <widget class="QCheckBox" name="chkWriteMapurl">
             <property name="text">
              <string>Write .mapurl file</string>
             </property>
            </widget>
           </item>
-          <item row="9" column="0" colspan="3">
+          <item row="12" column="0" colspan="3">
            <widget class="QCheckBox" name="chkWriteViewer">
             <property name="text">
              <string>Write Leaflet-based viewer</string>

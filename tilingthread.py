@@ -27,6 +27,7 @@
 import math
 import time
 import codecs
+import json
 from string import Template
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -40,7 +41,7 @@ class TilingThread(QThread):
     updateProgress = pyqtSignal()
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
-    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mapUrl, viewer):
+    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mbtilesCompression, jsonFile, overview, mapUrl, viewer):
         QThread.__init__(self, QThread.currentThread())
         self.mutex = QMutex()
         self.stopMe = 0
@@ -57,8 +58,11 @@ class TilingThread(QThread):
             self.rootDir = 'tileset_%s' % unicode(time.time()).split('.')[0]
         self.antialias = antialiasing
         self.tmsConvention = tmsConvention
+        self.mbtilesCompression = mbtilesCompression
         self.format = format
         self.quality = quality
+        self.jsonFile = jsonFile
+        self.overview = overview
         self.mapurl = mapUrl
         self.viewer = viewer
         if self.output.isDir():
@@ -105,7 +109,11 @@ class TilingThread(QThread):
         elif self.mode == 'ZIP':
             self.writer = ZipWriter(self.output, self.rootDir)
         elif self.mode == 'MBTILES':
-            self.writer = MBTilesWriter(self.output, self.rootDir,self.format,self.minZoom,self.maxZoom,self.extent)
+            self.writer = MBTilesWriter(self.output, self.rootDir, self.format, self.minZoom, self.maxZoom, self.extent, self.mbtilesCompression)
+        if self.jsonFile:
+            self.writeJsonFile()
+        if self.overview:
+            self.writeOverviewFile()
         self.rangeChanged.emit(self.tr('Searching tiles...'), 0)
         useTMS = 1
         if self.tmsConvention:
@@ -135,6 +143,43 @@ class TilingThread(QThread):
         self.stopMe = 1
         self.mutex.unlock()
         QThread.wait(self)
+    def writeJsonFile(self):
+        filePath = '%s.json' % self.output.absoluteFilePath()
+        if self.mode == 'DIR':
+            filePath = '%s/%s.json' % (self.output.absoluteFilePath(), self.rootDir)
+        info = {
+            'name': self.rootDir,
+            'format': self.format.lower(),
+            'minZoom': self.minZoom,
+            'maxZoom': self.maxZoom,
+            'bounds': str(self.extent.xMinimum()) + ',' + str(self.extent.yMinimum()) + ',' + str(self.extent.xMaximum()) + ','+ str(self.extent.yMaximum())
+        }
+        with open(filePath, 'w') as f:
+            f.write( json.dumps(info) )
+    def writeOverviewFile(self):
+        self.settings.setExtent(self.projector.transform(self.extent))
+
+        image = QImage(self.settings.outputSize(), QImage.Format_ARGB32)
+        image.fill(Qt.transparent)
+
+        dpm = self.settings.outputDpi() / 25.4 * 1000
+        image.setDotsPerMeterX(dpm)
+        image.setDotsPerMeterY(dpm)
+
+        # job = QgsMapRendererSequentialJob(self.settings)
+        # job.start()
+        # job.waitForFinished()
+        # image = job.renderedImage()
+
+        painter = QPainter(image)
+        job = QgsMapRendererCustomPainterJob(self.settings, painter)
+        job.renderSynchronously()
+        painter.end()
+        
+        filePath = '%s.%s' % (self.output.absoluteFilePath(), self.format.lower())
+        if self.mode == 'DIR':
+            filePath = '%s/%s.%s' % (self.output.absoluteFilePath(), self.rootDir, self.format.lower())
+        image.save(filePath, self.format, self.quality)
     def writeMapurlFile(self):
         filePath = '%s/%s.mapurl' % (self.output.absoluteFilePath(), self.rootDir)
         tileServer = 'tms' if self.tmsConvention else 'google'

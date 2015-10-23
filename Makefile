@@ -30,7 +30,7 @@ $(UI_FILES): $(UI_PATH)/ui_%.py: $(UI_PATH)/%.ui
 	pyuic4 -o $@ $<
 
 $(LANG_FILES): $(LANG_PATH)/%.qm: $(LANG_PATH)/%.ts
-	lrelease-qt4 $<
+	lrelease $<
 
 $(RES_FILES): $(RES_PATH)/%_rc.py: $(RES_PATH)/%.qrc
 	pyrcc4 -o $@ $<

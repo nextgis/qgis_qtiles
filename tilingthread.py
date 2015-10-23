@@ -175,7 +175,7 @@ class TilingThread(QThread):
         job = QgsMapRendererCustomPainterJob(self.settings, painter)
         job.renderSynchronously()
         painter.end()
-        
+
         filePath = '%s.%s' % (self.output.absoluteFilePath(), self.format.lower())
         if self.mode == 'DIR':
             filePath = '%s/%s.%s' % (self.output.absoluteFilePath(), self.rootDir, self.format.lower())

@@ -36,28 +36,39 @@ import qtiles_utils as utils
 
 
 class QTilesDialog(QDialog, Ui_Dialog):
+
     def __init__(self, iface):
         QDialog.__init__(self)
         self.setupUi(self)
         self.iface = iface
+
+        self.verticalLayout_2.setAlignment(Qt.AlignTop)
+
         self.workThread = None
+
         self.FORMATS = {
-            self.tr('ZIP archives (*.zip *.ZIP)') : '.zip',
-            self.tr('MBTiles databases (*.mbtiles *.MBTILES)') : '.mbtiles'}
+            self.tr('ZIP archives (*.zip *.ZIP)'): '.zip',
+            self.tr('MBTiles databases (*.mbtiles *.MBTILES)'): '.mbtiles'}
+
         self.settings = QSettings('NextGIS', 'QTiles')
         self.grpParameters.setSettings(self.settings)
         self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
-        self.rbOutputZip.toggled.connect(self.__toggleZipTarget)
         self.rbExtentLayer.toggled.connect(self.__toggleLayerSelector)
         self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
         self.spnTileWidth.valueChanged.connect(self.__updateTileSize)
-        self.btnBrowse.clicked.connect(self.__selectOutput)
+        self.btnBrowse.clicked.connect(self.__select_output)
         self.cmbFormat.activated.connect(self.formatChanged)
+
+        self.rbOutputZip.toggled.connect(self.__toggleTarget)
+        self.rbOutputDir.toggled.connect(self.__toggleTarget)
+        self.rbNGM.toggled.connect(self.__toggleTarget)
+        self.rbNGM.setIcon(QIcon(':/icons/ngm_index_24x24.png'))
+
         self.manageGui()
 
     def formatChanged(self):
-        if self.cmbFormat.currentText()=='JPG':
+        if self.cmbFormat.currentText() == 'JPG':
             self.spnTransparency.setEnabled(False)
             self.spnQuality.setEnabled(True)
         else:
@@ -65,8 +76,6 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.spnQuality.setEnabled(False)
 
     def manageGui(self):
-        self.leDirectoryName.setText(self.settings.value('lastUsedDir', '.'))
-
         layers = utils.getMapLayers()
         relations = self.iface.legendInterface().groupLayerRelationship()
         for layer in sorted(layers.iteritems(), cmp=locale.strcoll, key=operator.itemgetter(1)):
@@ -75,12 +84,28 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.cmbLayers.addItem(layer[1], layer[0])
             else:
                 self.cmbLayers.addItem('%s - %s' % (layer[1], groupName), layer[0])
+
         self.rbOutputZip.setChecked(self.settings.value('outputToZip', True, type=bool))
         self.rbOutputDir.setChecked(self.settings.value('outputToDir', False, type=bool))
+        self.rbNGM.setChecked(self.settings.value('outputToNGM', False, type=bool))
         if self.rbOutputZip.isChecked():
+            self.leDirectoryName.setEnabled(False)
+            self.leTilesFroNGM.setEnabled(False)
+        elif self.rbOutputDir.isChecked():
+            self.leZipFileName.setEnabled(False)
+            self.leTilesFroNGM.setEnabled(False)
+        elif self.rbNGM.isChecked():
+            self.leZipFileName.setEnabled(False)
             self.leDirectoryName.setEnabled(False)
         else:
             self.leZipFileName.setEnabled(False)
+            self.leDirectoryName.setEnabled(False)
+            self.leTilesFroNGM.setEnabled(False)
+
+        self.leZipFileName.setText(self.settings.value('outputToZip_Path', '.'))
+        self.leDirectoryName.setText(self.settings.value('outputToDir_Path', '.'))
+        self.leTilesFroNGM.setText(self.settings.value('outputToNGM_Path', '.'))
+
         self.cmbLayers.setEnabled(False)
         self.leRootDir.setText(self.settings.value('rootDir', 'Mapnik'))
         self.rbExtentCanvas.setChecked(self.settings.value('extentCanvas', True, type=bool))
@@ -101,15 +126,20 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.chkWriteOverview.setChecked(self.settings.value("write_overview", False, type=bool))
         self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False, type=bool))
         self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False, type=bool))
+
         self.formatChanged()
 
     def reject(self):
         QDialog.reject(self)
+
     def accept(self):
         if self.rbOutputZip.isChecked():
             output = self.leZipFileName.text()
-        else:
+        elif self.rbOutputDir.isChecked():
             output = self.leDirectoryName.text()
+        elif self.rbNGM.isChecked():
+            output = self.leTilesFroNGM.text()
+
         if not output:
             QMessageBox.warning(self, self.tr('No output'), self.tr('Output path is not set. Please enter correct path and try again.'))
             return
@@ -124,6 +154,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.settings.setValue('rootDir', self.leRootDir.text())
         self.settings.setValue('outputToZip', self.rbOutputZip.isChecked())
         self.settings.setValue('outputToDir', self.rbOutputDir.isChecked())
+        self.settings.setValue('outputToNGM', self.rbNGM.isChecked())
         self.settings.setValue('extentCanvas', self.rbExtentCanvas.isChecked())
         self.settings.setValue('extentFull', self.rbExtentFull.isChecked())
         self.settings.setValue('extentLayer', self.rbExtentLayer.isChecked())
@@ -132,7 +163,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.settings.setValue('keepRatio', self.chkLockRatio.isChecked())
         self.settings.setValue('tileWidth', self.spnTileWidth.value())
         self.settings.setValue('tileHeight', self.spnTileHeight.value())
-        self.settings.setValue('format', self.cmbFormat.currentIndex ())
+        self.settings.setValue('format', self.cmbFormat.currentIndex())
         self.settings.setValue('transparency', self.spnTransparency.value())
         self.settings.setValue('quality', self.spnQuality.value())
         self.settings.setValue('enable_antialiasing', self.chkAntialiasing.isChecked())
@@ -208,13 +239,46 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.btnClose.clicked.disconnect(self.stopProcessing)
         self.btnClose.setText(self.tr('Close'))
         self.btnOk.setEnabled(True)
-    def __toggleZipTarget(self, checked):
-        self.leZipFileName.setEnabled(checked)
-        self.leDirectoryName.setEnabled(not checked)
-        self.chkWriteMapurl.setEnabled(not checked)
-        self.chkWriteViewer.setEnabled(not checked)
+
+    def __toggleTarget(self, checked):
+        if checked:
+            if self.sender() is self.rbOutputZip:
+                self.leZipFileName.setEnabled(True)
+                self.leDirectoryName.setEnabled(False)
+                self.leTilesFroNGM.setEnabled(False)
+                self.chkWriteMapurl.setEnabled(False)
+                self.chkWriteViewer.setEnabled(False)
+
+                self.spnTileWidth.setEnabled(True)
+                self.chkLockRatio.setEnabled(True)
+                self.cmbFormat.setEnabled(True)
+            elif self.sender() is self.rbOutputDir:
+                self.leZipFileName.setEnabled(False)
+                self.leDirectoryName.setEnabled(True)
+                self.leTilesFroNGM.setEnabled(False)
+                self.chkWriteMapurl.setEnabled(True)
+                self.chkWriteViewer.setEnabled(True)
+
+                self.spnTileWidth.setEnabled(True)
+                self.chkLockRatio.setEnabled(True)
+                self.cmbFormat.setEnabled(True)
+            elif self.sender() is self.rbNGM:
+                self.leZipFileName.setEnabled(False)
+                self.leDirectoryName.setEnabled(False)
+                self.leTilesFroNGM.setEnabled(True)
+                self.chkWriteMapurl.setEnabled(False)
+                self.chkWriteViewer.setEnabled(False)
+
+                self.spnTileWidth.setValue(256)
+                self.spnTileWidth.setEnabled(False)
+                self.chkLockRatio.setCheckState(Qt.Checked)
+                self.chkLockRatio.setEnabled(False)
+                self.cmbFormat.setCurrentIndex(0)
+                self.cmbFormat.setEnabled(False)
+
     def __toggleLayerSelector(self, checked):
         self.cmbLayers.setEnabled(checked)
+
     def __toggleHeightEdit(self, state):
         if state == Qt.Checked:
             self.lblHeight.setEnabled(False)
@@ -223,22 +287,38 @@ class QTilesDialog(QDialog, Ui_Dialog):
         else:
             self.lblHeight.setEnabled(True)
             self.spnTileHeight.setEnabled(True)
+
     @pyqtSlot(int)
     def __updateTileSize(self, value):
         if self.chkLockRatio.isChecked():
             self.spnTileHeight.setValue(value)
-    def __selectOutput(self):
-        lastDirectory = QFileInfo(self.settings.value('lastUsedDir', '.')).absoluteDir().absolutePath()
+
+    def __select_output(self):
         if self.rbOutputZip.isChecked():
-            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), lastDirectory, ';;'.join(self.FORMATS.iterkeys()), self.FORMATS.keys()[self.FORMATS.values().index('.zip')])
+            file_directory = QFileInfo(self.settings.value('outputToZip_Path', '.')).absolutePath()
+            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), file_directory, ';;'.join(self.FORMATS.iterkeys()), self.FORMATS.keys()[self.FORMATS.values().index('.zip')])
             if not outPath:
                 return
             if not outPath.lower().endswith(self.FORMATS[outFilter]):
                 outPath += self.FORMATS[outFilter]
             self.leZipFileName.setText(outPath)
-        else:
-            outPath = QFileDialog.getExistingDirectory(self, self.tr('Save to directory'), lastDirectory, QFileDialog.ShowDirsOnly)
+            self.settings.setValue('outputToZip_Path', QFileInfo(outPath).absoluteFilePath())
+
+        elif self.rbOutputDir.isChecked():
+            dir_directory = QFileInfo(self.settings.value('outputToDir_Path', '.')).absolutePath()
+            outPath = QFileDialog.getExistingDirectory(self, self.tr('Save to directory'), dir_directory, QFileDialog.ShowDirsOnly)
             if not outPath:
                 return
             self.leDirectoryName.setText(outPath)
-        self.settings.setValue('lastUsedDir', QFileInfo(outPath).absoluteFilePath())
+            self.settings.setValue('outputToDir_Path', QFileInfo(outPath).absoluteFilePath())
+
+        elif self.rbNGM.isChecked():
+            zip_directory = QFileInfo(self.settings.value('outputToNGM_Path', '.')).absolutePath()
+            formats = {self.FORMATS.keys()[self.FORMATS.values().index(value)]: value for value in ['.zip']}
+            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), zip_directory, ';;'.join(formats.iterkeys()))
+            if not outPath:
+                return
+            if not outPath.lower().endswith(self.FORMATS[outFilter]):
+                outPath += self.FORMATS[outFilter]
+            self.leZipFileName.setText(outPath)
+            self.settings.setValue('outputToNGM_Path', QFileInfo(outPath).absoluteFilePath())

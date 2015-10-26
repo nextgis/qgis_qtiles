@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>478</width>
+    <width>520</width>
     <height>681</height>
    </rect>
   </property>
@@ -48,8 +48,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>443</width>
-        <height>622</height>
+        <width>485</width>
+        <height>624</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -80,54 +80,188 @@
           <property name="topMargin">
            <number>6</number>
           </property>
-          <item row="2" column="0">
-           <widget class="QRadioButton" name="rbNGM">
-            <property name="text">
-             <string>NGM</string>
+          <item row="2" column="1">
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <property name="spacing">
+             <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QRadioButton" name="rbOutputZip">
-            <property name="text">
-             <string>File</string>
+            <property name="leftMargin">
+             <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="leDirectoryName"/>
+            <item>
+             <widget class="QRadioButton" name="rbOutputNGM">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>NGM</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>:/icons/ngm_index_24x24.png</normaloff>:/icons/ngm_index_24x24.png</iconset>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lInfoIconOutputNGM">
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="text">
+               <string>&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/icons/info.png&quot;/&gt;&lt;/a&gt;</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+              </property>
+              <property name="openExternalLinks">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lBlank_3">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
           <item row="0" column="1">
-           <widget class="QLineEdit" name="leZipFileName"/>
-          </item>
-          <item row="1" column="0">
-           <widget class="QRadioButton" name="rbOutputDir">
-            <property name="text">
-             <string>Directory</string>
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <property name="spacing">
+             <number>0</number>
             </property>
-           </widget>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QRadioButton" name="rbOutputZip">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="styleSheet">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string>File</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lInfoIconOutputZip">
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="text">
+               <string notr="true">&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/icons/info.png&quot;/&gt;&lt;/a&gt;</string>
+              </property>
+              <property name="textFormat">
+               <enum>Qt::RichText</enum>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+              </property>
+              <property name="openExternalLinks">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lBlank_1">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </item>
-          <item row="4" column="0">
+          <item row="1" column="1">
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QRadioButton" name="rbOutputDir">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Directory</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lInfoIconOutputDir">
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="text">
+               <string>&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/icons/info.png&quot;/&gt;&lt;/a&gt;</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+              </property>
+              <property name="openExternalLinks">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lBlank_2">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="4" column="1">
            <widget class="QLabel" name="label_4">
             <property name="text">
              <string>Tileset name</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="1" colspan="2">
+          <item row="4" column="6" colspan="2">
            <widget class="QLineEdit" name="leRootDir"/>
           </item>
-          <item row="2" column="1">
+          <item row="0" column="6">
+           <widget class="QLineEdit" name="leZipFileName">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="6">
            <widget class="QLineEdit" name="leTilesFroNGM">
             <property name="toolTip">
              <string/>
             </property>
             <property name="placeholderText">
-             <string>Prepare package for NextGIS Mobile</string>
+             <string/>
             </property>
            </widget>
           </item>
-          <item row="1" column="2">
+          <item row="1" column="6">
+           <widget class="QLineEdit" name="leDirectoryName"/>
+          </item>
+          <item row="1" column="7">
            <widget class="QPushButton" name="btnBrowse">
             <property name="text">
              <string>Browse...</string>

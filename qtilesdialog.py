@@ -345,11 +345,10 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
         elif self.rbOutputNGM.isChecked():
             zip_directory = QFileInfo(self.settings.value('outputToNGM_Path', '.')).absolutePath()
-            formats = {self.FORMATS.keys()[self.FORMATS.values().index(value)]: value for value in ['.zip']}
-            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), zip_directory, ';;'.join(formats.iterkeys()))
+            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), zip_directory, 'ngrc')
             if not outPath:
                 return
-            if not outPath.lower().endswith(self.FORMATS[outFilter]):
-                outPath += self.FORMATS[outFilter]
+            if not outPath.lower().endswith('ngrc'):
+                outPath += '.ngrc'
             self.leTilesFroNGM.setText(outPath)
             self.settings.setValue('outputToNGM_Path', QFileInfo(outPath).absoluteFilePath())

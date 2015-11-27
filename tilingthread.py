@@ -69,6 +69,8 @@ class TilingThread(QThread):
             self.mode = 'DIR'
         elif self.output.suffix().lower() == "zip":
             self.mode = 'ZIP'
+        elif self.output.suffix().lower() == "ngrc":
+            self.mode = 'NGM'
         elif self.output.suffix().lower() == 'mbtiles':
             self.mode = 'MBTILES'
             self.tmsConvention = True
@@ -108,6 +110,8 @@ class TilingThread(QThread):
                 self.writeLeafletViewer()
         elif self.mode == 'ZIP':
             self.writer = ZipWriter(self.output, self.rootDir)
+        elif self.mode == 'NGM':
+            self.writer = NGMArchiveWriter(self.output, self.rootDir)
         elif self.mode == 'MBTILES':
             self.writer = MBTilesWriter(self.output, self.rootDir, self.format, self.minZoom, self.maxZoom, self.extent, self.mbtilesCompression)
         if self.jsonFile:
@@ -119,6 +123,7 @@ class TilingThread(QThread):
         if self.tmsConvention:
             useTMS = -1
         self.countTiles(Tile(0, 0, 0, useTMS))
+
         if self.interrupted:
             del self.tiles[:]
             self.tiles = None

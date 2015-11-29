@@ -36,10 +36,21 @@ import qtiles_utils as utils
 
 
 class QTilesDialog(QDialog, Ui_Dialog):
+    MAX_ZOOM_LEVEL = 18
+    MIN_ZOOM_LEVEL = 0
 
     def __init__(self, iface):
         QDialog.__init__(self)
         self.setupUi(self)
+
+        self.spnZoomMax.setMaximum(self.MAX_ZOOM_LEVEL)
+        self.spnZoomMax.setMinimum(self.MIN_ZOOM_LEVEL)
+        self.spnZoomMin.setMaximum(self.MAX_ZOOM_LEVEL)
+        self.spnZoomMin.setMinimum(self.MIN_ZOOM_LEVEL)
+
+        self.spnZoomMin.valueChanged.connect(self.spnZoomMax.setMinimum)
+        self.spnZoomMax.valueChanged.connect(self.spnZoomMin.setMaximum)
+
         self.iface = iface
 
         self.verticalLayout_2.setAlignment(Qt.AlignTop)

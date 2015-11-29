@@ -247,7 +247,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="ui/qtilesdialogbase.ui" line="365"/>
         <source>Write overview image file</source>
-        <translation>Создаить файл обзорноого изображения карты</translation>
+        <translation>Создать файл обзорного изображения карты</translation>
     </message>
     <message>
         <location filename="ui/qtilesdialogbase.ui" line="386"/>
@@ -284,9 +284,9 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="qtiles.py" line="71"/>
-        <source>Quantum GIS %1 detected.
+        <source>QGIS %1 detected.
 </source>
-        <translation type="obsolete">Обнаружена Quantum GIS версии %1.</translation>
+        <translation type="obsolete">Обнаружен QGIS версии %1.</translation>
     </message>
     <message>
         <location filename="qtiles.py" line="71"/>
@@ -320,17 +320,17 @@ Plugin will not be enabled.</source>
         <location filename="qtiles.py" line="69"/>
         <source>QGIS %s detected.
 </source>
-        <translation>Обнаружена QGIS %s.</translation>
+        <translation>Обнаружен QGIS %s.</translation>
     </message>
     <message>
         <location filename="qtiles.py" line="70"/>
         <source>This version of QTiles requires at least QGIS version 2.0. Plugin will not be enabled.</source>
-        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 2.0. Модуль не будет загружен.</translation>
+        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 2.0 и выше. Модуль не будет загружен.</translation>
     </message>
     <message>
         <location filename="qtiles.py" line="69"/>
         <source>This version of QTiles requires at least QGIS 2.0. Plugin will not be enabled.</source>
-        <translation>Эта версия QTiles требует наличия QGIS 2.0 и выше. Модуль не может быть загружен.</translation>
+        <translation>Эта версия QTiles требует наличия QGIS 2.0 и выше. Модуль не будет загружен.</translation>
     </message>
 </context>
 <context>

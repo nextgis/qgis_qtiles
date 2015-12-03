@@ -10,9 +10,9 @@ email=info@nextgis.com
 
 changelog=1.5.1
         * create tiles for NextGIS Mobile
-        * add mbtiles compression
-        * add export metatdata to .json file
-        * add an image overview
+        * add MBTiles compression
+        * add export MBTiles metadata to .json file
+        * add image overview for MBTiles
     1.5.0
         * change MBTiles parameters vаlues: format in lower case, description is 'Created with QTiles'
         * tiles are now produced correctly when transparency is set

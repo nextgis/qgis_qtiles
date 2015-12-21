@@ -70,9 +70,9 @@ class AboutDialog(QDialog, Ui_Dialog):
 
         localeShortName = localeFullName[0:2]
         if localeShortName in ['ru', 'uk']:
-            QDesktopServices.openUrl(QUrl('http://hub.qgis.org/projects/qtiles/wiki'))
+            QDesktopServices.openUrl(QUrl('http://gis-lab.info/qa/qtiles.html'))
         else:
-            QDesktopServices.openUrl(QUrl('http://hub.qgis.org/projects/qtiles/wiki'))
+            QDesktopServices.openUrl(QUrl('http://gis-lab.info/qa/qtiles-eng.html'))
 
     def getAboutText(self):
         return self.tr('<p>Generate tiles from QGIS project.</p>'

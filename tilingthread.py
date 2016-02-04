@@ -41,7 +41,7 @@ class TilingThread(QThread):
     updateProgress = pyqtSignal()
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
-    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mbtilesCompression, jsonFile, overview, mapUrl, viewer):
+    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mbtilesCompression, jsonFile, overview, renderEmptyTiles, mapUrl, viewer):
         QThread.__init__(self, QThread.currentThread())
         self.mutex = QMutex()
         self.stopMe = 0
@@ -63,6 +63,7 @@ class TilingThread(QThread):
         self.quality = quality
         self.jsonFile = jsonFile
         self.overview = overview
+        self.renderEmptyTiles = renderEmptyTiles
         self.mapurl = mapUrl
         self.viewer = viewer
         if self.output.isDir():
@@ -76,6 +77,9 @@ class TilingThread(QThread):
             self.tmsConvention = True
         self.interrupted = False
         self.tiles = []
+        self.layersId = []
+        for layer in self.layers:
+            self.layersId.append(layer.id())
         myRed = QgsProject.instance().readNumEntry('Gui', '/CanvasColorRedPart', 255)[0]
         myGreen = QgsProject.instance().readNumEntry('Gui', '/CanvasColorGreenPart', 255)[0]
         myBlue = QgsProject.instance().readNumEntry('Gui', '/CanvasColorBluePart', 255)[0]
@@ -92,7 +96,7 @@ class TilingThread(QThread):
         self.settings.setOutputImageFormat(QImage.Format_ARGB32_Premultiplied)
         self.settings.setDestinationCrs(QgsCoordinateReferenceSystem('EPSG:3395'))
         self.settings.setOutputSize(image.size())
-        self.settings.setLayers(self.layers)
+        self.settings.setLayers(self.layersId)
         self.settings.setMapUnits(QgsCoordinateReferenceSystem('EPSG:3395').mapUnits())
         if self.antialias:
             self.settings.setFlag(QgsMapSettings.Antialiasing, True)
@@ -220,7 +224,13 @@ class TilingThread(QThread):
         if self.interrupted or not self.extent.intersects(tile.toRectangle()):
             return
         if self.minZoom <= tile.z and tile.z <= self.maxZoom:
-            self.tiles.append(tile)
+            if not self.renderEmptyTiles:
+                for layer in self.layers:
+                    if layer.extent().intersects(tile.toRectangle()):
+                        self.tiles.append(tile)
+                        break
+            else:
+                self.tiles.append(tile)
         if tile.z < self.maxZoom:
             for x in xrange(2 * tile.x, 2 * tile.x + 2, 1):
                 for y in xrange(2 * tile.y, 2 * tile.y + 2, 1):

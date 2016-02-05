@@ -309,6 +309,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.leTilesFroNGM.setEnabled(False)
                 self.chkWriteMapurl.setEnabled(False)
                 self.chkWriteViewer.setEnabled(False)
+                self.chkWriteJson.setEnabled(True)
 
                 self.spnTileWidth.setEnabled(True)
                 self.chkLockRatio.setEnabled(True)
@@ -322,6 +323,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.leTilesFroNGM.setEnabled(False)
                 self.chkWriteMapurl.setEnabled(True)
                 self.chkWriteViewer.setEnabled(True)
+                self.chkWriteJson.setEnabled(True)
                 self.chkMBTilesCompression.setEnabled(False)
 
                 self.spnTileWidth.setEnabled(True)
@@ -344,8 +346,11 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.cmbFormat.setCurrentIndex(0)
                 self.cmbFormat.setEnabled(False)
 
-                self.chkWriteOverview.setEnabled(False)
                 self.chkWriteOverview.setChecked(False)
+                self.chkWriteOverview.setEnabled(False)
+
+                self.chkWriteJson.setChecked(False)
+                self.chkWriteJson.setEnabled(False)
 
 
     def __toggleLayerSelector(self, checked):

@@ -168,6 +168,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.chkWriteOverview.setChecked(self.settings.value("write_overview", False, type=bool))
         self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False, type=bool))
         self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False, type=bool))
+        self.chkRenderEmptyTiles.setChecked(self.settings.value("renderEmptyTiles", True, type=bool))
 
         self.formatChanged()
 
@@ -215,6 +216,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.settings.setValue('write_overview', self.chkWriteOverview.isChecked())
         self.settings.setValue('write_mapurl', self.chkWriteMapurl.isChecked())
         self.settings.setValue('write_viewer', self.chkWriteViewer.isChecked())
+        self.settings.setValue('renderEmptyTiles', self.chkRenderEmptyTiles.isChecked())
         canvas = self.iface.mapCanvas()
         if self.rbExtentCanvas.isChecked():
             extent = canvas.extent()
@@ -226,7 +228,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         extent = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(), QgsCoordinateReferenceSystem('EPSG:4326')).transform(extent)
         arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
         extent = extent.intersect(QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
-        layers = canvas.mapSettings().layers()
+        layers = canvas.layers()
         writeMapurl = self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
         writeViewer = self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
         self.workThread = tilingthread.TilingThread(
@@ -246,6 +248,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.chkMBTilesCompression.isChecked(),
             self.chkWriteJson.isChecked(),
             self.chkWriteOverview.isChecked(),
+            self.chkRenderEmptyTiles.isChecked(),
             writeMapurl,
             writeViewer
         )

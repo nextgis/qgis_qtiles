@@ -42,31 +42,32 @@ class TilingThread(QThread):
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
 
-    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mbtilesCompression, jsonFile, overview, renderOutsideTiles, mapUrl, viewer):
+    def __init__(self, options, tiles):
         QThread.__init__(self, QThread.currentThread())
-        self.mutex = QMutex()
-        self.stopMe = 0
+        self.mutex   = QMutex()
+        self.stopMe  = 0
         self.interrupted = False
-        self.layers = layers
-        self.extent = extent
-        self.minZoom = minZoom
-        self.maxZoom = maxZoom
-        self.output = outputPath
-        self.width = width
-        if rootDir:
-            self.rootDir = rootDir
+        self.layers  = options["layers"]
+        self.extent  = options["extent"]
+        self.minZoom = options["minZoom"]
+        self.maxZoom = options["maxZoom"]
+        self.output  = options["outputPath"]
+        self.format  = options["format"]
+        self.quality = options["quality"]
+        self.mapurl  = options["mapUrl"]
+        self.viewer  = options["mapViewer"]
+        self.antialias     = options["antialiasing"]
+        self.transparency  = options["transparency"]
+        self.tmsConvention = options["tmsConvention"]
+        self.renderOutsideTiles = options["renderOutsideTiles"]
+        self.mbtilesCompression = options["mbtilesCompression"]
+        self.format = options["format"]
+        self.jsonFile = options["jsonFile"]
+        self.overview = options["overview"]
+        if options["rootDir"]:
+            self.rootDir = options["rootDir"]
         else:
             self.rootDir = 'tileset_%s' % unicode(time.time()).split('.')[0]
-        self.antialias = antialiasing
-        self.tmsConvention = tmsConvention
-        self.mbtilesCompression = mbtilesCompression
-        self.format = format
-        self.quality = quality
-        self.jsonFile = jsonFile
-        self.overview = overview
-        self.renderOutsideTiles = renderOutsideTiles
-        self.mapurl = mapUrl
-        self.viewer = viewer
         if self.output.isDir():
             self.mode = 'DIR'
         elif self.output.suffix().lower() == "zip":
@@ -77,15 +78,15 @@ class TilingThread(QThread):
             self.mode = 'MBTILES'
             self.tmsConvention = True
         self.interrupted = False
-        self.tiles = []
+        self.tiles = tiles
         self.layersId = []
         for layer in self.layers:
             self.layersId.append(layer.id())
         myRed = QgsProject.instance().readNumEntry('Gui', '/CanvasColorRedPart', 255)[0]
         myGreen = QgsProject.instance().readNumEntry('Gui', '/CanvasColorGreenPart', 255)[0]
         myBlue = QgsProject.instance().readNumEntry('Gui', '/CanvasColorBluePart', 255)[0]
-        self.color = QColor(myRed, myGreen, myBlue, transp)
-        image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
+        self.color = QColor(myRed, myGreen, myBlue, self.transparency)
+        image = QImage(options["width"], options["height"], QImage.Format_ARGB32_Premultiplied)
         self.projector = QgsCoordinateTransform(QgsCoordinateReferenceSystem('EPSG:4326'), QgsCoordinateReferenceSystem('EPSG:3395'))
         self.scaleCalc = QgsScaleCalculator()
         self.scaleCalc.setDpi(image.logicalDpiX())
@@ -128,13 +129,11 @@ class TilingThread(QThread):
         useTMS = 1
         if self.tmsConvention:
             useTMS = -1
-        self.countTiles(Tile(0, 0, 0, useTMS))
 
         if self.interrupted:
             del self.tiles[:]
             self.tiles = None
             self.processInterrupted.emit()
-        self.rangeChanged.emit(self.tr('Rendering: %v from %m (%p%)'), len(self.tiles))
         for t in self.tiles:
             self.render(t)
             self.updateProgress.emit()

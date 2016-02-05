@@ -24,7 +24,6 @@
 # MA 02110-1335 USA.
 #
 #******************************************************************************
-import math
 import time
 import codecs
 import json
@@ -36,12 +35,14 @@ from tile import Tile
 from writers import *
 import resources_rc
 
+
 class TilingThread(QThread):
     rangeChanged = pyqtSignal(str, int)
     updateProgress = pyqtSignal()
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
-    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mbtilesCompression, jsonFile, overview, renderEmptyTiles, mapUrl, viewer):
+
+    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mbtilesCompression, jsonFile, overview, renderOutsideTiles, mapUrl, viewer):
         QThread.__init__(self, QThread.currentThread())
         self.mutex = QMutex()
         self.stopMe = 0
@@ -63,7 +64,7 @@ class TilingThread(QThread):
         self.quality = quality
         self.jsonFile = jsonFile
         self.overview = overview
-        self.renderEmptyTiles = renderEmptyTiles
+        self.renderOutsideTiles = renderOutsideTiles
         self.mapurl = mapUrl
         self.viewer = viewer
         if self.output.isDir():
@@ -102,6 +103,7 @@ class TilingThread(QThread):
             self.settings.setFlag(QgsMapSettings.Antialiasing, True)
         else:
             self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
+
     def run(self):
         self.mutex.lock()
         self.stopMe = 0
@@ -147,11 +149,13 @@ class TilingThread(QThread):
             self.processFinished.emit()
         else:
             self.processInterrupted.emit()
+
     def stop(self):
         self.mutex.lock()
         self.stopMe = 1
         self.mutex.unlock()
         QThread.wait(self)
+
     def writeJsonFile(self):
         filePath = '%s.json' % self.output.absoluteFilePath()
         if self.mode == 'DIR':
@@ -165,6 +169,7 @@ class TilingThread(QThread):
         }
         with open(filePath, 'w') as f:
             f.write( json.dumps(info) )
+
     def writeOverviewFile(self):
         self.settings.setExtent(self.projector.transform(self.extent))
 
@@ -189,6 +194,7 @@ class TilingThread(QThread):
         if self.mode == 'DIR':
             filePath = '%s/%s.%s' % (self.output.absoluteFilePath(), self.rootDir, self.format.lower())
         image.save(filePath, self.format, self.quality)
+
     def writeMapurlFile(self):
         filePath = '%s/%s.mapurl' % (self.output.absoluteFilePath(), self.rootDir)
         tileServer = 'tms' if self.tmsConvention else 'google'
@@ -198,6 +204,7 @@ class TilingThread(QThread):
             mapurl.write('%s=%s\n' % ('maxzoom', self.maxZoom))
             mapurl.write('%s=%f %f\n' % ('center', self.extent.center().x(), self.extent.center().y()))
             mapurl.write('%s=%s\n' % ('type', tileServer))
+
     def writeLeafletViewer(self):
         templateFile = QFile(':/resources/viewer.html')
         if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
@@ -220,11 +227,12 @@ class TilingThread(QThread):
             with codecs.open(filePath, 'w', 'utf-8') as fOut:
                 fOut.write(viewer.substitute(substitutions))
             templateFile.close()
+
     def countTiles(self, tile):
         if self.interrupted or not self.extent.intersects(tile.toRectangle()):
             return
         if self.minZoom <= tile.z and tile.z <= self.maxZoom:
-            if not self.renderEmptyTiles:
+            if not self.renderOutsideTiles:
                 for layer in self.layers:
                     if layer.extent().intersects(tile.toRectangle()):
                         self.tiles.append(tile)
@@ -267,7 +275,9 @@ class TilingThread(QThread):
         painter.end()
         self.writer.writeTile(tile, image, self.format, self.quality)
 
+
 class MyTemplate(Template):
     delimiter = '@'
+
     def __init__(self, templateString):
         Template.__init__(self, templateString)

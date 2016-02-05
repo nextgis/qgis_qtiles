@@ -13,6 +13,7 @@ changelog=1.5.1:
         * add MBTiles compression
         * add export MBTiles metadata to .json file
         * add image overview for MBTiles
+        * add option for skiping tiles outside of layers extents (within combined extent)
     1.5.0:
         * change MBTiles parameters vаlues: format in lower case, description is 'Created with QTiles'
         * tiles are now produced correctly when transparency is set

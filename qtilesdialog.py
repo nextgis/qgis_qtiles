@@ -24,6 +24,7 @@
 # MA 02110-1335 USA.
 #
 #******************************************************************************
+import os
 import locale
 import math
 import operator
@@ -42,6 +43,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
     def __init__(self, iface):
         QDialog.__init__(self)
         self.setupUi(self)
+
+        self.btnOk = self.buttonBox.addButton(self.tr("Run"), QDialogButtonBox.AcceptRole)
 
         self.spnZoomMax.setMaximum(self.MAX_ZOOM_LEVEL)
         self.spnZoomMax.setMinimum(self.MIN_ZOOM_LEVEL)
@@ -63,7 +66,6 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
         self.settings = QSettings('NextGIS', 'QTiles')
         self.grpParameters.setSettings(self.settings)
-        self.btnOk = self.buttonBox.button(QDialogButtonBox.Ok)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
         self.rbExtentLayer.toggled.connect(self.__toggleLayerSelector)
         self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
@@ -95,9 +97,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
                             <img src=':/icons/ngm_index_24x24.png'/> \
                         </td> \
                         <td> \
-                            Prepare package for <a href='http://nextgis.ru/en/nextgis-mobile/'> NextGIS Mobile </a> \
+                            %s \
                         </td> \
-                    </tr> </table>"
+                    </tr> </table>" % self.tr("Prepare package for <a href='http://nextgis.ru/en/nextgis-mobile/'> NextGIS Mobile </a>")
 
         # QMessageBox.information(
         #     self,
@@ -168,7 +170,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.chkWriteOverview.setChecked(self.settings.value("write_overview", False, type=bool))
         self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False, type=bool))
         self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False, type=bool))
-        self.chkRenderEmptyTiles.setChecked(self.settings.value("renderEmptyTiles", True, type=bool))
+        self.chkRenderOutsideTiles.setChecked(self.settings.value("renderOutsideTiles", True, type=bool))
 
         self.formatChanged()
 
@@ -180,6 +182,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
             output = self.leZipFileName.text()
         elif self.rbOutputDir.isChecked():
             output = self.leDirectoryName.text()
+            if not QFileInfo(output).exists():
+                os.mkdir(QFileInfo(output).absoluteFilePath())
         elif self.rbOutputNGM.isChecked():
             output = self.leTilesFroNGM.text()
 
@@ -188,9 +192,15 @@ class QTilesDialog(QDialog, Ui_Dialog):
             return
         fileInfo = QFileInfo(output)
         if fileInfo.isDir() and not len(QDir(output).entryList(QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot)) == 0:
-            res = QMessageBox.warning(self, self.tr('Directory not empty'), self.tr('Selected directory is not empty. Continue?'), QMessageBox.Yes | QMessageBox.No)
+            res = QMessageBox.warning(
+                self,
+                self.tr('Directory not empty'),
+                self.tr('Selected directory is not empty. Continue?'),
+                QMessageBox.Yes | QMessageBox.No
+            )
             if res == QMessageBox.No:
                 return
+
         if self.spnZoomMin.value() > self.spnZoomMax.value():
             QMessageBox.warning(self, self.tr('Wrong zoom'), self.tr('Maximum zoom value is lower than minimum. Please correct this and try again.'))
             return
@@ -216,7 +226,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.settings.setValue('write_overview', self.chkWriteOverview.isChecked())
         self.settings.setValue('write_mapurl', self.chkWriteMapurl.isChecked())
         self.settings.setValue('write_viewer', self.chkWriteViewer.isChecked())
-        self.settings.setValue('renderEmptyTiles', self.chkRenderEmptyTiles.isChecked())
+        self.settings.setValue('renderOutsideTiles', self.chkRenderOutsideTiles.isChecked())
         canvas = self.iface.mapCanvas()
         if self.rbExtentCanvas.isChecked():
             extent = canvas.extent()
@@ -248,7 +258,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.chkMBTilesCompression.isChecked(),
             self.chkWriteJson.isChecked(),
             self.chkWriteOverview.isChecked(),
-            self.chkRenderEmptyTiles.isChecked(),
+            self.chkRenderOutsideTiles.isChecked(),
             writeMapurl,
             writeViewer
         )
@@ -262,20 +272,26 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.buttonBox.rejected.disconnect(self.reject)
         self.btnClose.clicked.connect(self.stopProcessing)
         self.workThread.start()
+
     def setProgressRange(self, message, value):
         self.progressBar.setFormat(message)
         self.progressBar.setRange(0, value)
+
     def updateProgress(self):
         self.progressBar.setValue(self.progressBar.value() + 1)
+
     def processInterrupted(self):
         self.restoreGui()
+
     def processFinished(self):
         self.stopProcessing()
         self.restoreGui()
+
     def stopProcessing(self):
         if self.workThread is not None:
             self.workThread.stop()
             self.workThread = None
+
     def restoreGui(self):
         self.progressBar.setFormat('%p%')
         self.progressBar.setRange(0, 1)
@@ -297,22 +313,29 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.spnTileWidth.setEnabled(True)
                 self.chkLockRatio.setEnabled(True)
                 self.cmbFormat.setEnabled(True)
+                self.chkMBTilesCompression.setEnabled(True)
+
+                self.chkWriteOverview.setEnabled(True)
             elif self.sender() is self.rbOutputDir:
                 self.leZipFileName.setEnabled(False)
                 self.leDirectoryName.setEnabled(True)
                 self.leTilesFroNGM.setEnabled(False)
                 self.chkWriteMapurl.setEnabled(True)
                 self.chkWriteViewer.setEnabled(True)
+                self.chkMBTilesCompression.setEnabled(False)
 
                 self.spnTileWidth.setEnabled(True)
                 self.chkLockRatio.setEnabled(True)
                 self.cmbFormat.setEnabled(True)
+
+                self.chkWriteOverview.setEnabled(True)
             elif self.sender() is self.rbOutputNGM:
                 self.leZipFileName.setEnabled(False)
                 self.leDirectoryName.setEnabled(False)
                 self.leTilesFroNGM.setEnabled(True)
                 self.chkWriteMapurl.setEnabled(False)
                 self.chkWriteViewer.setEnabled(False)
+                self.chkMBTilesCompression.setEnabled(False)
 
                 self.spnTileWidth.setValue(256)
                 self.spnTileWidth.setEnabled(False)
@@ -320,6 +343,10 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.chkLockRatio.setEnabled(False)
                 self.cmbFormat.setCurrentIndex(0)
                 self.cmbFormat.setEnabled(False)
+
+                self.chkWriteOverview.setEnabled(False)
+                self.chkWriteOverview.setChecked(False)
+
 
     def __toggleLayerSelector(self, checked):
         self.cmbLayers.setEnabled(checked)

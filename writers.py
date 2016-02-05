@@ -25,7 +25,6 @@
 #
 #******************************************************************************
 
-import os
 import sqlite3
 import zipfile
 import json
@@ -35,7 +34,6 @@ from PyQt4.QtGui import *
 
 from mbutils import *
 
-from qgis.core import QgsMessageLog
 
 class DirectoryWriter:
     def __init__(self, outputPath, rootDir):

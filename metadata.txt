@@ -35,4 +35,4 @@ repository=https://github.com/nextgis/QTiles
 experimental=True
 deprecated=False
 
-about=Plugin generates raster tiles from QGIS project using selected zoom levels and tile naming conventions (Slippy Map or TMS). Also it can write .mapurl file for GeoPaparazzi and simple Leaflet-based viewer.
+about=Generates raster tiles from QGIS project for selected zoom levels and tile naming conventions (Slippy Map or TMS). It can also package tiles for variety of formats and applications, NextGIS Mobile, GeoPaparazzi, simple Leaflet-based viewer and MBTiles.

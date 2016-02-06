@@ -1,8 +1,6 @@
 #QTiles
-------
-Generate tiles from QGIS project.
 
-Generates raster tiles from QGIS project for selected zoom levels and tile naming conventions (Slippy Map or TMS). It can also package tiles for variety of formats and applications, NextGIS Mobile, GeoPaparazzi, simple Leaflet-based viewer and MBTiles.
+QGIS plugin that generates raster tiles from QGIS project for selected zoom levels and tile naming convention (Slippy Map or TMS). It can also package tiles for variety of formats and applications: NextGIS Mobile, GeoPaparazzi, simple Leaflet-based viewer and MBTiles.
 
 QGIS plugins page: http://plugins.qgis.org/plugins/qtiles/
 

@@ -1,4 +1,4 @@
-QTiles
+#QTiles
 ------
 Generate tiles from QGIS project.
 
@@ -11,3 +11,8 @@ Manual (English): http://gis-lab.info/qa/qtiles-eng.html
 
 Created by NextGIS - open source geospatial solutions maker. Write us for geospatial development services!
 http://nextgis.ru/en/contact/
+
+#Screenshots
+
+##Settings
+![Example1](/img/example1.png)

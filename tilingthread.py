@@ -27,6 +27,7 @@
 import time
 import codecs
 import json
+import threading
 from string import Template
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -104,6 +105,9 @@ class TilingThread(QThread):
         else:
             self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
 
+        self.max_renders_count = 10
+        self.rendering = QSemaphore(self.max_renders_count)
+
     def run(self):
         self.mutex.lock()
         self.stopMe = 0
@@ -120,10 +124,13 @@ class TilingThread(QThread):
             self.writer = NGMArchiveWriter(self.output, self.rootDir)
         elif self.mode == 'MBTILES':
             self.writer = MBTilesWriter(self.output, self.rootDir, self.format, self.minZoom, self.maxZoom, self.extent, self.mbtilesCompression)
+
         if self.jsonFile:
             self.writeJsonFile()
+
         if self.overview:
             self.writeOverviewFile()
+
         self.rangeChanged.emit(self.tr('Searching tiles...'), 0)
         useTMS = 1
         if self.tmsConvention:
@@ -135,15 +142,26 @@ class TilingThread(QThread):
             self.tiles = None
             self.processInterrupted.emit()
         self.rangeChanged.emit(self.tr('Rendering: %v from %m (%p%)'), len(self.tiles))
+
         for t in self.tiles:
-            self.render(t)
-            self.updateProgress.emit()
+            self.rendering.acquire(1)
+            t = threading.Thread(
+                target=self.render,
+                args=(t, )
+            )
+            t.start()
+            # self.render(t)
+
+            # self.updateProgress.emit()
             self.mutex.lock()
             s = self.stopMe
             self.mutex.unlock()
             if s == 1:
                 self.interrupted = True
                 break
+
+        self.rendering.acquire(self.max_renders_count)
+
         self.writer.finalize()
         if not self.interrupted:
             self.processFinished.emit()
@@ -168,7 +186,7 @@ class TilingThread(QThread):
             'bounds': str(self.extent.xMinimum()) + ',' + str(self.extent.yMinimum()) + ',' + str(self.extent.xMaximum()) + ','+ str(self.extent.yMaximum())
         }
         with open(filePath, 'w') as f:
-            f.write( json.dumps(info) )
+            f.write(json.dumps(info))
 
     def writeOverviewFile(self):
         self.settings.setExtent(self.projector.transform(self.extent))
@@ -271,9 +289,13 @@ class TilingThread(QThread):
 
         painter = QPainter(image)
         job = QgsMapRendererCustomPainterJob(self.settings, painter)
+
         job.renderSynchronously()
         painter.end()
         self.writer.writeTile(tile, image, self.format, self.quality)
+
+        self.updateProgress.emit()
+        self.rendering.release(1)
 
 
 class MyTemplate(Template):

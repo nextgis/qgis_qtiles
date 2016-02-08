@@ -68,6 +68,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.grpParameters.setSettings(self.settings)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
         self.rbExtentLayer.toggled.connect(self.__toggleLayerSelector)
+        self.rbVectorIntersect.toggled.connect(self.__toggleLayerSelector_VectorIntersection)
         self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
         self.spnTileWidth.valueChanged.connect(self.__updateTileSize)
         self.btnBrowse.clicked.connect(self.__select_output)
@@ -125,9 +126,11 @@ class QTilesDialog(QDialog, Ui_Dialog):
         for layer in sorted(layers.iteritems(), cmp=locale.strcoll, key=operator.itemgetter(1)):
             groupName = utils.getLayerGroup(relations, layer[0])
             if groupName == '':
-                self.cmbLayers.addItem(layer[1], layer[0])
+                for cmb in [self.cmbLayers, self.cmbVectorIntersect]:
+                    cmb.addItem(layer[1], layer[0])
             else:
-                self.cmbLayers.addItem('%s - %s' % (layer[1], groupName), layer[0])
+                for cmb in [self.cmbLayers, self.cmbVectorIntersect]:
+                    cmb.addItem('%s - %s' % (layer[1], groupName), layer[0])
 
         self.rbOutputZip.setChecked(self.settings.value('outputToZip', True, type=bool))
         self.rbOutputDir.setChecked(self.settings.value('outputToDir', False, type=bool))
@@ -151,6 +154,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.leTilesFroNGM.setText(self.settings.value('outputToNGM_Path', ''))
 
         self.cmbLayers.setEnabled(False)
+        self.cmbVectorIntersect.setEnabled(False)
         self.leRootDir.setText(self.settings.value('rootDir', 'Mapnik'))
         self.rbExtentCanvas.setChecked(self.settings.value('extentCanvas', True, type=bool))
         self.rbExtentFull.setChecked(self.settings.value('extentFull', False, type=bool))
@@ -235,6 +239,14 @@ class QTilesDialog(QDialog, Ui_Dialog):
         else:
             layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()))
             extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
+        # if self.rbVectorIntersect.isChecked():
+        #     # Only tiles that intersect the chosen vector layer will be rendered and cached
+        #     self.intersect_layer = utils.getLayerById(self.cmbVectorIntersect.itemData(self.cmbVectorIntersect.currentIndex()))
+        #     self.intersect_features = {feature.id(): feature for (feature) in self.intersect_layer.getFeatures()}
+        #     self.intersect_layer_index = QgsSpatialIndex()
+        #     map(self.intersect_layer_index.insertFeature, self.intersect_features.values())
+        # else:
+        #     self.intersect_layer_index = None
         extent = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(), QgsCoordinateReferenceSystem('EPSG:4326')).transform(extent)
         arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
         extent = extent.intersect(QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
@@ -355,6 +367,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
     def __toggleLayerSelector(self, checked):
         self.cmbLayers.setEnabled(checked)
+
+    def __toggleLayerSelector_VectorIntersection(self, checked):
+        self.cmbVectorIntersect.setEnabled(checked)
 
     def __toggleHeightEdit(self, state):
         if state == Qt.Checked:

@@ -49,7 +49,7 @@
         <x>0</x>
         <y>0</y>
         <width>515</width>
-        <height>619</height>
+        <height>607</height>
        </rect>
       </property>
       <property name="styleSheet">
@@ -277,20 +277,17 @@
           <string>Extent</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
-          <property name="topMargin">
-           <number>6</number>
-          </property>
-          <item row="1" column="0">
-           <widget class="QRadioButton" name="rbExtentFull">
-            <property name="text">
-             <string>Full extent</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="0">
            <widget class="QRadioButton" name="rbExtentCanvas">
             <property name="text">
              <string>Canvas extent</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QRadioButton" name="rbExtentFull">
+            <property name="text">
+             <string>Full extent</string>
             </property>
            </widget>
           </item>
@@ -303,6 +300,23 @@
           </item>
           <item row="2" column="1">
            <widget class="QComboBox" name="cmbLayers">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QRadioButton" name="rbVectorIntersect">
+            <property name="text">
+             <string>Feature intersect</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="cmbVectorIntersect">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -402,10 +416,10 @@
          <property name="title">
           <string>Parameters</string>
          </property>
-         <property name="collapsed" stdset="0">
+         <property name="collapsed">
           <bool>true</bool>
          </property>
-         <property name="saveCollapsedState" stdset="0">
+         <property name="saveCollapsedState">
           <bool>true</bool>
          </property>
          <layout class="QGridLayout">
@@ -631,7 +645,7 @@
   <customwidget>
    <class>QgsCollapsibleGroupBox</class>
    <extends>QGroupBox</extends>
-   <header>qgis.gui</header>
+   <header>qgscollapsiblegroupbox.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
@@ -644,8 +658,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>257</x>
+     <y>680</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -660,8 +674,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>325</x>
+     <y>680</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

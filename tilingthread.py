@@ -103,6 +103,7 @@ class TilingThread(QThread):
             self.settings.setFlag(QgsMapSettings.Antialiasing, True)
         else:
             self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
+        # self.spatialIndex = spatialIndex
 
     def run(self):
         self.mutex.lock()
@@ -135,7 +136,10 @@ class TilingThread(QThread):
             self.tiles = None
             self.processInterrupted.emit()
         self.rangeChanged.emit(self.tr('Rendering: %v from %m (%p%)'), len(self.tiles))
+        QgsMessageLog.logMessage(str(len(self.tiles)))
         for t in self.tiles:
+            # if not self.spatialIndex or t.intersects_spatial_index(self.spatialIndex):
+            #     self.render(t)
             self.render(t)
             self.updateProgress.emit()
             self.mutex.lock()

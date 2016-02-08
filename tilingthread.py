@@ -136,10 +136,9 @@ class TilingThread(QThread):
             self.tiles = None
             self.processInterrupted.emit()
         self.rangeChanged.emit(self.tr('Rendering: %v from %m (%p%)'), len(self.tiles))
-        QgsMessageLog.logMessage(str(len(self.tiles)))
         for t in self.tiles:
             self.render(t)
-            self.updateProgress.emit()
+            self.updateProgress.emit() 
             self.mutex.lock()
             s = self.stopMe
             self.mutex.unlock()

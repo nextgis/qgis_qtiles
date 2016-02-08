@@ -123,13 +123,13 @@ class QTilesDialog(QDialog, Ui_Dialog):
     def manageGui(self):
         layers = utils.getMapLayers()
         relations = self.iface.legendInterface().groupLayerRelationship()
+        combos = [self.cmbLayers, self.cmbVectorIntersect]
         for layer in sorted(layers.iteritems(), cmp=locale.strcoll, key=operator.itemgetter(1)):
             groupName = utils.getLayerGroup(relations, layer[0])
-            if groupName == '':
-                for cmb in [self.cmbLayers, self.cmbVectorIntersect]:
+            for cmb in combos:
+                if groupName == '':
                     cmb.addItem(layer[1], layer[0])
-            else:
-                for cmb in [self.cmbLayers, self.cmbVectorIntersect]:
+                else:
                     cmb.addItem('%s - %s' % (layer[1], groupName), layer[0])
 
         self.rbOutputZip.setChecked(self.settings.value('outputToZip', True, type=bool))
@@ -232,22 +232,20 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.settings.setValue('write_viewer', self.chkWriteViewer.isChecked())
         self.settings.setValue('renderOutsideTiles', self.chkRenderOutsideTiles.isChecked())
         canvas = self.iface.mapCanvas()
+        geomTransform = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(), QgsCoordinateReferenceSystem('EPSG:4326'))
+        self.spatialIndex = None
         if self.rbExtentCanvas.isChecked():
             extent = canvas.extent()
         elif self.rbExtentFull.isChecked():
             extent = canvas.fullExtent()
+        elif self.rbVectorIntersect.isChecked():
+            layer = utils.getLayerById(self.cmbVectorIntersect.itemData(self.cmbVectorIntersect.currentIndex()))
+            extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
+            self.spatialIndex = self.__prepare_spatial_index(layer, geomTransform)
         else:
             layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()))
             extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
-        # if self.rbVectorIntersect.isChecked():
-        #     # Only tiles that intersect the chosen vector layer will be rendered and cached
-        #     self.intersect_layer = utils.getLayerById(self.cmbVectorIntersect.itemData(self.cmbVectorIntersect.currentIndex()))
-        #     self.intersect_features = {feature.id(): feature for (feature) in self.intersect_layer.getFeatures()}
-        #     self.intersect_layer_index = QgsSpatialIndex()
-        #     map(self.intersect_layer_index.insertFeature, self.intersect_features.values())
-        # else:
-        #     self.intersect_layer_index = None
-        extent = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(), QgsCoordinateReferenceSystem('EPSG:4326')).transform(extent)
+        extent = geomTransform.transform(extent)
         arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
         extent = extent.intersect(QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
         layers = canvas.layers()
@@ -272,7 +270,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.chkWriteOverview.isChecked(),
             self.chkRenderOutsideTiles.isChecked(),
             writeMapurl,
-            writeViewer
+            writeViewer,
+            self.spatialIndex
         )
 
         self.workThread.rangeChanged.connect(self.setProgressRange)
@@ -413,3 +412,15 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 outPath += '.ngrc'
             self.leTilesFroNGM.setText(outPath)
             self.settings.setValue('outputToNGM_Path', QFileInfo(outPath).absoluteFilePath())
+
+    def __prepare_spatial_index(self, layer, geomTransform):
+        '''Returns a QgsSpatialIndex of the features of the layer selected in
+        self.cmbVectorIntersect. <geomTransform> should be a
+        QgsCoordianteTransform allowing transformation from the source CRS to
+        EPSG:4326 for <layer>'''
+        spatialIndex = QgsSpatialIndex()
+        vals = {feature.id(): feature for (feature) in layer.getFeatures()}.values()
+        for v in vals:
+            v.geometry().transform(geomTransform)
+        map(spatialIndex.insertFeature, vals)
+        return spatialIndex

@@ -4,11 +4,8 @@ QGIS plugin that generates raster tiles from QGIS project for selected zoom leve
 
 QGIS plugins page: http://plugins.qgis.org/plugins/qtiles/
 
-Manual (Russian): http://gis-lab.info/qa/qtiles.html
-Manual (English): http://gis-lab.info/qa/qtiles-eng.html
-
-Created by NextGIS - open source geospatial solutions maker. Write us for geospatial development services!
-http://nextgis.ru/en/contact/
+* Manual (Russian): http://gis-lab.info/qa/qtiles.html
+* Manual (English): http://gis-lab.info/qa/qtiles-eng.html
 
 #Screenshots
 

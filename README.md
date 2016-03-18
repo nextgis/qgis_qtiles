@@ -14,3 +14,9 @@ http://nextgis.ru/en/contact/
 
 ##Settings
 ![Example1](/img/example1.png)
+
+Commercial support
+----------
+Need to fix a bug or add a feature to QTiles? We provide custom development and support for this software. [Contact us](http://nextgis.ru/en/contact/) to discuss options!
+
+[![http://nextgis.com](http://nextgis.ru/img/nextgis.png)](http://nextgis.com)

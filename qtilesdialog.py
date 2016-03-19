@@ -68,6 +68,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.grpParameters.setSettings(self.settings)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
         self.rbExtentLayer.toggled.connect(self.__toggleLayerSelector)
+        self.rbVectorIntersect.toggled.connect(self.__toggleLayerSelector_VectorIntersection)
         self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
         self.spnTileWidth.valueChanged.connect(self.__updateTileSize)
         self.btnBrowse.clicked.connect(self.__select_output)
@@ -122,12 +123,14 @@ class QTilesDialog(QDialog, Ui_Dialog):
     def manageGui(self):
         layers = utils.getMapLayers()
         relations = self.iface.legendInterface().groupLayerRelationship()
+        combos = [self.cmbLayers, self.cmbVectorIntersect]
         for layer in sorted(layers.iteritems(), cmp=locale.strcoll, key=operator.itemgetter(1)):
             groupName = utils.getLayerGroup(relations, layer[0])
-            if groupName == '':
-                self.cmbLayers.addItem(layer[1], layer[0])
-            else:
-                self.cmbLayers.addItem('%s - %s' % (layer[1], groupName), layer[0])
+            for cmb in combos:
+                if groupName == '':
+                    cmb.addItem(layer[1], layer[0])
+                else:
+                    cmb.addItem('%s - %s' % (layer[1], groupName), layer[0])
 
         self.rbOutputZip.setChecked(self.settings.value('outputToZip', True, type=bool))
         self.rbOutputDir.setChecked(self.settings.value('outputToDir', False, type=bool))
@@ -151,6 +154,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.leTilesFroNGM.setText(self.settings.value('outputToNGM_Path', ''))
 
         self.cmbLayers.setEnabled(False)
+        self.cmbVectorIntersect.setEnabled(False)
         self.leRootDir.setText(self.settings.value('rootDir', 'Mapnik'))
         self.rbExtentCanvas.setChecked(self.settings.value('extentCanvas', True, type=bool))
         self.rbExtentFull.setChecked(self.settings.value('extentFull', False, type=bool))
@@ -228,14 +232,20 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.settings.setValue('write_viewer', self.chkWriteViewer.isChecked())
         self.settings.setValue('renderOutsideTiles', self.chkRenderOutsideTiles.isChecked())
         canvas = self.iface.mapCanvas()
+        geomTransform = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(), QgsCoordinateReferenceSystem('EPSG:4326'))
+        self.spatialIndex = None
         if self.rbExtentCanvas.isChecked():
             extent = canvas.extent()
         elif self.rbExtentFull.isChecked():
             extent = canvas.fullExtent()
+        elif self.rbVectorIntersect.isChecked():
+            layer = utils.getLayerById(self.cmbVectorIntersect.itemData(self.cmbVectorIntersect.currentIndex()))
+            extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
+            self.spatialIndex = self.__prepare_spatial_index(layer, geomTransform)
         else:
             layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()))
             extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
-        extent = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(), QgsCoordinateReferenceSystem('EPSG:4326')).transform(extent)
+        extent = geomTransform.transform(extent)
         arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
         extent = extent.intersect(QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
         layers = canvas.layers()
@@ -260,7 +270,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.chkWriteOverview.isChecked(),
             self.chkRenderOutsideTiles.isChecked(),
             writeMapurl,
-            writeViewer
+            writeViewer,
+            self.spatialIndex
         )
 
         self.workThread.rangeChanged.connect(self.setProgressRange)
@@ -356,6 +367,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
     def __toggleLayerSelector(self, checked):
         self.cmbLayers.setEnabled(checked)
 
+    def __toggleLayerSelector_VectorIntersection(self, checked):
+        self.cmbVectorIntersect.setEnabled(checked)
+
     def __toggleHeightEdit(self, state):
         if state == Qt.Checked:
             self.lblHeight.setEnabled(False)
@@ -398,3 +412,15 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 outPath += '.ngrc'
             self.leTilesFroNGM.setText(outPath)
             self.settings.setValue('outputToNGM_Path', QFileInfo(outPath).absoluteFilePath())
+
+    def __prepare_spatial_index(self, layer, geomTransform):
+        '''Returns a QgsSpatialIndex of the features of the layer selected in
+        self.cmbVectorIntersect. <geomTransform> should be a
+        QgsCoordianteTransform allowing transformation from the source CRS to
+        EPSG:4326 for <layer>'''
+        spatialIndex = QgsSpatialIndex()
+        vals = {feature.id(): feature for (feature) in layer.getFeatures()}.values()
+        for v in vals:
+            v.geometry().transform(geomTransform)
+        map(spatialIndex.insertFeature, vals)
+        return spatialIndex

@@ -42,7 +42,7 @@ class TilingThread(QThread):
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
 
-    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mbtilesCompression, jsonFile, overview, renderOutsideTiles, mapUrl, viewer):
+    def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mbtilesCompression, jsonFile, overview, renderOutsideTiles, mapUrl, viewer, spatialIndex):
         QThread.__init__(self, QThread.currentThread())
         self.mutex = QMutex()
         self.stopMe = 0
@@ -103,6 +103,7 @@ class TilingThread(QThread):
             self.settings.setFlag(QgsMapSettings.Antialiasing, True)
         else:
             self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
+        self.spatialIndex = spatialIndex
 
     def run(self):
         self.mutex.lock()
@@ -137,7 +138,7 @@ class TilingThread(QThread):
         self.rangeChanged.emit(self.tr('Rendering: %v from %m (%p%)'), len(self.tiles))
         for t in self.tiles:
             self.render(t)
-            self.updateProgress.emit()
+            self.updateProgress.emit() 
             self.mutex.lock()
             s = self.stopMe
             self.mutex.unlock()
@@ -228,6 +229,11 @@ class TilingThread(QThread):
                 fOut.write(viewer.substitute(substitutions))
             templateFile.close()
 
+    def append_tile_index_check(self, tile):
+        if not self.spatialIndex or tile.intersects_spatial_index(self.spatialIndex):
+            self.tiles.append(tile)
+        return
+
     def countTiles(self, tile):
         if self.interrupted or not self.extent.intersects(tile.toRectangle()):
             return
@@ -235,10 +241,10 @@ class TilingThread(QThread):
             if not self.renderOutsideTiles:
                 for layer in self.layers:
                     if layer.extent().intersects(tile.toRectangle()):
-                        self.tiles.append(tile)
+                        self.append_tile_index_check(tile)
                         break
             else:
-                self.tiles.append(tile)
+                self.append_tile_index_check(tile)
         if tile.z < self.maxZoom:
             for x in xrange(2 * tile.x, 2 * tile.x + 2, 1):
                 for y in xrange(2 * tile.y, 2 * tile.y + 2, 1):

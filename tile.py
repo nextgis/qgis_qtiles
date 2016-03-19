@@ -46,3 +46,9 @@ class Tile:
 
     def toRectangle(self):
         return QgsRectangle(self.toPoint(), Tile(self.x + 1, self.y + 1, self.z, self.tms).toPoint())
+
+    def intersects_spatial_index(self, spatial_index):
+        if spatial_index.intersects(self.toRectangle()):
+            return True
+        else:
+            return False

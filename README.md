@@ -12,6 +12,10 @@ QGIS plugins page: http://plugins.qgis.org/plugins/qtiles/
 ##Settings
 ![Example1](/img/example1.png)
 
+License
+-------------
+This program is licensed under GNU GPL v2 or any later version
+
 Commercial support
 ----------
 Need to fix a bug or add a feature to QTiles? We provide custom development and support for this software. [Contact us](http://nextgis.ru/en/contact/) to discuss options!

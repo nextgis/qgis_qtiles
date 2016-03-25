@@ -34,6 +34,8 @@ from qgis.core import *
 import tilingthread
 from ui.ui_qtilesdialogbase import Ui_Dialog
 import qtiles_utils as utils
+from tile import Tile
+import multiprocessing
 
 
 class QTilesDialog(QDialog, Ui_Dialog):
@@ -58,7 +60,10 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
         self.verticalLayout_2.setAlignment(Qt.AlignTop)
 
-        self.workThread = None
+        self.threads = []
+        self.tilesToCompute = []
+        self.threadsAvailable = multiprocessing.cpu_count()
+        self.threadsFinished = 0
 
         self.FORMATS = {
             self.tr('ZIP archives (*.zip *.ZIP)'): '.zip',
@@ -241,58 +246,96 @@ class QTilesDialog(QDialog, Ui_Dialog):
         layers = canvas.layers()
         writeMapurl = self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
         writeViewer = self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
-        self.workThread = tilingthread.TilingThread(
-            layers,
-            extent,
-            self.spnZoomMin.value(),
-            self.spnZoomMax.value(),
-            self.spnTileWidth.value(),
-            self.spnTileHeight.value(),
-            self.spnTransparency.value(),
-            self.spnQuality.value(),
-            self.cmbFormat.currentText(),
-            fileInfo,
-            self.leRootDir.text(),
-            self.chkAntialiasing.isChecked(),
-            self.chkTMSConvention.isChecked(),
-            self.chkMBTilesCompression.isChecked(),
-            self.chkWriteJson.isChecked(),
-            self.chkWriteOverview.isChecked(),
-            self.chkRenderOutsideTiles.isChecked(),
-            writeMapurl,
-            writeViewer
-        )
 
-        self.workThread.rangeChanged.connect(self.setProgressRange)
-        self.workThread.updateProgress.connect(self.updateProgress)
-        self.workThread.processFinished.connect(self.processFinished)
-        self.workThread.processInterrupted.connect(self.processInterrupted)
+        options = {
+            "extent" : extent,
+            "mapUrl" : writeMapurl,
+            "layers" : canvas.layers(),
+            "rootDir": self.leRootDir.text(),
+            "quality": self.spnQuality.value(),
+            "minZoom": self.spnZoomMin.value(),
+            "maxZoom": self.spnZoomMax.value(),
+            "width"  : self.spnTileWidth.value(),
+            "height" : self.spnTileHeight.value(),
+            "format" : self.cmbFormat.currentText(),
+            "outputPath"   : fileInfo,
+            "mapViewer"    : writeViewer,
+            "transparency" : self.spnTransparency.value(),
+            "antialiasing" : self.chkAntialiasing.isChecked(),
+            "tmsConvention": self.chkTMSConvention.isChecked(),
+            "jsonFile"          : self.chkWriteJson.isChecked(),
+            "overview"          : self.chkWriteOverview.isChecked(),
+            "renderOutsideTiles": self.chkRenderOutsideTiles.isChecked(),
+            "mbtilesCompression": self.chkMBTilesCompression.isChecked(),
+        }
+
+        self.progressBar.setFormat(self.tr('Compute number of tiles...'))
+        useTMS = 1 if options['tmsConvention'] else -1
+        self.countTilesToCompute(Tile(0, 0, 0, useTMS), options)
+        self.progressBar.setFormat(self.tr('Rendering: %v from %m (%p%)'))
+        self.progressBar.setRange(0, len(self.tilesToCompute))
+
+        tileQueue = []
+        tilesPerThread = len(self.tilesToCompute)/(self.threadsAvailable)
+        remainingTiles = len(self.tilesToCompute)%(self.threadsAvailable)
+
+        for i in range(self.threadsAvailable):
+            thread = i+1
+            tileRange = self.tilesToCompute[i*tilesPerThread:thread*tilesPerThread]
+            if thread == self.threadsAvailable:
+                tileRange.extend(self.tilesToCompute[thread*tilesPerThread:])
+            tileQueue.append(tileRange);
+
+        for tiles in tileQueue:
+            thread = tilingthread.TilingThread(options, tiles)
+            thread.updateProgress.connect(self.updateProgress)
+            thread.processFinished.connect(self.processFinished)
+            thread.processInterrupted.connect(self.processInterrupted)
+            thread.start()
+            self.threads.append(thread)
+
         self.btnOk.setEnabled(False)
         self.btnClose.setText(self.tr('Cancel'))
         self.buttonBox.rejected.disconnect(self.reject)
         self.btnClose.clicked.connect(self.stopProcessing)
-        self.workThread.start()
 
-    def setProgressRange(self, message, value):
-        self.progressBar.setFormat(message)
-        self.progressBar.setRange(0, value)
+    def countTilesToCompute(self, tile, options):
+        if not options['extent'].intersects(tile.toRectangle()):
+            return
+        if options['minZoom'] <= tile.z and tile.z <= options['maxZoom']:
+            if not options['renderOutsideTiles']:
+                for layer in options['layers']:
+                    if layer.extent().intersects(tile.toRectangle()):
+                        self.tilesToCompute.append(tile)
+                        break
+            else:
+                self.tilesToCompute.append(tile)
+        if tile.z < options['maxZoom']:
+            for x in xrange(2 * tile.x, 2 * tile.x + 2, 1):
+                for y in xrange(2 * tile.y, 2 * tile.y + 2, 1):
+                    subTile = Tile(x, y, tile.z + 1, tile.tms)
+                    self.countTilesToCompute(subTile, options)
 
     def updateProgress(self):
         self.progressBar.setValue(self.progressBar.value() + 1)
 
     def processInterrupted(self):
-        self.restoreGui()
+        self.stopProcessing()
 
     def processFinished(self):
-        self.stopProcessing()
-        self.restoreGui()
+        self.threadsFinished += 1
+        if self.threadsFinished == self.threadsAvailable:
+            self.restoreGui()
 
     def stopProcessing(self):
-        if self.workThread is not None:
-            self.workThread.stop()
-            self.workThread = None
+        self.stopMe = True
+        for thread in self.threads:
+            thread.stop()
+        self.restoreGui()
 
     def restoreGui(self):
+        self.tilesToCompute = []
+        self.threadsFinished = 0
         self.progressBar.setFormat('%p%')
         self.progressBar.setRange(0, 1)
         self.progressBar.setValue(0)

@@ -391,6 +391,16 @@ Plugin will not be enabled.</source>
         <translation>Закрыть</translation>
     </message>
     <message>
+        <location filename="qtilesdialog.py" line="294"/>
+        <source>Confirmation</source>
+        <translation>Подтверждение</translation>
+    </message>
+    <message>
+        <location filename="qtilesdialog.py" line="294"/>
+        <source>Estimate number of tiles more then %d! Continue?</source>
+        <translation>Оцениваемое количество тайлов больше %d! Продолжить?</translation>
+    </message>
+    <message>
         <location filename="qtilesdialog.py" line="374"/>
         <source>Save to file</source>
         <translation>Сохранить файл</translation>

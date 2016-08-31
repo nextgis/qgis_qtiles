@@ -41,10 +41,14 @@ class TilingThread(QThread):
     updateProgress = pyqtSignal()
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
+    threshold = pyqtSignal(int)
+
+    warring_threshold_tiles_count = 10000
 
     def __init__(self, layers, extent, minZoom, maxZoom, width, height, transp, quality, format, outputPath, rootDir, antialiasing, tmsConvention, mbtilesCompression, jsonFile, overview, renderOutsideTiles, mapUrl, viewer):
         QThread.__init__(self, QThread.currentThread())
         self.mutex = QMutex()
+        self.confirmMutex = QMutex()
         self.stopMe = 0
         self.interrupted = False
         self.layers = layers
@@ -135,6 +139,16 @@ class TilingThread(QThread):
             self.tiles = None
             self.processInterrupted.emit()
         self.rangeChanged.emit(self.tr('Rendering: %v from %m (%p%)'), len(self.tiles))
+
+        if len(self.tiles) > self.warring_threshold_tiles_count:
+            self.confirmMutex.lock()
+            self.threshold.emit(self.warring_threshold_tiles_count)
+
+        self.confirmMutex.lock()
+        if self.interrupted:
+            self.processInterrupted.emit()
+            return
+
         for t in self.tiles:
             self.render(t)
             self.updateProgress.emit()
@@ -144,6 +158,7 @@ class TilingThread(QThread):
             if s == 1:
                 self.interrupted = True
                 break
+
         self.writer.finalize()
         if not self.interrupted:
             self.processFinished.emit()
@@ -155,6 +170,13 @@ class TilingThread(QThread):
         self.stopMe = 1
         self.mutex.unlock()
         QThread.wait(self)
+
+    def confirmContinue(self):
+        self.confirmMutex.unlock()
+
+    def confirmStop(self):
+        self.interrupted = True
+        self.confirmMutex.unlock()
 
     def writeJsonFile(self):
         filePath = '%s.json' % self.output.absoluteFilePath()

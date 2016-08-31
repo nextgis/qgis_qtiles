@@ -37,7 +37,7 @@ import qtiles_utils as utils
 
 
 class QTilesDialog(QDialog, Ui_Dialog):
-    MAX_ZOOM_LEVEL = 18
+    # MAX_ZOOM_LEVEL = 18
     MIN_ZOOM_LEVEL = 0
 
     def __init__(self, iface):
@@ -46,9 +46,9 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
         self.btnOk = self.buttonBox.addButton(self.tr("Run"), QDialogButtonBox.AcceptRole)
 
-        self.spnZoomMax.setMaximum(self.MAX_ZOOM_LEVEL)
+        # self.spnZoomMax.setMaximum(self.MAX_ZOOM_LEVEL)
         self.spnZoomMax.setMinimum(self.MIN_ZOOM_LEVEL)
-        self.spnZoomMin.setMaximum(self.MAX_ZOOM_LEVEL)
+        # self.spnZoomMin.setMaximum(self.MAX_ZOOM_LEVEL)
         self.spnZoomMin.setMinimum(self.MIN_ZOOM_LEVEL)
 
         self.spnZoomMin.valueChanged.connect(self.spnZoomMax.setMinimum)
@@ -267,11 +267,25 @@ class QTilesDialog(QDialog, Ui_Dialog):
         self.workThread.updateProgress.connect(self.updateProgress)
         self.workThread.processFinished.connect(self.processFinished)
         self.workThread.processInterrupted.connect(self.processInterrupted)
+        self.workThread.threshold.connect(self.confirmContinueThreshold)
         self.btnOk.setEnabled(False)
         self.btnClose.setText(self.tr('Cancel'))
         self.buttonBox.rejected.disconnect(self.reject)
         self.btnClose.clicked.connect(self.stopProcessing)
         self.workThread.start()
+
+    def confirmContinueThreshold(self, tilesCountThreshold):
+        res = QMessageBox.question(
+            self.parent(),
+            self.tr("Confirmation"),
+            self.tr("Estimate number of tiles more then %d! Continue?") % tilesCountThreshold,
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if res == QMessageBox.Yes:
+            self.workThread.confirmContinue()
+        else:
+            self.workThread.confirmStop()
 
     def setProgressRange(self, message, value):
         self.progressBar.setFormat(message)

@@ -7,6 +7,7 @@
 # Generates tiles from QGIS project
 #
 # Copyright (C) 2012-2014 NextGIS (info@nextgis.org)
+# Copyright (C) 2019 Alexander Bruy (alexander.bruy@gmail.com)
 #
 # This source is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -25,32 +26,30 @@
 #
 #******************************************************************************
 
+from qgis.PyQt.QtCore import QFileInfo, QLocale, QTranslator, QCoreApplication
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QMessageBox, QAction
+from qgis.core import Qgis, QgsApplication, QgsSettings
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-
-from qgis.core import *
-
-import qtilesdialog
-import aboutdialog
-
-import resources_rc
+from . import resources_rc
+from .aboutdialog import AboutDialog
+from .qtilesdialog import QTilesDialog
 
 
 class QTilesPlugin:
     def __init__(self, iface):
         self.iface = iface
 
-        self.qgsVersion = unicode(QGis.QGIS_VERSION_INT)
+        self.qgsVersion = str(Qgis.QGIS_VERSION_INT)
 
-        userPluginPath = QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + '/python/plugins/qtiles'
+        userPluginPath = QFileInfo(QgsApplication.qgisUserDatabaseFilePath()).path() + '/python/plugins/qtiles'
         systemPluginPath = QgsApplication.prefixPath() + '/python/plugins/qtiles'
 
-        overrideLocale = QSettings().value('locale/overrideFlag', False, type=bool)
+        overrideLocale = QgsSettings().value('locale/overrideFlag', False, type=bool)
         if not overrideLocale:
             localeFullName = QLocale.system().name()
         else:
-            localeFullName = QSettings().value('locale/userLocale', '')
+            localeFullName = QgsSettings().value('locale/userLocale', '')
 
         if QFileInfo(userPluginPath).exists():
             translationPath = userPluginPath + '/i18n/qtiles_' + localeFullName + '.qm'
@@ -92,10 +91,10 @@ class QTilesPlugin:
         self.iface.removePluginMenu(QCoreApplication.translate('QTiles', 'QTiles'), self.actionAbout)
 
     def run(self):
-        d = qtilesdialog.QTilesDialog(self.iface)
+        d = QTilesDialog(self.iface)
         d.show()
         d.exec_()
 
     def about(self):
-        d = aboutdialog.AboutDialog()
+        d = AboutDialog()
         d.exec_()

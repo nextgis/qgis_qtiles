@@ -7,6 +7,7 @@
 # Generates tiles from QGIS project
 #
 # Copyright (C) 2012-2014 NextGIS (info@nextgis.org)
+# Copyright (C) 2019 Alexander Bruy (alexander.bruy@gmail.com)
 #
 # This source is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -25,14 +26,13 @@
 #
 #******************************************************************************
 
+import json
 import sqlite3
 import zipfile
-import json
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from qgis.PyQt.QtCore import QDir, QTemporaryFile, QIODevice, QByteArray, QBuffer
 
-from mbutils import *
+from . import mbutils
 
 
 class DirectoryWriter:
@@ -40,11 +40,11 @@ class DirectoryWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
-    def writeTile(self, tile, image, format, quality):
+    def writeTile(self, tile, image, fileFormat, quality):
         path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
         dirPath = '%s/%s' % (self.output.absoluteFilePath(), path)
         QDir().mkpath(dirPath)
-        image.save('%s/%s.%s' % (dirPath, tile.y, format.lower()), format, quality)
+        image.save('%s/%s.%s' % (dirPath, tile.y, fileFormat.lower()), fileFormat, quality)
 
     def finalize(self):
         pass
@@ -55,19 +55,19 @@ class ZipWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
-        self.zipFile = zipfile.ZipFile(unicode(self.output.absoluteFilePath()), 'w')
+        self.zipFile = zipfile.ZipFile(self.output.absoluteFilePath(), 'w')
         self.tempFile = QTemporaryFile()
         self.tempFile.setAutoRemove(False)
         self.tempFile.open(QIODevice.WriteOnly)
         self.tempFileName = self.tempFile.fileName()
         self.tempFile.close()
 
-    def writeTile(self, tile, image, format, quality):
+    def writeTile(self, tile, image, fileFormat, quality):
         path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
 
-        image.save(self.tempFileName, format, quality)
-        tilePath = '%s/%s.%s' % (path, tile.y, format.lower())
-        self.zipFile.write(unicode(self.tempFileName), unicode(tilePath).encode('utf8'))
+        image.save(self.tempFileName, fileFormat, quality)
+        tilePath = '%s/%s.%s' % (path, tile.y, fileFormat.lower())
+        self.zipFile.write(self.tempFileName, tilePath)
 
     def finalize(self):
         self.tempFile.close()
@@ -81,8 +81,8 @@ class NGMArchiveWriter(ZipWriter):
         self.levels = {}
         self.__layerName = rootDir
 
-    def writeTile(self, tile, image, format, quality):
-        ZipWriter.writeTile(self, tile, image, format, quality)
+    def writeTile(self, tile, image, fileFormat, quality):
+        ZipWriter.writeTile(self, tile, image, fileFormat, quality)
         level = self.levels.get(tile.z, {"x": [], "y": []})
         level["x"].append(tile.x)
         level["y"].append(tile.y)
@@ -141,10 +141,10 @@ class MBTilesWriter:
         self.rootDir = rootDir
         self.compression = compression
         s = str(extent.xMinimum()) + ',' + str(extent.yMinimum()) + ',' + str(extent.xMaximum()) + ','+ str(extent.yMaximum())
-        self.connection = mbtiles_connect(unicode(self.output.absoluteFilePath()))
+        self.connection = mbutils.mbtiles_connect(str(self.output.absoluteFilePath()), True)
         self.cursor = self.connection.cursor()
-        optimize_connection(self.cursor)
-        mbtiles_setup(self.cursor)
+        mbutils.optimize_connection(self.cursor)
+        mbutils.mbtiles_setup(self.cursor)
         self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('name', rootDir))
         self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('description', 'Created with QTiles'))
         self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('format', formatext.lower()))
@@ -154,27 +154,27 @@ class MBTilesWriter:
         self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('version', '1.1'))
         self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('bounds', s))
         self.connection.commit()
-
-    def writeTile(self, tile, image, format, quality):
+        
+    def writeTile(self, tile, image, fileFormat, quality):
         data = QByteArray()
         buff = QBuffer(data)
-        image.save(buff, format, quality)
+        image.save(buff, fileFormat, quality)
 
         self.cursor.execute('''INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?);''', (tile.z, tile.x, tile.y, sqlite3.Binary(buff.data())))
         buff.close()
 
     def finalize(self):
-        optimize_database(self.connection)
+        mbutils.optimize_database(self.connection)
         self.connection.commit()
         if self.compression:
             # start compression
-            compression_prepare(self.cursor, self.connection)
+            mbutils.compression_prepare(self.cursor, self.connection)
             self.cursor.execute("select count(zoom_level) from tiles")
             res = self.cursor.fetchone()
             total_tiles = res[0]
-            compression_do(self.cursor, self.connection, total_tiles)
-            compression_finalize(self.cursor)
-            optimize_database(self.connection)
+            mbutils.compression_do(self.cursor, self.connection, total_tiles)
+            mbutils.compression_finalize(self.cursor)
+            mbutils.optimize_database(self.connection)
             self.connection.commit()
             # end compression
         self.connection.close()

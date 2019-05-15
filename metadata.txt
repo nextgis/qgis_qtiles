@@ -1,31 +1,12 @@
 [general]
-name=QTiles
-description=Generate tiles from QGIS project
+name=QTiles3
+description=Generate tiles from QGIS project. Ported to QGIS 3 with sponsorship by Gamaya SA (https://gamaya.com/). Enhanced by Nacho Urenda (nurenda@bcn.cat, Barcelona City Council).
 category=Plugins
-version=1.5.2
-qgisMinimumVersion=2.0
+version=1.7.1
+qgisMinimumVersion=3.0
 
-author=NextGIS
-email=info@nextgis.com
-
-changelog=1.5.2
-        * Removed the limitation of the maximum zoom
-        * Host css+js in local repository for LeafLet preview
-    1.5.1:
-        * create tiles for NextGIS Mobile
-        * add MBTiles compression
-        * add export MBTiles metadata to .json file
-        * add image overview for MBTiles
-        * add option for skiping tiles outside of layers extents (within combined extent)
-    1.5.0:
-        * change MBTiles parameters vаlues: format in lower case, description is 'Created with QTiles'
-        * tiles are now produced correctly when transparency is set
-        * geojson is now rendered correctly
-        * CRS shift when using 3857 is fixed
-    1.4.6:
-        * works fine now with non-english characters in folder names
-        * add MBTiles initialize arguments for Geopaparazzi4
-        * take into account the actual zoom level when generating tiles
+author=NextGIS, Alexander Bruy, Nacho Urenda
+email=nurenda@bcn.cat
 
 icon=icons/qtiles.png
 
@@ -33,9 +14,9 @@ tags=raster,tiles
 
 homepage=https://github.com/nextgis/QTiles
 tracker=https://github.com/nextgis/QTiles/issues
-repository=https://github.com/nextgis/QTiles
+repository=https://github.com/nextgis/qtiles
 
 experimental=True
 deprecated=False
 
-about=Generates raster tiles from QGIS project for selected zoom levels and tile naming conventions (Slippy Map or TMS). It can also package tiles for variety of formats and applications, NextGIS Mobile, GeoPaparazzi, simple Leaflet-based viewer and MBTiles.
+about=Generates raster tiles from QGIS project for selected zoom levels and tile naming conventions (Slippy Map or TMS). It can also package tiles for variety of formats and applications, GeoPaparazzi, simple Leaflet-based viewer and MBTiles. This is an ampliation of the QTiles3 original plugin with blank tiles detection and increased performance.

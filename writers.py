@@ -55,7 +55,7 @@ class ZipWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
-        self.zipFile = zipfile.ZipFile(unicode(self.output.absoluteFilePath()), 'w')
+        self.zipFile = zipfile.ZipFile(unicode(self.output.absoluteFilePath()), 'w', allowZip64=True)
         self.tempFile = QTemporaryFile()
         self.tempFile.setAutoRemove(False)
         self.tempFile.open(QIODevice.WriteOnly)

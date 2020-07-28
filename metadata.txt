@@ -2,13 +2,15 @@
 name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
-version=1.5.2
+version=1.5.3
 qgisMinimumVersion=2.0
 
 author=NextGIS
 email=info@nextgis.com
 
-changelog=1.5.2
+changelog=1.5.3
+        * Fix problem with 65356 tiles limit
+    1.5.2
         * Removed the limitation of the maximum zoom
         * Host css+js in local repository for LeafLet preview
     1.5.1:

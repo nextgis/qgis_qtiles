@@ -998,7 +998,7 @@
   <customwidget>
    <class>QgsCollapsibleGroupBox</class>
    <extends>QGroupBox</extends>
-   <header>qgscollapsiblegroupbox.h</header>
+   <header>qgis.gui.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

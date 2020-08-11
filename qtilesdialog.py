@@ -358,7 +358,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
                 self.chkLockRatio.setCheckState(Qt.Checked)
                 self.chkLockRatio.setEnabled(False)
                 self.cmbFormat.setCurrentIndex(0)
-                self.cmbFormat.setEnabled(False)
+                self.cmbFormat.setEnabled(True)
 
                 self.chkWriteOverview.setChecked(False)
                 self.chkWriteOverview.setEnabled(False)

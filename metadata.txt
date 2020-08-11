@@ -2,13 +2,15 @@
 name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
-version=1.5.3
+version=1.5.4
 qgisMinimumVersion=2.0
 
 author=NextGIS
 email=info@nextgis.com
 
-changelog=1.5.3
+changelog=1.5.4
+        * Allow JPG as format for NGRC
+    1.5.3
         * Fix problem with 65356 tiles limit
     1.5.2
         * Removed the limitation of the maximum zoom

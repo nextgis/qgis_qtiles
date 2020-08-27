@@ -36,6 +36,10 @@ from writers import *
 import resources_rc
 
 
+def printQtilesLog(msg, level=QgsMessageLog.INFO):
+    QgsMessageLog.logMessage(msg, 'QTiles', level)
+
+
 class TilingThread(QThread):
     rangeChanged = pyqtSignal(str, int)
     updateProgress = pyqtSignal()
@@ -256,7 +260,8 @@ class TilingThread(QThread):
         if self.minZoom <= tile.z and tile.z <= self.maxZoom:
             if not self.renderOutsideTiles:
                 for layer in self.layers:
-                    if layer.extent().intersects(tile.toRectangle()):
+                    t = QgsCoordinateTransform(layer.crs(), QgsCoordinateReferenceSystem('EPSG:4326'))
+                    if t.transform(layer.extent()).intersects(tile.toRectangle()):
                         self.tiles.append(tile)
                         break
             else:

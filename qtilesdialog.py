@@ -234,8 +234,13 @@ class QTilesDialog(QDialog, Ui_Dialog):
             extent = canvas.fullExtent()
         else:
             layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()))
-            extent = canvas.mapRenderer().layerExtentToOutputExtent(layer, layer.extent())
-        extent = QgsCoordinateTransform(canvas.mapRenderer().destinationCrs(), QgsCoordinateReferenceSystem('EPSG:4326')).transform(extent)
+            extent = canvas.mapSettings().layerExtentToOutputExtent(layer, layer.extent())
+        
+        extent = QgsCoordinateTransform(
+            canvas.mapSettings().destinationCrs(),
+            QgsCoordinateReferenceSystem('EPSG:4326')
+        ).transform(extent)
+
         arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
         extent = extent.intersect(QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
         layers = canvas.layers()

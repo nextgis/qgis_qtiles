@@ -2,13 +2,16 @@
 name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
-version=1.5.4
-qgisMinimumVersion=2.0
+version=1.5.5
+qgisMinimumVersion=2.4
 
 author=NextGIS
 email=info@nextgis.com
 
-changelog=1.5.4
+changelog=1.5.5
+        * Fix rendering of tiles outside of layer extent
+        * Fix qgis warnings
+    1.5.4
         * Allow JPG as format for NGRC
     1.5.3
         * Fix problem with 65356 tiles limit

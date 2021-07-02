@@ -29,10 +29,9 @@ import sqlite3
 import zipfile
 import json
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice, QTemporaryFile, QDir
 
-from mbutils import *
+from .mbutils import *
 
 
 class DirectoryWriter:
@@ -55,7 +54,7 @@ class ZipWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
-        self.zipFile = zipfile.ZipFile(unicode(self.output.absoluteFilePath()), 'w', allowZip64=True)
+        self.zipFile = zipfile.ZipFile(str(self.output.absoluteFilePath()), 'w', allowZip64=True)
         self.tempFile = QTemporaryFile()
         self.tempFile.setAutoRemove(False)
         self.tempFile.open(QIODevice.WriteOnly)
@@ -67,7 +66,7 @@ class ZipWriter:
 
         image.save(self.tempFileName, format, quality)
         tilePath = '%s/%s.%s' % (path, tile.y, format.lower())
-        self.zipFile.write(unicode(self.tempFileName), unicode(tilePath).encode('utf8'))
+        self.zipFile.write(bytes(str(self.tempFileName).encode('utf8')), tilePath)
 
     def finalize(self):
         self.tempFile.close()
@@ -111,7 +110,7 @@ class NGMArchiveWriter(ZipWriter):
             "visible": True
         }
 
-        for level, coords in self.levels.items():
+        for level, coords in list(self.levels.items()):
             level_json = {
                 "level": level,
                 "bbox_maxx": max(coords["x"]),
@@ -141,7 +140,7 @@ class MBTilesWriter:
         self.rootDir = rootDir
         self.compression = compression
         s = str(extent.xMinimum()) + ',' + str(extent.yMinimum()) + ',' + str(extent.xMaximum()) + ','+ str(extent.yMaximum())
-        self.connection = mbtiles_connect(unicode(self.output.absoluteFilePath()))
+        self.connection = mbtiles_connect(str(self.output.absoluteFilePath()))
         self.cursor = self.connection.cursor()
         optimize_connection(self.cursor)
         mbtiles_setup(self.cursor)

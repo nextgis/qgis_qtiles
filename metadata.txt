@@ -2,13 +2,17 @@
 name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
-version=1.5.5
+version=1.6.0
 qgisMinimumVersion=2.4
+qgisMaximumVersion=3.99
 
 author=NextGIS
 email=info@nextgis.com
 
-changelog=1.5.5
+changelog=
+    1.6.0
+        * QGIS 3 support added
+    1.5.5
         * Fix rendering of tiles outside of layer extent
         * Fix qgis warnings
     1.5.4

@@ -28,15 +28,17 @@ import time
 import codecs
 import json
 from string import Template
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from qgis.core import *
-from tile import Tile
-from writers import *
-import resources_rc
+from qgis.PyQt.QtCore import QIODevice, QFile, QMutex, QThread, Qt, pyqtSignal
+from qgis.PyQt.QtGui import QImage, QPainter, QColor
+from qgis.PyQt.QtWidgets import *
+from qgis.core import QgsMapRendererCustomPainterJob, QgsMapSettings, QgsProject, QgsMessageLog, QgsScaleCalculator
+from .tile import Tile
+from .writers import *
+from .compat import QGis, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsMessageLogInfo, QGIS_VERSION_3
+from . import resources_rc
 
 
-def printQtilesLog(msg, level=QgsMessageLog.INFO):
+def printQtilesLog(msg, level=QgsMessageLogInfo):
     QgsMessageLog.logMessage(msg, 'QTiles', level)
 
 
@@ -64,7 +66,7 @@ class TilingThread(QThread):
         if rootDir:
             self.rootDir = rootDir
         else:
-            self.rootDir = 'tileset_%s' % unicode(time.time()).split('.')[0]
+            self.rootDir = 'tileset_%s' % str(time.time()).split('.')[0]
         self.antialias = antialiasing
         self.tmsConvention = tmsConvention
         self.mbtilesCompression = mbtilesCompression
@@ -94,19 +96,29 @@ class TilingThread(QThread):
         myBlue = QgsProject.instance().readNumEntry('Gui', '/CanvasColorBluePart', 255)[0]
         self.color = QColor(myRed, myGreen, myBlue, transp)
         image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
-        self.projector = QgsCoordinateTransform(QgsCoordinateReferenceSystem('EPSG:4326'), QgsCoordinateReferenceSystem('EPSG:3395'))
+        self.projector = QgsCoordinateTransform(QgsCoordinateReferenceSystem.fromEpsgId(4326), QgsCoordinateReferenceSystem.fromEpsgId(3395))
         self.scaleCalc = QgsScaleCalculator()
         self.scaleCalc.setDpi(image.logicalDpiX())
-        self.scaleCalc.setMapUnits(QgsCoordinateReferenceSystem('EPSG:3395').mapUnits())
+        self.scaleCalc.setMapUnits(QgsCoordinateReferenceSystem.fromEpsgId(3395).mapUnits())
         self.settings = QgsMapSettings()
         self.settings.setBackgroundColor(self.color)
-        self.settings.setCrsTransformEnabled(True)
+
+        if not QGIS_VERSION_3:
+            self.settings.setCrsTransformEnabled(True)
+
         self.settings.setOutputDpi(image.logicalDpiX())
         self.settings.setOutputImageFormat(QImage.Format_ARGB32_Premultiplied)
-        self.settings.setDestinationCrs(QgsCoordinateReferenceSystem('EPSG:3395'))
+        self.settings.setDestinationCrs(QgsCoordinateReferenceSystem.fromEpsgId(3395))
         self.settings.setOutputSize(image.size())
-        self.settings.setLayers(self.layersId)
-        self.settings.setMapUnits(QgsCoordinateReferenceSystem('EPSG:3395').mapUnits())
+
+        if QGIS_VERSION_3:
+            self.settings.setLayers(self.layers)
+        else:
+            self.settings.setLayers(self.layersId)
+
+        if not QGIS_VERSION_3:
+            self.settings.setMapUnits(QgsCoordinateReferenceSystem.fromEpsgId(3395).mapUnits())
+
         if self.antialias:
             self.settings.setFlag(QgsMapSettings.Antialiasing, True)
         else:
@@ -234,7 +246,7 @@ class TilingThread(QThread):
     def writeLeafletViewer(self):
         templateFile = QFile(':/resources/viewer.html')
         if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
-            viewer = MyTemplate(unicode(templateFile.readAll()))
+            viewer = MyTemplate(str(templateFile.readAll()))
 
             tilesDir = '%s/%s' % (self.output.absoluteFilePath(), self.rootDir)
             useTMS = 'true' if self.tmsConvention else 'false'
@@ -260,15 +272,15 @@ class TilingThread(QThread):
         if self.minZoom <= tile.z and tile.z <= self.maxZoom:
             if not self.renderOutsideTiles:
                 for layer in self.layers:
-                    t = QgsCoordinateTransform(layer.crs(), QgsCoordinateReferenceSystem('EPSG:4326'))
+                    t = QgsCoordinateTransform(layer.crs(), QgsCoordinateReferenceSystem.fromEpsgId(4326))
                     if t.transform(layer.extent()).intersects(tile.toRectangle()):
                         self.tiles.append(tile)
                         break
             else:
                 self.tiles.append(tile)
         if tile.z < self.maxZoom:
-            for x in xrange(2 * tile.x, 2 * tile.x + 2, 1):
-                for y in xrange(2 * tile.y, 2 * tile.y + 2, 1):
+            for x in range(2 * tile.x, 2 * tile.x + 2, 1):
+                for y in range(2 * tile.y, 2 * tile.y + 2, 1):
                     self.mutex.lock()
                     s = self.stopMe
                     self.mutex.unlock()

@@ -28,15 +28,21 @@ import os
 import locale
 import math
 import operator
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from qgis.core import *
-import tilingthread
-from ui.ui_qtilesdialogbase import Ui_Dialog
-import qtiles_utils as utils
 
+from qgis.PyQt.QtCore import QFileInfo, Qt, QDir, pyqtSignal, pyqtSlot
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox, QMessageBox
+from qgis.PyQt import uic
+from qgis.core import QgsRectangle
 
-class QTilesDialog(QDialog, Ui_Dialog):
+from . import tilingthread
+from . import qtiles_utils as utils
+
+from .compat import QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsSettings
+
+FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ui/qtilesdialogbase.ui'))
+
+class QTilesDialog(QDialog, FORM_CLASS):
     # MAX_ZOOM_LEVEL = 18
     MIN_ZOOM_LEVEL = 0
 
@@ -64,7 +70,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
             self.tr('ZIP archives (*.zip *.ZIP)'): '.zip',
             self.tr('MBTiles databases (*.mbtiles *.MBTILES)'): '.mbtiles'}
 
-        self.settings = QSettings('NextGIS', 'QTiles')
+        self.settings = QgsSettings('NextGIS', 'QTiles')
         self.grpParameters.setSettings(self.settings)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
         self.rbExtentLayer.toggled.connect(self.__toggleLayerSelector)
@@ -121,9 +127,8 @@ class QTilesDialog(QDialog, Ui_Dialog):
 
     def manageGui(self):
         layers = utils.getMapLayers()
-        relations = self.iface.legendInterface().groupLayerRelationship()
-        for layer in sorted(layers.iteritems(), cmp=locale.strcoll, key=operator.itemgetter(1)):
-            groupName = utils.getLayerGroup(relations, layer[0])
+        for layer in sorted(iter(list(layers.items())), key=operator.itemgetter(1)):
+            groupName = utils.getLayerGroup(layer[0])
             if groupName == '':
                 self.cmbLayers.addItem(layer[1], layer[0])
             else:
@@ -238,7 +243,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
         
         extent = QgsCoordinateTransform(
             canvas.mapSettings().destinationCrs(),
-            QgsCoordinateReferenceSystem('EPSG:4326')
+            QgsCoordinateReferenceSystem.fromEpsgId(4326)
         ).transform(extent)
 
         arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
@@ -392,7 +397,7 @@ class QTilesDialog(QDialog, Ui_Dialog):
     def __select_output(self):
         if self.rbOutputZip.isChecked():
             file_directory = QFileInfo(self.settings.value('outputToZip_Path', '.')).absolutePath()
-            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), file_directory, ';;'.join(self.FORMATS.iterkeys()), self.FORMATS.keys()[self.FORMATS.values().index('.zip')])
+            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), file_directory, ';;'.join(iter(list(self.FORMATS.keys()))), list(self.FORMATS.keys())[list(self.FORMATS.values()).index('.zip')])
             if not outPath:
                 return
             if not outPath.lower().endswith(self.FORMATS[outFilter]):

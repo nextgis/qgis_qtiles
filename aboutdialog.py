@@ -27,17 +27,18 @@
 
 
 import os
-import ConfigParser
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from qgis.PyQt.QtCore import QSettings, QUrl, QLocale
+from qgis.PyQt.QtGui import QDesktopServices, QTextDocument, QPixmap
+from qgis.PyQt.QtWidgets import QDialogButtonBox, QDialog
+from qgis.PyQt import uic
 
-from ui.ui_aboutdialogbase import Ui_Dialog
+from . import resources_rc
+from .compat import configparser
 
-import resources_rc
+FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ui/aboutdialogbase.ui'))
 
-
-class AboutDialog(QDialog, Ui_Dialog):
+class AboutDialog(QDialog, FORM_CLASS):
     def __init__(self):
         QDialog.__init__(self)
         self.setupUi(self)
@@ -46,7 +47,7 @@ class AboutDialog(QDialog, Ui_Dialog):
 
         self.lblLogo.setPixmap(QPixmap(':/icons/qtiles.png'))
 
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.SafeConfigParser()
         cfg.read(os.path.join(os.path.dirname(__file__), 'metadata.txt'))
         version = cfg.get('general', 'version')
 

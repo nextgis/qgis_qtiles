@@ -38,7 +38,7 @@ def mbtiles_connect(mbtiles_file):
     try:
         con = sqlite3.connect(mbtiles_file, check_same_thread=False)
         return con
-    except Exception, e:
+    except Exception as e:
         logger.error("Could not connect to database")
         logger.exception(e)
         sys.exit(1)
@@ -149,7 +149,7 @@ def disk_to_mbtiles(directory_path, mbtiles_file, **kwargs):
     try:
         metadata = json.load(open(os.path.join(directory_path, 'metadata.json'), 'r'))
         image_format = kwargs.get('format')
-        for name, value in metadata.items():
+        for name, value in list(metadata.items()):
             cur.execute('insert into metadata (name, value) values (?, ?)',
                 (name, value))
         logger.info('metadata from metadata.json restored')
@@ -245,7 +245,7 @@ def mbtiles_to_disk(mbtiles_file, directory_path, **kwargs):
         y = t[2]
         if kwargs.get('scheme') == 'xyz':
             y = flip_y(z,y)
-            print 'flipping'
+            print('flipping')
             tile_dir = os.path.join(base_path, str(z), str(x))
         elif kwargs.get('scheme') == 'wms':
             tile_dir = os.path.join(base_path,

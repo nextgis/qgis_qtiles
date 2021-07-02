@@ -27,5 +27,5 @@
 
 
 def classFactory(iface):
-    from qtiles import QTilesPlugin
+    from .qtiles import QTilesPlugin
     return QTilesPlugin(iface)

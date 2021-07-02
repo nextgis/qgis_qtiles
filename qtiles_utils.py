@@ -26,27 +26,26 @@
 #******************************************************************************
 
 
-from PyQt4.QtCore import *
-
+from qgis.PyQt.QtCore import *
 from qgis.core import *
+
+from .compat import mapLayers
 
 
 def getMapLayers():
-    layerMap = QgsMapLayerRegistry.instance().mapLayers()
     layers = dict()
-    for name, layer in layerMap.iteritems():
+    for name, layer in list(mapLayers().items()):
         if layer.type() == QgsMapLayer.VectorLayer:
-            if layer.id() not in layers.keys():
-                layers[layer.id()] = unicode(layer.name())
+            if layer.id() not in list(layers.keys()):
+                layers[layer.id()] = str(layer.name())
         if layer.type() == QgsMapLayer.RasterLayer and layer.providerType() == 'gdal':
-            if layer.id() not in layers.keys():
-                layers[layer.id()] = unicode(layer.name())
+            if layer.id() not in list(layers.keys()):
+                layers[layer.id()] = str(layer.name())
     return layers
 
 
 def getLayerById(layerId):
-    layerMap = QgsMapLayerRegistry.instance().mapLayers()
-    for name, layer in layerMap.iteritems():
+    for name, layer in list(mapLayers().items()):
         if layer.id() == layerId:
             if layer.isValid():
                 return layer
@@ -54,13 +53,5 @@ def getLayerById(layerId):
                 return None
 
 
-def getLayerGroup(relations, layerId):
-    group = None
-
-    for item in relations:
-        group = unicode(item[0])
-        for lid in item[1]:
-            if unicode(lid) == unicode(layerId):
-                return group
-
-    return group
+def getLayerGroup(layerId):
+    return QgsProject.instance().layerTreeRoot().findLayer(layerId).parent().name()

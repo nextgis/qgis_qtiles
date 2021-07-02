@@ -26,24 +26,26 @@
 #******************************************************************************
 
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from qgis.PyQt.QtCore import QCoreApplication, QSettings, QLocale, QTranslator, QFileInfo
+from qgis.PyQt.QtWidgets import QAction, QMessageBox
+from qgis.PyQt.QtGui import QIcon
 
 from qgis.core import *
 
-import qtilesdialog
-import aboutdialog
+from . import qtilesdialog
+from . import aboutdialog
+from . import resources_rc
 
-import resources_rc
+from .compat import QGis, qgisUserDatabaseFilePath
 
 
 class QTilesPlugin:
     def __init__(self, iface):
         self.iface = iface
 
-        self.qgsVersion = unicode(QGis.QGIS_VERSION_INT)
+        self.qgsVersion = str(QGis.QGIS_VERSION_INT)
 
-        userPluginPath = QFileInfo(QgsApplication.qgisUserDbFilePath()).path() + '/python/plugins/qtiles'
+        userPluginPath = QFileInfo(qgisUserDatabaseFilePath()).path() + '/python/plugins/qtiles'
         systemPluginPath = QgsApplication.prefixPath() + '/python/plugins/qtiles'
 
         overrideLocale = QSettings().value('locale/overrideFlag', False, type=bool)

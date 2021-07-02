@@ -46,7 +46,7 @@ homepage=https://github.com/nextgis/QTiles
 tracker=https://github.com/nextgis/QTiles/issues
 repository=https://github.com/nextgis/QTiles
 
-experimental=True
+experimental=False
 deprecated=False
 
 about=Generates raster tiles from QGIS project for selected zoom levels and tile naming conventions (Slippy Map or TMS). It can also package tiles for variety of formats and applications, NextGIS Mobile, GeoPaparazzi, simple Leaflet-based viewer and MBTiles.

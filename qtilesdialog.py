@@ -31,7 +31,7 @@ import operator
 
 from qgis.PyQt.QtCore import QFileInfo, Qt, QDir, pyqtSignal, pyqtSlot
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox, QMessageBox
+from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox, QMessageBox, QFileDialog
 from qgis.PyQt import uic
 from qgis.core import QgsRectangle
 
@@ -397,7 +397,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
     def __select_output(self):
         if self.rbOutputZip.isChecked():
             file_directory = QFileInfo(self.settings.value('outputToZip_Path', '.')).absolutePath()
-            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), file_directory, ';;'.join(iter(list(self.FORMATS.keys()))), list(self.FORMATS.keys())[list(self.FORMATS.values()).index('.zip')])
+            outPath, outFilter = QFileDialog.getSaveFileName(self, self.tr('Save to file'), file_directory, ';;'.join(iter(list(self.FORMATS.keys()))), list(self.FORMATS.keys())[list(self.FORMATS.values()).index('.zip')])
             if not outPath:
                 return
             if not outPath.lower().endswith(self.FORMATS[outFilter]):
@@ -415,7 +415,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         elif self.rbOutputNGM.isChecked():
             zip_directory = QFileInfo(self.settings.value('outputToNGM_Path', '.')).absolutePath()
-            outPath, outFilter = QFileDialog.getSaveFileNameAndFilter(self, self.tr('Save to file'), zip_directory, 'ngrc')
+            outPath, outFilter = QFileDialog.getSaveFileName(self, self.tr('Save to file'), zip_directory, 'ngrc')
             if not outPath:
                 return
             if not outPath.lower().endswith('ngrc'):

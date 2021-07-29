@@ -124,7 +124,7 @@ class NGMArchiveWriter(ZipWriter):
         tempFile = QTemporaryFile()
         tempFile.setAutoRemove(False)
         tempFile.open(QIODevice.WriteOnly)
-        tempFile.write(json.dumps(archive_info))
+        tempFile.write(bytes(json.dumps(archive_info).encode('utf8')))
         tempFileName = tempFile.fileName()
         tempFile.close()
 

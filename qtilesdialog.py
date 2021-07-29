@@ -192,6 +192,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
         elif self.rbOutputNGM.isChecked():
             output = self.leTilesFroNGM.text()
 
+        if  self.rbExtentLayer.isChecked() and self.cmbLayers.currentIndex() < 0:
+            QMessageBox.warning(self, self.tr('Layer not selected'), self.tr('Please select a layer and try again.'))
+            return
+
         if not output:
             QMessageBox.warning(self, self.tr('No output'), self.tr('Output path is not set. Please enter correct path and try again.'))
             return

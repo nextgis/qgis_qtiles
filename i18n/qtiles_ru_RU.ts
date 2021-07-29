@@ -361,6 +361,16 @@ Plugin will not be enabled.</source>
         <translation>Не указан путь назначения. Пожалуйста, введите правильный путь и попробуйте ещё раз.</translation>
     </message>
     <message>
+        <location filename="qtilesdialog.py" line="196"/>
+        <source>Layer not selected</source>
+        <translation>Слой не выбран</translation>
+    </message>
+    <message>
+        <location filename="qtilesdialog.py" line="196"/>
+        <source>Please select a layer and try again.</source>
+        <translation>Пожалуйста, выберите слой и попробуйте еще раз.</translation>
+    </message>
+    <message>
         <location filename="qtilesdialog.py" line="194"/>
         <source>Directory not empty</source>
         <translation>Каталог не пуст</translation>

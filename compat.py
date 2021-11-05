@@ -31,6 +31,7 @@ import os
 import sys
 
 from qgis import core
+from qgis.PyQt.QtWidgets import QFileDialog
 
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
@@ -94,3 +95,10 @@ class QgsCoordinateReferenceSystem(core.QgsCoordinateReferenceSystem):
             return core.QgsCoordinateReferenceSystem.fromEpsgId(id)
         else:
             return core.QgsCoordinateReferenceSystem(id)
+
+def getSaveFileName(parent, title, directory, filter):
+    if QGIS_VERSION_3:
+        outPath, outFilter = QFileDialog.getSaveFileName(parent, title, directory, filter)
+    else:
+        outPath = QFileDialog.getSaveFileName(parent, title, directory, filter)
+    return outPath

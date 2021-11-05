@@ -2,7 +2,7 @@
 name=QTiles
 description=Generate tiles from QGIS project
 category=Plugins
-version=1.7.0
+version=1.7.1
 qgisMinimumVersion=2.4
 qgisMaximumVersion=3.99
 
@@ -10,6 +10,8 @@ author=NextGIS
 email=info@nextgis.com
 
 changelog=
+    1.7.1
+        * Fixed file selection dialog
     1.7.0
         * Fixed bugs
     1.6.0

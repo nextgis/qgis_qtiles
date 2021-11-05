@@ -38,7 +38,7 @@ from qgis.core import QgsRectangle
 from . import tilingthread
 from . import qtiles_utils as utils
 
-from .compat import QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsSettings
+from .compat import QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsSettings, getSaveFileName
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ui/qtilesdialogbase.ui'))
 
@@ -401,11 +401,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
     def __select_output(self):
         if self.rbOutputZip.isChecked():
             file_directory = QFileInfo(self.settings.value('outputToZip_Path', '.')).absolutePath()
-            outPath, outFilter = QFileDialog.getSaveFileName(self, self.tr('Save to file'), file_directory, ';;'.join(iter(list(self.FORMATS.keys()))), list(self.FORMATS.keys())[list(self.FORMATS.values()).index('.zip')])
+            outPath = getSaveFileName(self, self.tr('Save to file'), file_directory, ';;'.join(iter(list(self.FORMATS.keys()))))
             if not outPath:
                 return
-            if not outPath.lower().endswith(self.FORMATS[outFilter]):
-                outPath += self.FORMATS[outFilter]
             self.leZipFileName.setText(outPath)
             self.settings.setValue('outputToZip_Path', QFileInfo(outPath).absoluteFilePath())
 
@@ -419,7 +417,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         elif self.rbOutputNGM.isChecked():
             zip_directory = QFileInfo(self.settings.value('outputToNGM_Path', '.')).absolutePath()
-            outPath, outFilter = QFileDialog.getSaveFileName(self, self.tr('Save to file'), zip_directory, 'ngrc')
+            outPath = getSaveFileName(self, self.tr('Save to file'), zip_directory, 'ngrc')
             if not outPath:
                 return
             if not outPath.lower().endswith('ngrc'):

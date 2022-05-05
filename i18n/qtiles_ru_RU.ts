@@ -11,32 +11,32 @@
     <message>
         <location filename="aboutdialog.py" line="71"/>
         <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;
-&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;
+&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;
 specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Please report bugs at &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;https://nextgis.com&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;https://hub.qgis.org/projects/qtiles&quot;&gt;https://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Please report bugs at &lt;a href=&quot;https://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
 </source>
         <translation type="obsolete">&lt;p&gt;Создание тайлов из проектов QGIS.&lt;/p&gt;
-&lt;p&gt;Модуль создаёт растровые тайлы из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
+&lt;p&gt;Модуль создаёт растровые тайлы из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;https://nextgis.com&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;https://hub.qgis.org/projects/qtiles&quot;&gt;https://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;https://hub.qgis.org/projects/qtiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="aboutdialog.py" line="71"/>
         <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;
-&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;
+&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;
 specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Please report bugs at &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;https://nextgis.com&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;https://hub.qgis.org/projects/qtiles&quot;&gt;https://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Please report bugs at &lt;a href=&quot;https://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
 </source>
         <translation type="obsolete">&lt;p&gt;Создание тайлов из проектов QGIS.&lt;/p&gt;
-&lt;p&gt;Модуль создаёт растровые тайлы из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov и Giovanni Allegri.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
+&lt;p&gt;Модуль создаёт растровые тайлы из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;https://nextgis.com&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov и Giovanni Allegri.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;https://hub.qgis.org/projects/qtiles&quot;&gt;https://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;https://hub.qgis.org/projects/qtiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="aboutdialog.py" line="53"/>
@@ -46,26 +46,26 @@ specification. Output tiles can be saved in directory or as zip archive.&lt;/p&g
     <message>
         <location filename="aboutdialog.py" line="78"/>
         <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;
-    &lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;
+    &lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;
     specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;
-    &lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;
-    &lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;http://hub.qgis.org/projects/qtiles&quot;&gt;http://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
-    &lt;p&gt;Please report bugs at &lt;a href=&quot;http://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
+    &lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;https://nextgis.com&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;
+    &lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;https://hub.qgis.org/projects/qtiles&quot;&gt;https://hub.qgis.org/projects/qtiles&lt;/a&gt;&lt;/p&gt;
+    &lt;p&gt;Please report bugs at &lt;a href=&quot;https://hub.qgis.org/projects/qtiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;
     </source>
         <translation type="obsolete">&lt;p&gt;Создание набора тайлов из проектов QGIS.&lt;/p&gt;
-&lt;p&gt;Модуль создаёт набор растровых тайлов из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov и Giovanni Allegri.&lt;/p&gt;
+&lt;p&gt;Модуль создаёт набор растровых тайлов из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: Alexander Bruy (&lt;a href=&quot;https://nextgis.com&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov и Giovanni Allegri.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;Сообщения об ошибках оставляйте в &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;багтрекере&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="aboutdialog.py" line="81"/>
-        <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt; specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles/issues&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Please report bugs at &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt; specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles/issues&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Please report bugs at &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Создание набора тайлов из проектов QGIS.&lt;/p&gt;&lt;p&gt;Модуль создаёт набор растровых тайлов из проекта QGIS в соответствии со спецификацией &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt;. Полученные тайлы могут быть записаны в каталог или упакованы в zip архив.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Разработчики&lt;/strong&gt;: (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), фрагменты кода Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Домашняя страница&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles/issues&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Please report bugs at &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="aboutdialog.py" line="78"/>
-        <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt; specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Please report bugs at &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Generate tiles from QGIS project.&lt;/p&gt;&lt;p&gt;Plugin generates raster tiles from QGIS project corresponding to &lt;a href=&quot;https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames&quot;&gt;Slippy Map&lt;/a&gt; specification. Output tiles can be saved in directory or as zip archive.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Developers&lt;/strong&gt;: (&lt;a href=&quot;http://nextgis.org&quot;&gt;NextGIS&lt;/a&gt;), portions of code by Andrew Naplavkov and Giovanni Allegri.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Homepage&lt;/strong&gt;: &lt;a href=&quot;https://github.com/nextgis/QTiles&quot;&gt;https://github.com/nextgis/QTiles&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Please report bugs at &lt;a href=&quot;https://github.com/nextgis/QTiles/issues&quot;&gt;bugtracker&lt;/a&gt;&lt;/p&gt;</source>
         <translation></translation>
     </message>
 </context>

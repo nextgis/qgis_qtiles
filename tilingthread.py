@@ -6,7 +6,7 @@
 # ---------------------------------------------------------
 # Generates tiles from QGIS project
 #
-# Copyright (C) 2012-2014 NextGIS (info@nextgis.org)
+# Copyright (C) 2012-2022 NextGIS (info@nextgis.com)
 #
 # This source is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free

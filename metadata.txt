@@ -1,6 +1,7 @@
 [general]
 name=QTiles
-description=Generate tiles from QGIS project
+description=Generate map tiles from a QGIS project
+about=Generates raster tiles from QGIS project for selected zoom levels and tile naming conventions (Slippy Map or TMS). Package tiles for NextGIS Mobile, GeoPaparazzi, simple Leaflet-based viewer or MBTiles. Developed by NextGIS. Any feedback is welcome at https://nextgis.com/contact
 category=Plugins
 version=1.7.1
 qgisMinimumVersion=2.4
@@ -52,5 +53,3 @@ repository=https://github.com/nextgis/QTiles
 
 experimental=False
 deprecated=False
-
-about=Generates raster tiles from QGIS project for selected zoom levels and tile naming conventions (Slippy Map or TMS). It can also package tiles for variety of formats and applications, NextGIS Mobile, GeoPaparazzi, simple Leaflet-based viewer and MBTiles.

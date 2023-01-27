@@ -214,7 +214,7 @@ class TilingThread(QThread):
         image = QImage(self.settings.outputSize(), QImage.Format_ARGB32)
         image.fill(Qt.transparent)
 
-        dpm = self.settings.outputDpi() / 25.4 * 1000
+        dpm = round(self.settings.outputDpi() / 25.4 * 1000)
         image.setDotsPerMeterX(dpm)
         image.setDotsPerMeterY(dpm)
 
@@ -299,7 +299,7 @@ class TilingThread(QThread):
         image = QImage(self.settings.outputSize(), QImage.Format_ARGB32)
         image.fill(Qt.transparent)
 
-        dpm = self.settings.outputDpi() / 25.4 * 1000
+        dpm = round(self.settings.outputDpi() / 25.4 * 1000)
         image.setDotsPerMeterX(dpm)
         image.setDotsPerMeterY(dpm)
 

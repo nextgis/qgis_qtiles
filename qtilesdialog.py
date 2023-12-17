@@ -34,6 +34,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox, QMessageBox, QFileDialog
 from qgis.PyQt import uic
 from qgis.core import QgsRectangle
+from qgis.gui import QgsGui
 
 from . import tilingthread
 from . import qtiles_utils as utils
@@ -49,6 +50,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
     def __init__(self, iface):
         QDialog.__init__(self)
         self.setupUi(self)
+
+        self.setObjectName("qtiles_main_window")
+        QgsGui.enableAutoGeometryRestore(self, "qtiles_main_window")
 
         self.btnOk = self.buttonBox.addButton(self.tr("Run"), QDialogButtonBox.AcceptRole)
 

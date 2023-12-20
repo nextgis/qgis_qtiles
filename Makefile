@@ -15,6 +15,9 @@ PRO_FILES=$(wildcard $(PRO_PATH)/*.pro)
 
 ALL_FILES= ${RES_FILES} ${UI_FILES} ${LANG_FILES}
 
+TS_PATH=i18n
+TS_FILE=$(TS_PATH)/qtiles_ru.ts
+
 all: $(ALL_FILES)
 
 ui: $(UI_FILES)
@@ -42,14 +45,21 @@ pep8:
 	@echo "-----------"
 	@pep8 --repeat --ignore=E203,E121,E122,E123,E124,E125,E126,E127,E128 --exclude mbutils.py,resources_rc.py . || true
 
+compile_ts:
+	lrelease $(TS_FILE)
+
 clean:
 	rm -f $(ALL_FILES)
 	find -name "*.pyc" -exec rm -f {} \;
 	rm -f *.zip
 
-package:
-	cd .. && rm -f *.zip && zip -r qtiles.zip qtiles -x \*.pyc \*.ts \*.ui \*.qrc \*.pro \*~ \*.git\* \resources\* \*Makefile*
+zip:
+	cd .. && rm -f *.zip && zip -r qtiles.zip qtiles -x \*.pyc \*.ts \*.qrc \*.pro \*~ \*.git\* \resources\* \*Makefile*
 	mv ../qtiles.zip .
+
+package: compile_ts zip
+	rm $(TS_PATH)/*.qm
+
 
 upload:
 	plugin_uploaderNG.py qtiles.zip

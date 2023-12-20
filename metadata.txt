@@ -1,8 +1,9 @@
 [general]
 name=QTiles
 description=Generate map tiles from a QGIS project
+description[ru]=Создание фрагментов карты из проекта QGIS
 about=Generates raster tiles from QGIS project for selected zoom levels and tile naming conventions (Slippy Map or TMS). Package tiles for NextGIS Mobile, GeoPaparazzi, simple Leaflet-based viewer or MBTiles. Developed by NextGIS. Any feedback is welcome at https://nextgis.com/contact
-category=Plugins
+about[ru]=Генерирует растровые плитки из проекта QGIS для выбранных уровней масштабирования и соглашений об именах плиток (Slippy Map или TMS). Пакет плиток для NextGIS Mobile, GeoPaparazzi, простой программы просмотра листовок или MBTiles. Разработан компанией NextGIS. Любые отзывы приветствуются на https://nextgis.com/contact.category=Plugins
 version=1.7.1
 qgisMinimumVersion=2.4
 qgisMaximumVersion=3.99
@@ -50,6 +51,8 @@ tags=raster,tiles
 homepage=https://github.com/nextgis/QTiles
 tracker=https://github.com/nextgis/QTiles/issues
 repository=https://github.com/nextgis/QTiles
+video=https://youtu.be/vU4bGCh5khM
+video[ru]=https://youtu.be/Lk-i4Az0SEo
 
 experimental=False
 deprecated=False

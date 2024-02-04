@@ -130,8 +130,6 @@ def compression_finalize(cur):
     cur.execute("""
           CREATE UNIQUE INDEX images_id on images
             (tile_id);""")
-    cur.execute("""vacuum;""")
-    cur.execute("""analyze;""")
 
 def getDirs(path):
     return [name for name in os.listdir(path)

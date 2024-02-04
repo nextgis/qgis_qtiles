@@ -63,8 +63,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>367</width>
-        <height>429</height>
+        <width>365</width>
+        <height>625</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -82,7 +82,16 @@
        </property>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
-         <property name="margin">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
           <number>0</number>
          </property>
          <item>
@@ -138,16 +147,19 @@
           </property>
           <item>
            <layout class="QGridLayout" name="gridLayout_4">
-            <property name="verticalSpacing">
-             <number>3</number>
-            </property>
             <property name="leftMargin">
              <number>0</number>
+            </property>
+            <property name="verticalSpacing">
+             <number>3</number>
             </property>
             <item row="2" column="2">
              <widget class="QLineEdit" name="leTilesFroNGM">
               <property name="toolTip">
                <string/>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
               </property>
               <property name="placeholderText">
                <string/>
@@ -232,6 +244,9 @@
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
                </widget>
               </item>
              </layout>
@@ -273,6 +288,9 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
              </widget>
             </item>
             <item row="1" column="3">
@@ -284,7 +302,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>...</string>
+               <string>Select</string>
               </property>
              </widget>
             </item>
@@ -542,13 +560,13 @@
          <property name="title">
           <string>Parameters</string>
          </property>
-         <property name="collapsed">
+         <property name="collapsed" stdset="0">
           <bool>true</bool>
          </property>
-         <property name="scrollOnExpand">
+         <property name="scrollOnExpand" stdset="0">
           <bool>true</bool>
          </property>
-         <property name="saveCollapsedState">
+         <property name="saveCollapsedState" stdset="0">
           <bool>true</bool>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -650,7 +668,16 @@
               <property name="spacing">
                <number>0</number>
               </property>
-              <property name="margin">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
                <number>0</number>
               </property>
               <item>
@@ -991,8 +1018,6 @@
     </layout>
    </item>
   </layout>
-  <zorder>horizontalLayoutWidget_2</zorder>
-  <zorder>scrollArea</zorder>
  </widget>
  <customwidgets>
   <customwidget>

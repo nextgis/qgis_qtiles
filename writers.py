@@ -54,6 +54,9 @@ class ZipWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
+        if os.path.exists(self.output):
+            os.remove(self.output)
+
         self.zipFile = zipfile.ZipFile(str(self.output.absoluteFilePath()), 'w', allowZip64=True)
         self.tempFile = QTemporaryFile()
         self.tempFile.setAutoRemove(False)
@@ -163,7 +166,6 @@ class MBTilesWriter:
         buff.close()
 
     def finalize(self):
-        optimize_database(self.connection)
         self.connection.commit()
         if self.compression:
             # start compression
@@ -173,8 +175,9 @@ class MBTilesWriter:
             total_tiles = res[0]
             compression_do(self.cursor, self.connection, total_tiles)
             compression_finalize(self.cursor)
-            optimize_database(self.connection)
             self.connection.commit()
             # end compression
+
+        optimize_database(self.connection)
         self.connection.close()
         self.cursor = None

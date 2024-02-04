@@ -245,8 +245,9 @@ class TilingThread(QThread):
 
     def writeLeafletViewer(self):
         templateFile = QFile(':/resources/viewer.html')
-        if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
-            viewer = MyTemplate(str(templateFile.readAll()))
+        if templateFile.open(QIODevice.ReadOnly):
+            html = templateFile.readAll().data().decode()
+            viewer = MyTemplate(html)
 
             tilesDir = '%s/%s' % (self.output.absoluteFilePath(), self.rootDir)
             useTMS = 'true' if self.tmsConvention else 'false'
@@ -262,8 +263,10 @@ class TilingThread(QThread):
             }
 
             filePath = '%s/%s.html' % (self.output.absoluteFilePath(), self.rootDir)
-            with codecs.open(filePath, 'w', 'utf-8') as fOut:
-                fOut.write(viewer.substitute(substitutions))
+
+            with open(filePath, 'wb') as fOut:
+                s = viewer.substitute(substitutions)
+                fOut.write(s.encode('utf-8'))
             templateFile.close()
 
     def countTiles(self, tile):

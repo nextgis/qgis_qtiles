@@ -54,6 +54,9 @@ class ZipWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
+        if os.path.exists(self.output):
+            os.remove(self.output)
+
         self.zipFile = zipfile.ZipFile(str(self.output.absoluteFilePath()), 'w', allowZip64=True)
         self.tempFile = QTemporaryFile()
         self.tempFile.setAutoRemove(False)

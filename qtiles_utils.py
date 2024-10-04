@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# ******************************************************************************
 #
 # QTiles
 # ---------------------------------------------------------
@@ -23,7 +23,7 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
+# ******************************************************************************
 
 
 from qgis.PyQt.QtCore import *
@@ -38,7 +38,10 @@ def getMapLayers():
         if layer.type() == QgsMapLayer.VectorLayer:
             if layer.id() not in list(layers.keys()):
                 layers[layer.id()] = str(layer.name())
-        if layer.type() == QgsMapLayer.RasterLayer and layer.providerType() == 'gdal':
+        if (
+            layer.type() == QgsMapLayer.RasterLayer
+            and layer.providerType() == "gdal"
+        ):
             if layer.id() not in list(layers.keys()):
                 layers[layer.id()] = str(layer.name())
     return layers
@@ -54,4 +57,10 @@ def getLayerById(layerId):
 
 
 def getLayerGroup(layerId):
-    return QgsProject.instance().layerTreeRoot().findLayer(layerId).parent().name()
+    return (
+        QgsProject.instance()
+        .layerTreeRoot()
+        .findLayer(layerId)
+        .parent()
+        .name()
+    )

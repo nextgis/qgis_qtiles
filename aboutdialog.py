@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# ******************************************************************************
 #
 # QTiles
 # ---------------------------------------------------------
@@ -23,7 +23,7 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
+# ******************************************************************************
 
 
 import os
@@ -36,7 +36,10 @@ from qgis.PyQt import uic
 from . import resources_rc
 from .compat import configparser
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ui/aboutdialogbase.ui'))
+FORM_CLASS, _ = uic.loadUiType(
+    os.path.join(os.path.dirname(__file__), "ui/aboutdialogbase.ui")
+)
+
 
 class AboutDialog(QDialog, FORM_CLASS):
     def __init__(self):
@@ -45,13 +48,13 @@ class AboutDialog(QDialog, FORM_CLASS):
 
         self.btnHelp = self.buttonBox.button(QDialogButtonBox.Help)
 
-        self.lblLogo.setPixmap(QPixmap(':/icons/qtiles.png'))
+        self.lblLogo.setPixmap(QPixmap(":/icons/qtiles.png"))
 
         cfg = configparser.SafeConfigParser()
-        cfg.read(os.path.join(os.path.dirname(__file__), 'metadata.txt'))
-        version = cfg.get('general', 'version')
+        cfg.read(os.path.join(os.path.dirname(__file__), "metadata.txt"))
+        version = cfg.get("general", "version")
 
-        self.lblVersion.setText(self.tr('Version: %s') % version)
+        self.lblVersion.setText(self.tr("Version: %s") % version)
         doc = QTextDocument()
         doc.setHtml(self.getAboutText())
         self.textBrowser.setDocument(doc)
@@ -63,33 +66,40 @@ class AboutDialog(QDialog, FORM_CLASS):
         QDialog.reject(self)
 
     def openHelp(self):
-        overrideLocale = QSettings().value('locale/overrideFlag', False, type=bool)
+        overrideLocale = QSettings().value(
+            "locale/overrideFlag", False, type=bool
+        )
         if not overrideLocale:
             localeFullName = QLocale.system().name()
         else:
-            localeFullName = QSettings().value('locale/userLocale', '')
+            localeFullName = QSettings().value("locale/userLocale", "")
 
         localeShortName = localeFullName[0:2]
-        if localeShortName in ['ru', 'uk']:
-            QDesktopServices.openUrl(QUrl('http://gis-lab.info/qa/qtiles.html'))
+        if localeShortName in ["ru", "uk"]:
+            QDesktopServices.openUrl(
+                QUrl("http://gis-lab.info/qa/qtiles.html")
+            )
         else:
-            QDesktopServices.openUrl(QUrl('http://gis-lab.info/qa/qtiles-eng.html'))
+            QDesktopServices.openUrl(
+                QUrl("http://gis-lab.info/qa/qtiles-eng.html")
+            )
 
     def getAboutText(self):
-        return self.tr('<p>Generate tiles from QGIS project.</p>'
-            '<p>Plugin generates raster tiles from QGIS project corresponding '
-            'to <a '
+        return self.tr(
+            "<p>Generate tiles from QGIS project.</p>"
+            "<p>Plugin generates raster tiles from QGIS project corresponding "
+            "to <a "
             'href="http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames">'
-            'Slippy Map</a> '
-            'specification. Output tiles can be saved in directory or as zip '
-            'archive.</p>'
-            '<p><strong>Developers</strong>: '
+            "Slippy Map</a> "
+            "specification. Output tiles can be saved in directory or as zip "
+            "archive.</p>"
+            "<p><strong>Developers</strong>: "
             '(<a href="http://nextgis.org">NextGIS</a>), portions of code by '
-            'Andrew Naplavkov and Giovanni Allegri.</p>'
-            '<p><strong>Homepage</strong>: '
+            "Andrew Naplavkov and Giovanni Allegri.</p>"
+            "<p><strong>Homepage</strong>: "
             '<a href="https://github.com/nextgis/QTiles">'
-            'https://github.com/nextgis/QTiles</a></p>'
-            '<p>Please report bugs at '
+            "https://github.com/nextgis/QTiles</a></p>"
+            "<p>Please report bugs at "
             '<a href="https://github.com/nextgis/QTiles/issues">'
-            'bugtracker</a></p>'
-            )
+            "bugtracker</a></p>"
+        )

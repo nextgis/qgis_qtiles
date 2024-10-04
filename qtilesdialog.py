@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# ******************************************************************************
 #
 # QTiles
 # ---------------------------------------------------------
@@ -23,7 +23,7 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
+# ******************************************************************************
 import os
 import locale
 import math
@@ -31,16 +31,29 @@ import operator
 
 from qgis.PyQt.QtCore import QFileInfo, Qt, QDir, pyqtSignal, pyqtSlot
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox, QMessageBox, QFileDialog
+from qgis.PyQt.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
+    QMessageBox,
+    QFileDialog,
+)
 from qgis.PyQt import uic
 from qgis.core import QgsRectangle
 
 from . import tilingthread
 from . import qtiles_utils as utils
 
-from .compat import QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsSettings, getSaveFileName
+from .compat import (
+    QgsCoordinateTransform,
+    QgsCoordinateReferenceSystem,
+    QgsSettings,
+    getSaveFileName,
+)
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(os.path.dirname(__file__), 'ui/qtilesdialogbase.ui'))
+FORM_CLASS, _ = uic.loadUiType(
+    os.path.join(os.path.dirname(__file__), "ui/qtilesdialogbase.ui")
+)
+
 
 class QTilesDialog(QDialog, FORM_CLASS):
     # MAX_ZOOM_LEVEL = 18
@@ -50,7 +63,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
         QDialog.__init__(self)
         self.setupUi(self)
 
-        self.btnOk = self.buttonBox.addButton(self.tr("Run"), QDialogButtonBox.AcceptRole)
+        self.btnOk = self.buttonBox.addButton(
+            self.tr("Run"), QDialogButtonBox.AcceptRole
+        )
 
         # self.spnZoomMax.setMaximum(self.MAX_ZOOM_LEVEL)
         self.spnZoomMax.setMinimum(self.MIN_ZOOM_LEVEL)
@@ -67,10 +82,11 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.workThread = None
 
         self.FORMATS = {
-            self.tr('ZIP archives (*.zip *.ZIP)'): '.zip',
-            self.tr('MBTiles databases (*.mbtiles *.MBTILES)'): '.mbtiles'}
+            self.tr("ZIP archives (*.zip *.ZIP)"): ".zip",
+            self.tr("MBTiles databases (*.mbtiles *.MBTILES)"): ".mbtiles",
+        }
 
-        self.settings = QgsSettings('NextGIS', 'QTiles')
+        self.settings = QgsSettings("NextGIS", "QTiles")
         self.grpParameters.setSettings(self.settings)
         self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
         self.rbExtentLayer.toggled.connect(self.__toggleLayerSelector)
@@ -82,7 +98,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.rbOutputZip.toggled.connect(self.__toggleTarget)
         self.rbOutputDir.toggled.connect(self.__toggleTarget)
         self.rbOutputNGM.toggled.connect(self.__toggleTarget)
-        self.rbOutputNGM.setIcon(QIcon(':/icons/ngm_index_24x24.png'))
+        self.rbOutputNGM.setIcon(QIcon(":/icons/ngm_index_24x24.png"))
 
         self.lInfoIconOutputZip.linkActivated.connect(self.show_output_info)
         self.lInfoIconOutputDir.linkActivated.connect(self.show_output_info)
@@ -98,14 +114,19 @@ class QTilesDialog(QDialog, FORM_CLASS):
         elif self.sender() is self.lInfoIconOutputDir:
             message = self.tr("Save tiles as directory structure")
         elif self.sender() is self.lInfoIconOutputNGM:
-            message = "<table cellspacing='10'> <tr> \
+            message = (
+                "<table cellspacing='10'> <tr> \
                         <td> \
                             <img src=':/icons/ngm_index_24x24.png'/> \
                         </td> \
                         <td> \
                             %s \
                         </td> \
-                    </tr> </table>" % self.tr("Prepare package for <a href='http://nextgis.ru/en/nextgis-mobile/'> NextGIS Mobile </a>")
+                    </tr> </table>"
+                % self.tr(
+                    "Prepare package for <a href='http://nextgis.ru/en/nextgis-mobile/'> NextGIS Mobile </a>"
+                )
+            )
 
         # QMessageBox.information(
         #     self,
@@ -118,7 +139,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         msgBox.exec_()
 
     def formatChanged(self):
-        if self.cmbFormat.currentText() == 'JPG':
+        if self.cmbFormat.currentText() == "JPG":
             self.spnTransparency.setEnabled(False)
             self.spnQuality.setEnabled(True)
         else:
@@ -127,16 +148,26 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
     def manageGui(self):
         layers = utils.getMapLayers()
-        for layer in sorted(iter(list(layers.items())), key=operator.itemgetter(1)):
+        for layer in sorted(
+            iter(list(layers.items())), key=operator.itemgetter(1)
+        ):
             groupName = utils.getLayerGroup(layer[0])
-            if groupName == '':
+            if groupName == "":
                 self.cmbLayers.addItem(layer[1], layer[0])
             else:
-                self.cmbLayers.addItem('%s - %s' % (layer[1], groupName), layer[0])
+                self.cmbLayers.addItem(
+                    "%s - %s" % (layer[1], groupName), layer[0]
+                )
 
-        self.rbOutputZip.setChecked(self.settings.value('outputToZip', True, type=bool))
-        self.rbOutputDir.setChecked(self.settings.value('outputToDir', False, type=bool))
-        self.rbOutputNGM.setChecked(self.settings.value('outputToNGM', False, type=bool))
+        self.rbOutputZip.setChecked(
+            self.settings.value("outputToZip", True, type=bool)
+        )
+        self.rbOutputDir.setChecked(
+            self.settings.value("outputToDir", False, type=bool)
+        )
+        self.rbOutputNGM.setChecked(
+            self.settings.value("outputToNGM", False, type=bool)
+        )
         if self.rbOutputZip.isChecked():
             self.leDirectoryName.setEnabled(False)
             self.leTilesFroNGM.setEnabled(False)
@@ -151,31 +182,63 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.leDirectoryName.setEnabled(False)
             self.leTilesFroNGM.setEnabled(False)
 
-        self.leZipFileName.setText(self.settings.value('outputToZip_Path', ''))
-        self.leDirectoryName.setText(self.settings.value('outputToDir_Path', ''))
-        self.leTilesFroNGM.setText(self.settings.value('outputToNGM_Path', ''))
+        self.leZipFileName.setText(self.settings.value("outputToZip_Path", ""))
+        self.leDirectoryName.setText(
+            self.settings.value("outputToDir_Path", "")
+        )
+        self.leTilesFroNGM.setText(self.settings.value("outputToNGM_Path", ""))
 
         self.cmbLayers.setEnabled(False)
-        self.leRootDir.setText(self.settings.value('rootDir', 'Mapnik'))
-        self.rbExtentCanvas.setChecked(self.settings.value('extentCanvas', True, type=bool))
-        self.rbExtentFull.setChecked(self.settings.value('extentFull', False, type=bool))
-        self.rbExtentLayer.setChecked(self.settings.value('extentLayer', False, type=bool))
-        self.spnZoomMin.setValue(self.settings.value('minZoom', 0, type=int))
-        self.spnZoomMax.setValue(self.settings.value('maxZoom', 18, type=int))
-        self.chkLockRatio.setChecked(self.settings.value('keepRatio', True, type=bool))
-        self.spnTileWidth.setValue(self.settings.value('tileWidth', 256, type=int))
-        self.spnTileHeight.setValue(self.settings.value('tileHeight', 256, type=int))
-        self.spnTransparency.setValue(self.settings.value('transparency', 255, type=int))
-        self.spnQuality.setValue(self.settings.value('quality', 70, type=int))
-        self.cmbFormat.setCurrentIndex(int(self.settings.value('format', 0)))
-        self.chkAntialiasing.setChecked(self.settings.value('enable_antialiasing', False, type=bool))
-        self.chkTMSConvention.setChecked(self.settings.value('use_tms_filenames', False, type=bool))
-        self.chkMBTilesCompression.setChecked(self.settings.value('use_mbtiles_compression', False, type=bool))
-        self.chkWriteJson.setChecked(self.settings.value("write_json", False, type=bool))
-        self.chkWriteOverview.setChecked(self.settings.value("write_overview", False, type=bool))
-        self.chkWriteMapurl.setChecked(self.settings.value("write_mapurl", False, type=bool))
-        self.chkWriteViewer.setChecked(self.settings.value("write_viewer", False, type=bool))
-        self.chkRenderOutsideTiles.setChecked(self.settings.value("renderOutsideTiles", True, type=bool))
+        self.leRootDir.setText(self.settings.value("rootDir", "Mapnik"))
+        self.rbExtentCanvas.setChecked(
+            self.settings.value("extentCanvas", True, type=bool)
+        )
+        self.rbExtentFull.setChecked(
+            self.settings.value("extentFull", False, type=bool)
+        )
+        self.rbExtentLayer.setChecked(
+            self.settings.value("extentLayer", False, type=bool)
+        )
+        self.spnZoomMin.setValue(self.settings.value("minZoom", 0, type=int))
+        self.spnZoomMax.setValue(self.settings.value("maxZoom", 18, type=int))
+        self.chkLockRatio.setChecked(
+            self.settings.value("keepRatio", True, type=bool)
+        )
+        self.spnTileWidth.setValue(
+            self.settings.value("tileWidth", 256, type=int)
+        )
+        self.spnTileHeight.setValue(
+            self.settings.value("tileHeight", 256, type=int)
+        )
+        self.spnTransparency.setValue(
+            self.settings.value("transparency", 255, type=int)
+        )
+        self.spnQuality.setValue(self.settings.value("quality", 70, type=int))
+        self.cmbFormat.setCurrentIndex(int(self.settings.value("format", 0)))
+        self.chkAntialiasing.setChecked(
+            self.settings.value("enable_antialiasing", False, type=bool)
+        )
+        self.chkTMSConvention.setChecked(
+            self.settings.value("use_tms_filenames", False, type=bool)
+        )
+        self.chkMBTilesCompression.setChecked(
+            self.settings.value("use_mbtiles_compression", False, type=bool)
+        )
+        self.chkWriteJson.setChecked(
+            self.settings.value("write_json", False, type=bool)
+        )
+        self.chkWriteOverview.setChecked(
+            self.settings.value("write_overview", False, type=bool)
+        )
+        self.chkWriteMapurl.setChecked(
+            self.settings.value("write_mapurl", False, type=bool)
+        )
+        self.chkWriteViewer.setChecked(
+            self.settings.value("write_viewer", False, type=bool)
+        )
+        self.chkRenderOutsideTiles.setChecked(
+            self.settings.value("renderOutsideTiles", True, type=bool)
+        )
 
         self.formatChanged()
 
@@ -192,69 +255,116 @@ class QTilesDialog(QDialog, FORM_CLASS):
         elif self.rbOutputNGM.isChecked():
             output = self.leTilesFroNGM.text()
 
-        if  self.rbExtentLayer.isChecked() and self.cmbLayers.currentIndex() < 0:
-            QMessageBox.warning(self, self.tr('Layer not selected'), self.tr('Please select a layer and try again.'))
+        if (
+            self.rbExtentLayer.isChecked()
+            and self.cmbLayers.currentIndex() < 0
+        ):
+            QMessageBox.warning(
+                self,
+                self.tr("Layer not selected"),
+                self.tr("Please select a layer and try again."),
+            )
             return
 
         if not output:
-            QMessageBox.warning(self, self.tr('No output'), self.tr('Output path is not set. Please enter correct path and try again.'))
+            QMessageBox.warning(
+                self,
+                self.tr("No output"),
+                self.tr(
+                    "Output path is not set. Please enter correct path and try again."
+                ),
+            )
             return
         fileInfo = QFileInfo(output)
-        if fileInfo.isDir() and not len(QDir(output).entryList(QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot)) == 0:
+        if (
+            fileInfo.isDir()
+            and not len(
+                QDir(output).entryList(
+                    QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot
+                )
+            )
+            == 0
+        ):
             res = QMessageBox.warning(
                 self,
-                self.tr('Directory not empty'),
-                self.tr('Selected directory is not empty. Continue?'),
-                QMessageBox.Yes | QMessageBox.No
+                self.tr("Directory not empty"),
+                self.tr("Selected directory is not empty. Continue?"),
+                QMessageBox.Yes | QMessageBox.No,
             )
             if res == QMessageBox.No:
                 return
 
         if self.spnZoomMin.value() > self.spnZoomMax.value():
-            QMessageBox.warning(self, self.tr('Wrong zoom'), self.tr('Maximum zoom value is lower than minimum. Please correct this and try again.'))
+            QMessageBox.warning(
+                self,
+                self.tr("Wrong zoom"),
+                self.tr(
+                    "Maximum zoom value is lower than minimum. Please correct this and try again."
+                ),
+            )
             return
-        self.settings.setValue('rootDir', self.leRootDir.text())
-        self.settings.setValue('outputToZip', self.rbOutputZip.isChecked())
-        self.settings.setValue('outputToDir', self.rbOutputDir.isChecked())
-        self.settings.setValue('outputToNGM', self.rbOutputNGM.isChecked())
-        self.settings.setValue('extentCanvas', self.rbExtentCanvas.isChecked())
-        self.settings.setValue('extentFull', self.rbExtentFull.isChecked())
-        self.settings.setValue('extentLayer', self.rbExtentLayer.isChecked())
-        self.settings.setValue('minZoom', self.spnZoomMin.value())
-        self.settings.setValue('maxZoom', self.spnZoomMax.value())
-        self.settings.setValue('keepRatio', self.chkLockRatio.isChecked())
-        self.settings.setValue('tileWidth', self.spnTileWidth.value())
-        self.settings.setValue('tileHeight', self.spnTileHeight.value())
-        self.settings.setValue('format', self.cmbFormat.currentIndex())
-        self.settings.setValue('transparency', self.spnTransparency.value())
-        self.settings.setValue('quality', self.spnQuality.value())
-        self.settings.setValue('enable_antialiasing', self.chkAntialiasing.isChecked())
-        self.settings.setValue('use_tms_filenames', self.chkTMSConvention.isChecked())
-        self.settings.setValue('use_mbtiles_compression', self.chkMBTilesCompression.isChecked())
-        self.settings.setValue('write_json', self.chkWriteJson.isChecked())
-        self.settings.setValue('write_overview', self.chkWriteOverview.isChecked())
-        self.settings.setValue('write_mapurl', self.chkWriteMapurl.isChecked())
-        self.settings.setValue('write_viewer', self.chkWriteViewer.isChecked())
-        self.settings.setValue('renderOutsideTiles', self.chkRenderOutsideTiles.isChecked())
+        self.settings.setValue("rootDir", self.leRootDir.text())
+        self.settings.setValue("outputToZip", self.rbOutputZip.isChecked())
+        self.settings.setValue("outputToDir", self.rbOutputDir.isChecked())
+        self.settings.setValue("outputToNGM", self.rbOutputNGM.isChecked())
+        self.settings.setValue("extentCanvas", self.rbExtentCanvas.isChecked())
+        self.settings.setValue("extentFull", self.rbExtentFull.isChecked())
+        self.settings.setValue("extentLayer", self.rbExtentLayer.isChecked())
+        self.settings.setValue("minZoom", self.spnZoomMin.value())
+        self.settings.setValue("maxZoom", self.spnZoomMax.value())
+        self.settings.setValue("keepRatio", self.chkLockRatio.isChecked())
+        self.settings.setValue("tileWidth", self.spnTileWidth.value())
+        self.settings.setValue("tileHeight", self.spnTileHeight.value())
+        self.settings.setValue("format", self.cmbFormat.currentIndex())
+        self.settings.setValue("transparency", self.spnTransparency.value())
+        self.settings.setValue("quality", self.spnQuality.value())
+        self.settings.setValue(
+            "enable_antialiasing", self.chkAntialiasing.isChecked()
+        )
+        self.settings.setValue(
+            "use_tms_filenames", self.chkTMSConvention.isChecked()
+        )
+        self.settings.setValue(
+            "use_mbtiles_compression", self.chkMBTilesCompression.isChecked()
+        )
+        self.settings.setValue("write_json", self.chkWriteJson.isChecked())
+        self.settings.setValue(
+            "write_overview", self.chkWriteOverview.isChecked()
+        )
+        self.settings.setValue("write_mapurl", self.chkWriteMapurl.isChecked())
+        self.settings.setValue("write_viewer", self.chkWriteViewer.isChecked())
+        self.settings.setValue(
+            "renderOutsideTiles", self.chkRenderOutsideTiles.isChecked()
+        )
         canvas = self.iface.mapCanvas()
         if self.rbExtentCanvas.isChecked():
             extent = canvas.extent()
         elif self.rbExtentFull.isChecked():
             extent = canvas.fullExtent()
         else:
-            layer = utils.getLayerById(self.cmbLayers.itemData(self.cmbLayers.currentIndex()))
-            extent = canvas.mapSettings().layerExtentToOutputExtent(layer, layer.extent())
-        
+            layer = utils.getLayerById(
+                self.cmbLayers.itemData(self.cmbLayers.currentIndex())
+            )
+            extent = canvas.mapSettings().layerExtentToOutputExtent(
+                layer, layer.extent()
+            )
+
         extent = QgsCoordinateTransform(
             canvas.mapSettings().destinationCrs(),
-            QgsCoordinateReferenceSystem.fromEpsgId(4326)
+            QgsCoordinateReferenceSystem.fromEpsgId(4326),
         ).transform(extent)
 
         arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
-        extent = extent.intersect(QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi))
+        extent = extent.intersect(
+            QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi)
+        )
         layers = canvas.layers()
-        writeMapurl = self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
-        writeViewer = self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
+        writeMapurl = (
+            self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
+        )
+        writeViewer = (
+            self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
+        )
         self.workThread = tilingthread.TilingThread(
             layers,
             extent,
@@ -274,7 +384,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.chkWriteOverview.isChecked(),
             self.chkRenderOutsideTiles.isChecked(),
             writeMapurl,
-            writeViewer
+            writeViewer,
         )
 
         self.workThread.rangeChanged.connect(self.setProgressRange)
@@ -283,7 +393,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.workThread.processInterrupted.connect(self.processInterrupted)
         self.workThread.threshold.connect(self.confirmContinueThreshold)
         self.btnOk.setEnabled(False)
-        self.btnClose.setText(self.tr('Cancel'))
+        self.btnClose.setText(self.tr("Cancel"))
         self.buttonBox.rejected.disconnect(self.reject)
         self.btnClose.clicked.connect(self.stopProcessing)
         self.workThread.start()
@@ -292,8 +402,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
         res = QMessageBox.question(
             self.parent(),
             self.tr("Confirmation"),
-            self.tr("Estimate number of tiles more then %d! Continue?") % tilesCountThreshold,
-            QMessageBox.Yes | QMessageBox.No
+            self.tr("Estimate number of tiles more then %d! Continue?")
+            % tilesCountThreshold,
+            QMessageBox.Yes | QMessageBox.No,
         )
 
         if res == QMessageBox.Yes:
@@ -321,12 +432,12 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.workThread = None
 
     def restoreGui(self):
-        self.progressBar.setFormat('%p%')
+        self.progressBar.setFormat("%p%")
         self.progressBar.setRange(0, 1)
         self.progressBar.setValue(0)
         self.buttonBox.rejected.connect(self.reject)
         self.btnClose.clicked.disconnect(self.stopProcessing)
-        self.btnClose.setText(self.tr('Close'))
+        self.btnClose.setText(self.tr("Close"))
         self.btnOk.setEnabled(True)
 
     def __toggleTarget(self, checked):
@@ -380,7 +491,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 self.chkWriteJson.setChecked(False)
                 self.chkWriteJson.setEnabled(False)
 
-
     def __toggleLayerSelector(self, checked):
         self.cmbLayers.setEnabled(checked)
 
@@ -400,27 +510,51 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
     def __select_output(self):
         if self.rbOutputZip.isChecked():
-            file_directory = QFileInfo(self.settings.value('outputToZip_Path', '.')).absolutePath()
-            outPath = getSaveFileName(self, self.tr('Save to file'), file_directory, ';;'.join(iter(list(self.FORMATS.keys()))))
+            file_directory = QFileInfo(
+                self.settings.value("outputToZip_Path", ".")
+            ).absolutePath()
+            outPath = getSaveFileName(
+                self,
+                self.tr("Save to file"),
+                file_directory,
+                ";;".join(iter(list(self.FORMATS.keys()))),
+            )
             if not outPath:
                 return
             self.leZipFileName.setText(outPath)
-            self.settings.setValue('outputToZip_Path', QFileInfo(outPath).absoluteFilePath())
+            self.settings.setValue(
+                "outputToZip_Path", QFileInfo(outPath).absoluteFilePath()
+            )
 
         elif self.rbOutputDir.isChecked():
-            dir_directory = QFileInfo(self.settings.value('outputToDir_Path', '.')).absolutePath()
-            outPath = QFileDialog.getExistingDirectory(self, self.tr('Save to directory'), dir_directory, QFileDialog.ShowDirsOnly)
+            dir_directory = QFileInfo(
+                self.settings.value("outputToDir_Path", ".")
+            ).absolutePath()
+            outPath = QFileDialog.getExistingDirectory(
+                self,
+                self.tr("Save to directory"),
+                dir_directory,
+                QFileDialog.ShowDirsOnly,
+            )
             if not outPath:
                 return
             self.leDirectoryName.setText(outPath)
-            self.settings.setValue('outputToDir_Path', QFileInfo(outPath).absoluteFilePath())
+            self.settings.setValue(
+                "outputToDir_Path", QFileInfo(outPath).absoluteFilePath()
+            )
 
         elif self.rbOutputNGM.isChecked():
-            zip_directory = QFileInfo(self.settings.value('outputToNGM_Path', '.')).absolutePath()
-            outPath = getSaveFileName(self, self.tr('Save to file'), zip_directory, 'ngrc')
+            zip_directory = QFileInfo(
+                self.settings.value("outputToNGM_Path", ".")
+            ).absolutePath()
+            outPath = getSaveFileName(
+                self, self.tr("Save to file"), zip_directory, "ngrc"
+            )
             if not outPath:
                 return
-            if not outPath.lower().endswith('ngrc'):
-                outPath += '.ngrc'
+            if not outPath.lower().endswith("ngrc"):
+                outPath += ".ngrc"
             self.leTilesFroNGM.setText(outPath)
-            self.settings.setValue('outputToNGM_Path', QFileInfo(outPath).absoluteFilePath())
+            self.settings.setValue(
+                "outputToNGM_Path", QFileInfo(outPath).absoluteFilePath()
+            )

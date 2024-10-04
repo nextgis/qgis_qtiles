@@ -1,0 +1,10 @@
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.7"
+
+reportOptionalCall = false
+reportOptionalMemberAccess = false
+
+[tool.ruff]
+line-length = 79
+target-version = "py37"

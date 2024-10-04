@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# ******************************************************************************
 #
 # QTiles
 # ---------------------------------------------------------
@@ -23,13 +23,19 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
+# ******************************************************************************
 
 import sqlite3
 import zipfile
 import json
 
-from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice, QTemporaryFile, QDir
+from qgis.PyQt.QtCore import (
+    QBuffer,
+    QByteArray,
+    QIODevice,
+    QTemporaryFile,
+    QDir,
+)
 
 from .mbutils import *
 
@@ -40,10 +46,12 @@ class DirectoryWriter:
         self.rootDir = rootDir
 
     def writeTile(self, tile, image, format, quality):
-        path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
-        dirPath = '%s/%s' % (self.output.absoluteFilePath(), path)
+        path = "%s/%s/%s" % (self.rootDir, tile.z, tile.x)
+        dirPath = "%s/%s" % (self.output.absoluteFilePath(), path)
         QDir().mkpath(dirPath)
-        image.save('%s/%s.%s' % (dirPath, tile.y, format.lower()), format, quality)
+        image.save(
+            "%s/%s.%s" % (dirPath, tile.y, format.lower()), format, quality
+        )
 
     def finalize(self):
         pass
@@ -54,7 +62,9 @@ class ZipWriter:
         self.output = outputPath
         self.rootDir = rootDir
 
-        self.zipFile = zipfile.ZipFile(str(self.output.absoluteFilePath()), 'w', allowZip64=True)
+        self.zipFile = zipfile.ZipFile(
+            str(self.output.absoluteFilePath()), "w", allowZip64=True
+        )
         self.tempFile = QTemporaryFile()
         self.tempFile.setAutoRemove(False)
         self.tempFile.open(QIODevice.WriteOnly)
@@ -62,11 +72,13 @@ class ZipWriter:
         self.tempFile.close()
 
     def writeTile(self, tile, image, format, quality):
-        path = '%s/%s/%s' % (self.rootDir, tile.z, tile.x)
+        path = "%s/%s/%s" % (self.rootDir, tile.z, tile.x)
 
         image.save(self.tempFileName, format, quality)
-        tilePath = '%s/%s.%s' % (path, tile.y, format.lower())
-        self.zipFile.write(bytes(str(self.tempFileName).encode('utf8')), tilePath)
+        tilePath = "%s/%s.%s" % (path, tile.y, format.lower())
+        self.zipFile.write(
+            bytes(str(self.tempFileName).encode("utf8")), tilePath
+        )
 
     def finalize(self):
         self.tempFile.close()
@@ -92,8 +104,8 @@ class NGMArchiveWriter(ZipWriter):
         archive_info = {
             "cache_size_multiply": 0,
             "levels": [],
-            'max_level': max(self.levels.keys()),
-            'min_level': min(self.levels.keys()),
+            "max_level": max(self.levels.keys()),
+            "min_level": min(self.levels.keys()),
             "name": self.__layerName,
             "renderer_properties": {
                 "alpha": 255,
@@ -103,11 +115,11 @@ class NGMArchiveWriter(ZipWriter):
                 "dither": True,
                 "filterbitmap": True,
                 "greyscale": False,
-                "type": "tms_renderer"
+                "type": "tms_renderer",
             },
             "tms_type": 2,
             "type": 32,
-            "visible": True
+            "visible": True,
         }
 
         for level, coords in list(self.levels.items()):
@@ -124,7 +136,7 @@ class NGMArchiveWriter(ZipWriter):
         tempFile = QTemporaryFile()
         tempFile.setAutoRemove(False)
         tempFile.open(QIODevice.WriteOnly)
-        tempFile.write(bytes(json.dumps(archive_info).encode('utf8')))
+        tempFile.write(bytes(json.dumps(archive_info).encode("utf8")))
         tempFileName = tempFile.fileName()
         tempFile.close()
 
@@ -134,24 +146,64 @@ class NGMArchiveWriter(ZipWriter):
 
 
 class MBTilesWriter:
-
-    def __init__(self, outputPath, rootDir, formatext, minZoom, maxZoom, extent, compression):
+    def __init__(
+        self,
+        outputPath,
+        rootDir,
+        formatext,
+        minZoom,
+        maxZoom,
+        extent,
+        compression,
+    ):
         self.output = outputPath
         self.rootDir = rootDir
         self.compression = compression
-        s = str(extent.xMinimum()) + ',' + str(extent.yMinimum()) + ',' + str(extent.xMaximum()) + ','+ str(extent.yMaximum())
+        s = (
+            str(extent.xMinimum())
+            + ","
+            + str(extent.yMinimum())
+            + ","
+            + str(extent.xMaximum())
+            + ","
+            + str(extent.yMaximum())
+        )
         self.connection = mbtiles_connect(str(self.output.absoluteFilePath()))
         self.cursor = self.connection.cursor()
         optimize_connection(self.cursor)
         mbtiles_setup(self.cursor)
-        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('name', rootDir))
-        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('description', 'Created with QTiles'))
-        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('format', formatext.lower()))
-        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('minZoom', str(minZoom)))
-        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('maxZoom', str(maxZoom)))
-        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('type', 'baselayer'))
-        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('version', '1.1'))
-        self.cursor.execute('''INSERT INTO metadata(name, value) VALUES (?, ?);''', ('bounds', s))
+        self.cursor.execute(
+            """INSERT INTO metadata(name, value) VALUES (?, ?);""",
+            ("name", rootDir),
+        )
+        self.cursor.execute(
+            """INSERT INTO metadata(name, value) VALUES (?, ?);""",
+            ("description", "Created with QTiles"),
+        )
+        self.cursor.execute(
+            """INSERT INTO metadata(name, value) VALUES (?, ?);""",
+            ("format", formatext.lower()),
+        )
+        self.cursor.execute(
+            """INSERT INTO metadata(name, value) VALUES (?, ?);""",
+            ("minZoom", str(minZoom)),
+        )
+        self.cursor.execute(
+            """INSERT INTO metadata(name, value) VALUES (?, ?);""",
+            ("maxZoom", str(maxZoom)),
+        )
+        self.cursor.execute(
+            """INSERT INTO metadata(name, value) VALUES (?, ?);""",
+            ("type", "baselayer"),
+        )
+        self.cursor.execute(
+            """INSERT INTO metadata(name, value) VALUES (?, ?);""",
+            ("version", "1.1"),
+        )
+        self.cursor.execute(
+            """INSERT INTO metadata(name, value) VALUES (?, ?);""",
+            ("bounds", s),
+        )
         self.connection.commit()
 
     def writeTile(self, tile, image, format, quality):
@@ -159,7 +211,10 @@ class MBTilesWriter:
         buff = QBuffer(data)
         image.save(buff, format, quality)
 
-        self.cursor.execute('''INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?);''', (tile.z, tile.x, tile.y, sqlite3.Binary(buff.data())))
+        self.cursor.execute(
+            """INSERT INTO tiles(zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?);""",
+            (tile.z, tile.x, tile.y, sqlite3.Binary(buff.data())),
+        )
         buff.close()
 
     def finalize(self):

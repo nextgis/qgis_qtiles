@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#******************************************************************************
+# ******************************************************************************
 #
 # QTiles
 # ---------------------------------------------------------
@@ -23,13 +23,14 @@
 # to the Free Software Foundation, 51 Franklin Street, Suite 500 Boston,
 # MA 02110-1335 USA.
 #
-#******************************************************************************
+# ******************************************************************************
 
 
 import math
 
 from qgis.core import QgsRectangle
 from .compat import QgsPointXY
+
 
 class Tile:
     def __init__(self, x=0, y=0, z=0, tms=1):
@@ -41,8 +42,13 @@ class Tile:
     def toPoint(self):
         n = math.pow(2, self.z)
         longitude = float(self.x) / n * 360.0 - 180.0
-        latitude = self.tms * math.degrees(math.atan(math.sinh(math.pi * (1.0 - 2.0 * float(self.y) / n))))
+        latitude = self.tms * math.degrees(
+            math.atan(math.sinh(math.pi * (1.0 - 2.0 * float(self.y) / n)))
+        )
         return QgsPointXY(longitude, latitude)
 
     def toRectangle(self):
-        return QgsRectangle(self.toPoint(), Tile(self.x + 1, self.y + 1, self.z, self.tms).toPoint())
+        return QgsRectangle(
+            self.toPoint(),
+            Tile(self.x + 1, self.y + 1, self.z, self.tms).toPoint(),
+        )

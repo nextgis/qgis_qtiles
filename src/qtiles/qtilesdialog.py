@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # ******************************************************************************
 #
 # QTiles
@@ -24,28 +22,26 @@
 # MA 02110-1335 USA.
 #
 # ******************************************************************************
-import os
-import locale
 import math
 import operator
+import os
 
-from qgis.PyQt.QtCore import QFileInfo, Qt, QDir, pyqtSignal, pyqtSlot
+from qgis.core import QgsRectangle
+from qgis.PyQt import uic
+from qgis.PyQt.QtCore import QDir, QFileInfo, Qt, pyqtSlot
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QDialog,
     QDialogButtonBox,
-    QMessageBox,
     QFileDialog,
+    QMessageBox,
 )
-from qgis.PyQt import uic
-from qgis.core import QgsRectangle
 
-from . import tilingthread
 from . import qtiles_utils as utils
-
+from . import tilingthread
 from .compat import (
-    QgsCoordinateTransform,
     QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
     QgsSettings,
     getSaveFileName,
 )
@@ -136,7 +132,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         msgBox = QMessageBox()
         msgBox.setWindowTitle(title)
         msgBox.setText(message)
-        msgBox.exec_()
+        msgBox.exec()
 
     def formatChanged(self):
         if self.cmbFormat.currentText() == "JPG":

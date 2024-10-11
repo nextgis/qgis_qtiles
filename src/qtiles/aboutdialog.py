@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # ******************************************************************************
 #
 # QTiles
@@ -28,12 +26,12 @@
 
 import os
 
-from qgis.PyQt.QtCore import QSettings, QUrl, QLocale
-from qgis.PyQt.QtGui import QDesktopServices, QTextDocument, QPixmap
-from qgis.PyQt.QtWidgets import QDialogButtonBox, QDialog
 from qgis.PyQt import uic
+from qgis.PyQt.QtCore import QLocale, QSettings, QUrl
+from qgis.PyQt.QtGui import QDesktopServices, QPixmap, QTextDocument
+from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox
 
-from . import resources_rc
+from . import resources_rc  # noqa: F401
 from .compat import configparser
 
 FORM_CLASS, _ = uic.loadUiType(
@@ -50,7 +48,7 @@ class AboutDialog(QDialog, FORM_CLASS):
 
         self.lblLogo.setPixmap(QPixmap(":/icons/qtiles.png"))
 
-        cfg = configparser.SafeConfigParser()
+        cfg = configparser.ConfigParser()
         cfg.read(os.path.join(os.path.dirname(__file__), "metadata.txt"))
         version = cfg.get("general", "version")
 

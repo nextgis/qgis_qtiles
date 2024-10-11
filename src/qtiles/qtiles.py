@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # ******************************************************************************
 #
 # QTiles
@@ -26,22 +24,18 @@
 # ******************************************************************************
 
 
+from qgis.core import *
 from qgis.PyQt.QtCore import (
     QCoreApplication,
-    QSettings,
-    QLocale,
-    QTranslator,
     QFileInfo,
+    QLocale,
+    QSettings,
+    QTranslator,
 )
-from qgis.PyQt.QtWidgets import QAction, QMessageBox
 from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction, QMessageBox
 
-from qgis.core import *
-
-from . import qtilesdialog
-from . import aboutdialog
-from . import resources_rc
-
+from . import aboutdialog, qtilesdialog, resources_rc  # noqa: F401
 from .compat import QGis, qgisUserDatabaseFilePath
 
 
@@ -142,8 +136,8 @@ class QTilesPlugin:
     def run(self):
         d = qtilesdialog.QTilesDialog(self.iface)
         d.show()
-        d.exec_()
+        d.exec()
 
     def about(self):
         d = aboutdialog.AboutDialog()
-        d.exec_()
+        d.exec()

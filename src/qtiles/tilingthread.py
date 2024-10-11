@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # ******************************************************************************
 #
 # QTiles
@@ -24,30 +22,31 @@
 # MA 02110-1335 USA.
 #
 # ******************************************************************************
-import time
 import codecs
 import json
+import time
 from string import Template
-from qgis.PyQt.QtCore import QIODevice, QFile, QMutex, QThread, Qt, pyqtSignal
-from qgis.PyQt.QtGui import QImage, QPainter, QColor
-from qgis.PyQt.QtWidgets import *
+
 from qgis.core import (
     QgsMapRendererCustomPainterJob,
     QgsMapSettings,
-    QgsProject,
     QgsMessageLog,
+    QgsProject,
     QgsScaleCalculator,
+)
+from qgis.PyQt.QtCore import QFile, QIODevice, QMutex, Qt, QThread, pyqtSignal
+from qgis.PyQt.QtGui import QColor, QImage, QPainter
+from qgis.PyQt.QtWidgets import *
+
+from . import resources_rc  # noqa: F401
+from .compat import (
+    QGIS_VERSION_3,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsMessageLogInfo,
 )
 from .tile import Tile
 from .writers import *
-from .compat import (
-    QGis,
-    QgsCoordinateTransform,
-    QgsCoordinateReferenceSystem,
-    QgsMessageLogInfo,
-    QGIS_VERSION_3,
-)
-from . import resources_rc
 
 
 def printQtilesLog(msg, level=QgsMessageLogInfo):

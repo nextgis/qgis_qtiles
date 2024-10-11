@@ -1,3 +1,30 @@
+[project]
+name = "qtiles"
+version = "1.7.2"
+readme = "README.md"
+license = { file = "LICENSE" }
+
+
+[tool.qgspb.package-data]
+"osminfo.resources.css.images" = ["layers.png"]
+"osminfo.resource.js.images" = ["ui-bg_flat_75_ffffff_40x100.png"]
+
+[tool.qgspb.forms]
+ui-files = ["src/qtiles/ui/*.ui"]
+compile = false
+
+[tool.qgspb.resources]
+qrc-files = ["src/qtiles/resources.qrc"]
+target-suffix = "_rc"
+
+[tool.qgspb.translations]
+ts-files = ["src/qtiles/i18n/*.ts"]
+no-obsolete = true
+
+
+[project.optional-dependencies]
+dev = ["ruff", "pre-commit"]
+
 [tool.pyright]
 include = ["src", "tests"]
 pythonVersion = "3.7"
@@ -8,3 +35,59 @@ reportOptionalMemberAccess = false
 [tool.ruff]
 line-length = 79
 target-version = "py37"
+
+[tool.ruff.lint]
+select = [
+    "A", # flake8-builtins
+    # "ARG",  # flake8-unused-arguments
+    "B", # flake8-bugbear
+    # "C90",  # mccabe complexity
+    # "COM",  # flake8-commas
+    "E", # pycodestyle errors
+    "F", # pyflakes
+    # "FBT",  # flake8-boolean-trap
+    # "FLY",  # flynt
+    "I", # isort
+    # "ISC",  #  flake8-implicit-str-concat
+    # "LOG",  # flake8-logging
+    # "N",    # pep8-naming
+    # "PERF", # Perflint
+    # "PGH",  # pygrep-hooks
+    # "PIE", # flake8-pie
+    # "PL",  # pylint
+    # "PTH", # flake8-use-pathlib
+    # "PYI", # flake8-pyi
+    # "Q",   # flake8-quotes
+    # "RET", # flake8-return
+    # "RSE", # flake8-raise
+    # "RUF",
+    # "SIM", # flake8-simplify
+    # "SLF", # flake8-self
+    # "T10", # flake8-debugger
+    # "T20", # flake8-print
+    # "TCH", # flake8-type-checking
+    # "TD",  # flake8-todos
+    # "TID", # flake8-tidy-imports
+    # "TRY", # tryceratops
+    "UP", # pyupgrade
+    "W",  # pycodesytle warnings
+    # "ANN",  # flake8-annotations
+    # "CPY",  # flake8-copyright
+    # "D",  # pydocstyle
+    # "FIX",  # flake8-fixme
+]
+ignore = ["ANN101", "ANN102", "TD003", "FBT003", "ISC001", "COM812", "E501"]
+exclude = ["resources_rc.py"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.lint.pep8-naming]
+extend-ignore-names = [
+    "setLevel",
+    "classFactory",
+    "initGui",
+    "sizeHint",
+    "createWidget",
+    "*Event",
+]

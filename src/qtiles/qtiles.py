@@ -34,6 +34,7 @@ from qgis.PyQt.QtCore import (
 )
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QMessageBox
+from pathlib import Path
 
 from . import aboutdialog, qtilesdialog, resources_rc  # noqa: F401
 from .compat import QGis, qgisUserDatabaseFilePath
@@ -139,5 +140,6 @@ class QTilesPlugin:
         d.exec()
 
     def about(self):
-        d = aboutdialog.AboutDialog()
+        package_name = str(Path(__file__).parent.name)
+        d = aboutdialog.AboutDialog(package_name)
         d.exec()

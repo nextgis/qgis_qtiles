@@ -1,9 +1,11 @@
 [general]
 name=QTiles
 description=Generate map tiles from a QGIS project
+description[ru]=Создавайте растровые тайлы из проекта QGIS
 about=Generates raster tiles from QGIS project for selected zoom levels and tile naming conventions (Slippy Map or TMS). Package tiles for NextGIS Mobile, GeoPaparazzi, simple Leaflet-based viewer or MBTiles. Developed by NextGIS. Any feedback is welcome at https://nextgis.com/contact
+about[ru]=Создает растровые тайлы из проекта QGIS для выбранных уровней масштабирования в соответствии с соглашениями о наименовании тайлов (Slippy Map или TMS). Набор тайлов для NextGIS Mobile, GeoPaparazzi, простого просмотра карт на основе Leaflet или MBTiles. Разработан NextGIS. Любые отзывы приветствуются на https://nextgis.com/contact
 category=Plugins
-version=1.7.1
+version=1.7.2
 qgisMinimumVersion=2.4
 qgisMaximumVersion=3.99
 
@@ -11,6 +13,8 @@ author=NextGIS
 email=info@nextgis.com
 
 changelog=
+    1.7.2
+        * Fix rounding error on Python 3.10
     1.7.1
         * Fixed file selection dialog
     1.7.0
@@ -50,6 +54,8 @@ tags=raster,tiles
 homepage=https://github.com/nextgis/QTiles
 tracker=https://github.com/nextgis/QTiles/issues
 repository=https://github.com/nextgis/QTiles
+video=https://www.youtube.com/watch?v=vU4bGCh5khM
+video[ru]=https://www.youtube.com/watch?v=Lk-i4Az0SEo
 
 experimental=False
 deprecated=False

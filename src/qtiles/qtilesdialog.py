@@ -94,7 +94,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.rbOutputZip.toggled.connect(self.__toggleTarget)
         self.rbOutputDir.toggled.connect(self.__toggleTarget)
         self.rbOutputNGM.toggled.connect(self.__toggleTarget)
-        self.rbOutputNGM.setIcon(QIcon(":/icons/ngm_index_24x24.png"))
+        self.rbOutputNGM.setIcon(
+            QIcon(":/plugins/qtiles/icons/ngm_index_24x24.png")
+        )
 
         self.lInfoIconOutputZip.linkActivated.connect(self.show_output_info)
         self.lInfoIconOutputDir.linkActivated.connect(self.show_output_info)
@@ -113,7 +115,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             message = (
                 "<table cellspacing='10'> <tr> \
                         <td> \
-                            <img src=':/icons/ngm_index_24x24.png'/> \
+                            <img src=':/plugins/qtiles/icons/ngm_index_24x24.png'/> \
                         </td> \
                         <td> \
                             %s \

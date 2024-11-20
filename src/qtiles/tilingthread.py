@@ -329,7 +329,7 @@ class TilingThread(QThread):
             mapurl.write("%s=%s\n" % ("type", tileServer))
 
     def writeLeafletViewer(self):
-        templateFile = QFile(":/resources/viewer.html")
+        templateFile = QFile(":/plugins/qtiles/resources/viewer.html")
         if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
             viewer = MyTemplate(str(templateFile.readAll()))
 

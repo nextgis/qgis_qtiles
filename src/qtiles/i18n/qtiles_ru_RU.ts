@@ -276,7 +276,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="ui_qtilesdialogbase.py" line="330"/>
-        <source>&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/icons/info.png&quot;/&gt;&lt;/a&gt;</source>
+        <source>&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/plugins/qtiles/icons/info.png&quot;/&gt;&lt;/a&gt;</source>
         <translation></translation>
     </message>
     <message>
@@ -307,7 +307,7 @@ p, li { white-space: pre-wrap; }
         <location filename="qtiles.py" line="71"/>
         <source>This version of QTiles requires at least QGIS version 1.8.0
 Plugin will not be enabled.</source>
-        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 1.8.0 и выше. 
+        <translation type="obsolete">Эта версия QTiles требует наличия QGIS 1.8.0 и выше.
 Модуль не будет загружен.</translation>
     </message>
     <message>

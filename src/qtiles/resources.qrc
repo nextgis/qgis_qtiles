@@ -1,5 +1,6 @@
 <RCC>
-  <qresource>
+  <qresource prefix="/plugins/qtiles/">
+    <file>icons/nextgis_logo.svg</file>
     <file>icons/qtiles.png</file>
     <file>icons/about.png</file>
     <file>icons/ngm_index_24x24.png</file>

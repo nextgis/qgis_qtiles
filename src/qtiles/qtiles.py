@@ -103,13 +103,13 @@ class QTilesPlugin:
             self.iface.mainWindow(),
         )
         self.iface.registerMainWindowAction(self.actionRun, "Shift+T")
-        self.actionRun.setIcon(QIcon(":/icons/qtiles.png"))
+        self.actionRun.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.png"))
         self.actionRun.setWhatsThis("Generate tiles from current project")
         self.actionAbout = QAction(
             QCoreApplication.translate("QTiles", "About QTiles..."),
             self.iface.mainWindow(),
         )
-        self.actionAbout.setIcon(QIcon(":/icons/about.png"))
+        self.actionAbout.setIcon(QIcon(":/plugins/qtiles/icons/about.png"))
         self.actionAbout.setWhatsThis("About QTiles")
 
         self.iface.addPluginToMenu(
@@ -122,6 +122,15 @@ class QTilesPlugin:
 
         self.actionRun.triggered.connect(self.run)
         self.actionAbout.triggered.connect(self.about)
+
+        self.__show_help_action = QAction(
+            QIcon(":/plugins/qtiles/icons/qtiles.png"),
+            "QTiles",
+        )
+        self.__show_help_action.triggered.connect(self.about)
+        plugin_help_menu = self.iface.pluginHelpMenu()
+        assert plugin_help_menu is not None
+        plugin_help_menu.addAction(self.__show_help_action)
 
     def unload(self):
         self.iface.unregisterMainWindowAction(self.actionRun)

@@ -160,7 +160,7 @@
                <cursorShape>PointingHandCursor</cursorShape>
               </property>
               <property name="text">
-               <string>&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/icons/info.png&quot;/&gt;&lt;/a&gt;</string>
+               <string>&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/plugins/qtiles/icons/info.png&quot;/&gt;&lt;/a&gt;</string>
               </property>
               <property name="openExternalLinks">
                <bool>false</bool>
@@ -195,7 +195,7 @@
                <cursorShape>PointingHandCursor</cursorShape>
               </property>
               <property name="text">
-               <string notr="true">&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/icons/info.png&quot;/&gt;&lt;/a&gt;</string>
+               <string notr="true">&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/plugins/qtiles/icons/info.png&quot;/&gt;&lt;/a&gt;</string>
               </property>
               <property name="textFormat">
                <enum>Qt::RichText</enum>
@@ -218,7 +218,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>:/icons/ngm_index_24x24.png</normaloff>:/icons/ngm_index_24x24.png</iconset>
+                <normaloff>:/plugins/qtiles/icons/ngm_index_24x24.png</normaloff>:/plugins/qtiles/icons/ngm_index_24x24.png</iconset>
               </property>
              </widget>
             </item>
@@ -258,7 +258,7 @@
                <cursorShape>PointingHandCursor</cursorShape>
               </property>
               <property name="text">
-               <string>&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/icons/info.png&quot;/&gt;&lt;/a&gt;</string>
+               <string>&lt;a href=&quot;infoOutpuZip&quot;&gt;&lt;img src=&quot;:/plugins/qtiles/icons/info.png&quot;/&gt;&lt;/a&gt;</string>
               </property>
               <property name="openExternalLinks">
                <bool>false</bool>

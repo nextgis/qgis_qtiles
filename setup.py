@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import os
 import platform
+import re
 import shutil
 import subprocess
+import sys
+import tempfile
 import zipfile
 from configparser import ConfigParser
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import tomllib
+try:
+    import tomllib
+except ImportError:
+    import pip._vendor.tomli as tomllib
 
 
 def with_name(
@@ -21,8 +28,8 @@ def with_name(
 
 class QgisPluginBuilder:
     def __init__(self):
-        current_directory = Path(__file__).parent
-        pyproject_file = current_directory / "pyproject.toml"
+        self.current_directory = Path(__file__).parent
+        pyproject_file = self.current_directory / "pyproject.toml"
 
         self.settings = tomllib.loads(pyproject_file.read_text())
         self.project_settings = self.settings.get("project", {})
@@ -499,7 +506,7 @@ class QgisPluginBuilder:
     def __profile_path(self, qgis: str, profile: Optional[str]) -> Path:
         system = platform.system()
 
-        if qgis == "Vanilla":
+        if qgis in ("Vanilla", "VanillaFlatpak"):
             qgis_profiles = Path("QGIS/QGIS3/profiles")
         elif qgis == "NextGIS":
             qgis_profiles = Path("NextGIS/ngqgis/profiles")
@@ -507,9 +514,15 @@ class QgisPluginBuilder:
             raise RuntimeError(f"Unknown QGIS: {qgis}")
 
         if system == "Linux":
-            profiles_path = (
-                Path("~/.local/share/").expanduser() / qgis_profiles
-            )
+            if qgis in ("Vanilla", "NextGIS"):
+                profiles_path = (
+                    Path("~/.local/share/").expanduser() / qgis_profiles
+                )
+            else:
+                profiles_path = (
+                    Path("~/.var/app/org.qgis.qgis/data/").expanduser()
+                    / qgis_profiles
+                )
 
         elif system == "Windows":
             appdata = os.getenv("APPDATA")
@@ -590,6 +603,337 @@ class QgisPluginBuilder:
         elif path.is_dir():
             shutil.rmtree(path)
 
+    def config(self, ide: str, qgis: str, profile: Optional[str]) -> None:
+        if ide == "vscode":
+            (self.current_directory / ".vscode").mkdir(exist_ok=True)
+            self.__create_vscode_launch(qgis, profile)
+            self.__create_vscode_tasks()
+            self.__create_dotenv()
+            return
+
+        raise NotImplementedError
+
+    def __create_vscode_launch(
+        self, qgis: str, profile: Optional[str]
+    ) -> None:
+        profile_path = self.__profile_path(qgis, profile)
+        plugins_path = profile_path / "python" / "plugins"
+        project_name: str = self.project_settings["name"]
+        plugin_path = plugins_path / project_name
+
+        launch_file = self.current_directory / ".vscode" / "launch.json"
+
+        launch_content = {}
+        need_fill = True
+        if launch_file.exists():
+            try:
+                launch_content = json.loads(self.__read_json(launch_file))
+                need_fill = False
+            except Exception:
+                print(
+                    f"An error occurred while reading {launch_file}. This file"
+                    " will be overwrited"
+                )
+                pass
+
+        if need_fill:
+            launch_content["version"] = "0.2.0"
+            launch_content["configurations"] = []
+
+        new_configurations = [
+            {
+                "name": "Attach QGIS",
+                "type": "debugpy",
+                "request": "attach",
+                "connect": {"host": "localhost", "port": 5678},
+                "pathMappings": [
+                    {
+                        "localRoot": f"${{workspaceFolder}}/src/{project_name}",
+                        "remoteRoot": str(plugin_path),
+                    }
+                ],
+                "justMyCode": True,
+            }
+        ]
+
+        for new_config in new_configurations:
+            is_replaced = False
+            for i, current_config in enumerate(
+                launch_content["configurations"]
+            ):
+                if new_config["name"] == current_config["name"]:
+                    launch_content["configurations"][i] = new_config
+                    is_replaced = True
+                    break
+
+            if not is_replaced:
+                launch_content["configurations"].append(new_config)
+
+        launch_file.write_text(json.dumps(launch_content, indent=4))
+
+    def __create_vscode_tasks(self) -> None:
+        tasks_file = self.current_directory / ".vscode" / "tasks.json"
+
+        tasks_conten = {}
+        if tasks_file.exists():
+            tasks_conten = json.loads(self.__read_json(tasks_file))
+        else:
+            tasks_conten["version"] = "2.0.0"
+            tasks_conten["inputs"] = []
+            tasks_conten["tasks"] = []
+
+        new_inputs = [
+            {
+                "id": "qgis",
+                "description": "QGIS build",
+                "type": "pickString",
+                "options": ["Vanilla", "NextGIS", "VanillaFlatpak"],
+            }
+        ]
+        for new_input in new_inputs:
+            is_replaced = False
+            for i, current_input in enumerate(tasks_conten["inputs"]):
+                if new_input["id"] == current_input["id"]:
+                    tasks_conten["inputs"][i] = new_input
+                    is_replaced = True
+                    break
+
+            if not is_replaced:
+                tasks_conten["inputs"].append(new_input)
+
+        new_tasks = [
+            {
+                "label": "Install plugin",
+                "type": "shell",
+                "group": "build",
+                "command": "${command:python.interpreterPath} "
+                "${workspaceFolder}/setup.py install --force --qgis "
+                "${input:qgis}",
+                "presentation": {
+                    "echo": True,
+                    "reveal": "always",
+                    "focus": True,
+                    "panel": "shared",
+                    "showReuseMessage": True,
+                    "clear": False,
+                },
+            },
+            {
+                "label": "Install plugin [editable]",
+                "type": "shell",
+                "group": "build",
+                "command": "${command:python.interpreterPath} "
+                "${workspaceFolder}/setup.py install --editable --force "
+                "--qgis ${input:qgis}",
+                "presentation": {
+                    "echo": True,
+                    "reveal": "always",
+                    "focus": True,
+                    "panel": "shared",
+                    "showReuseMessage": True,
+                    "clear": False,
+                },
+            },
+            {
+                "label": "Uninstall plugin",
+                "type": "shell",
+                "group": "build",
+                "command": "${command:python.interpreterPath} "
+                "${workspaceFolder}/setup.py uninstall",
+                "presentation": {
+                    "echo": True,
+                    "reveal": "always",
+                    "focus": True,
+                    "panel": "shared",
+                    "showReuseMessage": True,
+                    "clear": False,
+                },
+            },
+            {
+                "label": "Build release zip",
+                "type": "shell",
+                "group": "build",
+                "command": "${command:python.interpreterPath} "
+                "${workspaceFolder}/setup.py build",
+            },
+            {
+                "label": "Update translations",
+                "type": "shell",
+                "group": "build",
+                "command": "${command:python.interpreterPath} "
+                "${workspaceFolder}/setup.py update_ts",
+            },
+            {
+                "label": "Generate resources",
+                "type": "shell",
+                "group": "build",
+                "command": "${command:python.interpreterPath} "
+                "${workspaceFolder}/setup.py bootstrap",
+            },
+            {
+                "label": "Clean generated files",
+                "type": "shell",
+                "group": "build",
+                "command": "${command:python.interpreterPath} "
+                "${workspaceFolder}/setup.py clean",
+            },
+        ]
+
+        for new_task in new_tasks:
+            is_replaced = False
+            for i, current_task in enumerate(tasks_conten["tasks"]):
+                if new_task["label"] == current_task["label"]:
+                    tasks_conten["tasks"][i] = new_task
+                    is_replaced = True
+                    break
+
+            if not is_replaced:
+                tasks_conten["tasks"].append(new_task)
+
+        tasks_file.write_text(json.dumps(tasks_conten, indent=4))
+
+    def __create_dotenv(self) -> None:
+        if platform.system() == "Windows":
+            self.__create_dotenv_for_windows()
+        else:
+            self.__create_dotenv_for_unix()
+
+    def __read_json(self, json_path: Path) -> str:
+        text = json_path.read_text()
+        text = re.sub(r",(\s*)(\]|\})", r"\1\2", text, flags=re.MULTILINE)
+        text = re.sub(r"^(\s*)\/\/.*\n", r"", text, flags=re.MULTILINE)
+        return text
+
+    def __create_dotenv_for_windows(self) -> None:
+        # Capture updated state
+        bat_file = self.__create_env_bat_file()
+        if bat_file is None:
+            self.__write_dotenv(self.__create_dotenv_dict({}, {}))
+            return
+
+        # Capture current state
+        result = subprocess.run(
+            ["cmd.exe", "/c", "set"],
+            capture_output=True,
+            text=True,
+            shell=True,
+            check=True,
+        )
+        current_env = self.__extract_env_vars_from_set_output(result.stdout)
+
+        result = subprocess.run(
+            f'cmd.exe /c "{bat_file} & set"',
+            capture_output=True,
+            text=True,
+            shell=True,
+            check=True,
+        )
+        updated_env = self.__extract_env_vars_from_set_output(result.stdout)
+
+        bat_file.unlink()
+
+        dotenv = self.__create_dotenv_dict(current_env, updated_env)
+        self.__write_dotenv(dotenv)
+
+    def __create_dotenv_for_unix(self) -> None:
+        self.__write_dotenv(self.__create_dotenv_dict({}, {}))
+
+    def __extract_env_vars_from_set_output(
+        self, output: str
+    ) -> Dict[str, str]:
+        """Returns the current environment variables as a dictionary."""
+        env_variables = {}
+        for line in output.splitlines():
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            env_variables[key] = value
+
+        return env_variables
+
+    def __create_env_bat_file(self) -> Optional[Path]:
+        bin_path = Path(sys.executable).parent
+        osgeo_bat = bin_path / "python-qgis.bat"
+        nextgis_bat = bin_path.parent / "run_ng_env.bat"
+
+        source_bat_file = None
+        for bat_path in (osgeo_bat, nextgis_bat):
+            if not bat_path.exists():
+                continue
+            source_bat_file = bat_path
+            break
+
+        if source_bat_file is None:
+            return None
+
+        temp_bat_file = tempfile.mktemp(prefix="qgis_env", suffix=".bat")
+        source_dir = str(source_bat_file.parent)
+        source_bat = source_bat_file.read_text()
+
+        with open(temp_bat_file, "w") as file:
+            for line in source_bat.split("\n"):
+                if line.lstrip().startswith(("start", "python", "@echo on")):
+                    continue
+                line = line.replace("%~dp0", source_dir)
+                file.write(f"{line}\n")
+
+        return Path(temp_bat_file)
+
+    def __create_dotenv_dict(
+        self, current_env: Dict[str, str], updated_env: Dict[str, str]
+    ) -> Dict[str, str]:
+        def is_permanent_key(key: str) -> bool:
+            key = key.upper()
+            return key.startswith(
+                (
+                    "O4W_",
+                    "OSGEO4W_",
+                    "QGIS_",
+                    "QT_",
+                    "GDAL_",
+                    "VSI_",
+                    "PDAL_",
+                    "PROJ_",
+                    "GS_",
+                    "SSL_",
+                    "OPENSSL_",
+                    "PYTHON",
+                )
+            ) or key in ("PATH",)
+
+        dotenv = {
+            key: updated_env[key]
+            for key in updated_env
+            if is_permanent_key(key)
+            or updated_env.get(key) != current_env.get(key)
+        }
+
+        pythonhome_key = "PYTHONPATH"
+        for key in dotenv.keys():
+            if key.upper() != pythonhome_key:
+                continue
+            pythonhome_key = key
+
+        pythonhome_values = (
+            dotenv[pythonhome_key].split(os.pathsep)
+            if pythonhome_key in dotenv
+            else []
+        )
+
+        if (self.current_directory / "src").exists():
+            pythonhome_values.insert(0, str(self.current_directory / "src"))
+        pythonhome_values.insert(0, str(self.current_directory))
+
+        dotenv[pythonhome_key] = os.pathsep.join(pythonhome_values)
+
+        return dotenv
+
+    def __write_dotenv(self, env_variables: Dict[str, str]) -> None:
+        dotenv_path = self.current_directory / ".env"
+        with dotenv_path.open("w") as dotenv_file:
+            for key, value in env_variables.items():
+                dotenv_file.write(f"{key}={value}\n")
+
 
 def create_parser():
     parser = argparse.ArgumentParser(description="QGIS plugins build tool")
@@ -634,7 +978,7 @@ def create_parser():
     parser_install.add_argument(
         "--qgis",
         default="Vanilla",
-        choices=["Vanilla", "NextGIS"],
+        choices=["Vanilla", "NextGIS", "VanillaFlatpak"],
         help="QGIS build",
     )
     parser_install.add_argument(
@@ -654,7 +998,7 @@ def create_parser():
     parser_uninstall.add_argument(
         "--qgis",
         default="Vanilla",
-        choices=["Vanilla", "NextGIS"],
+        choices=["Vanilla", "NextGIS", "VanillaFlatpak"],
         help="QGIS build",
     )
     parser_uninstall.add_argument(
@@ -666,6 +1010,26 @@ def create_parser():
 
     # update_ts command
     subparsers.add_parser("update_ts", help="Update translations")
+
+    # config
+    parser_config = subparsers.add_parser(
+        "config", help="Config repo for development"
+    )
+    parser_config.add_argument(
+        "IDE",
+        default="vscode",
+        choices=["vscode"],
+        help="IDE",
+    )
+    parser_config.add_argument(
+        "--qgis",
+        default="Vanilla",
+        choices=["Vanilla", "NextGIS", "VanillaFlatpak"],
+        help="QGIS build",
+    )
+    parser_config.add_argument(
+        "--profile", default=None, help="QGIS profile name"
+    )
 
     return parser
 
@@ -693,6 +1057,8 @@ def main() -> None:
             builder.clean()
         elif args.command == "update_ts":
             builder.update_ts()
+        elif args.command == "config":
+            builder.config(args.IDE, args.qgis, args.profile)
 
     except KeyboardInterrupt:
         print("\nInterrupt signal received")

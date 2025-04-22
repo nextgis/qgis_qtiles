@@ -222,3 +222,6 @@ ui_*.py
 
 # QGIS
 *.db
+
+# VS Code
+/.vscode

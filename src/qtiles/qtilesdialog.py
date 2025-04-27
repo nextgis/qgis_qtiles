@@ -25,8 +25,12 @@
 import math
 import operator
 import os
+from typing import TYPE_CHECKING, List, Optional
 
-from qgis.core import QgsRectangle
+if TYPE_CHECKING:
+    from qgis.gui import QgsInterface
+
+from qgis.core import QgsMapLayer, QgsRectangle
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QDir, QFileInfo, Qt, pyqtSlot
 from qgis.PyQt.QtGui import QIcon
@@ -45,6 +49,8 @@ from .compat import (
     QgsSettings,
     getSaveFileName,
 )
+from qtiles.restrictions import OpenStreetMapRestriction
+from qtiles.tile import Tile
 
 FORM_CLASS, _ = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "ui/qtilesdialogbase.ui")
@@ -55,8 +61,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
     # MAX_ZOOM_LEVEL = 18
     MIN_ZOOM_LEVEL = 0
 
-    def __init__(self, iface):
-        QDialog.__init__(self)
+    def __init__(self, iface: "QgsInterface") -> None:
+        super().__init__()
         self.setupUi(self)
 
         self.btnOk = self.buttonBox.addButton(
@@ -104,7 +110,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.manageGui()
 
-    def show_output_info(self, href):
+    def show_output_info(self, href: str) -> None:
         title = self.tr("Output type info")
         message = ""
         if self.sender() is self.lInfoIconOutputZip:
@@ -136,7 +142,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         msgBox.setText(message)
         msgBox.exec()
 
-    def formatChanged(self):
+    def formatChanged(self) -> None:
         if self.cmbFormat.currentText() == "JPG":
             self.spnTransparency.setEnabled(False)
             self.spnQuality.setEnabled(True)
@@ -144,7 +150,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.spnTransparency.setEnabled(True)
             self.spnQuality.setEnabled(False)
 
-    def manageGui(self):
+    def manageGui(self) -> None:
         layers = utils.getMapLayers()
         for layer in sorted(
             iter(list(layers.items())), key=operator.itemgetter(1)
@@ -240,10 +246,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.formatChanged()
 
-    def reject(self):
-        QDialog.reject(self)
+    def reject(self) -> None:
+        super().reject()
 
-    def accept(self):
+    def accept(self) -> None:
         if self.rbOutputZip.isChecked():
             output = self.leZipFileName.text()
         elif self.rbOutputDir.isChecked():
@@ -273,9 +279,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 ),
             )
             return
-        fileInfo = QFileInfo(output)
+        file_info = QFileInfo(output)
         if (
-            fileInfo.isDir()
+            file_info.isDir()
             and not len(
                 QDir(output).entryList(
                     QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot
@@ -363,24 +369,90 @@ class QTilesDialog(QDialog, FORM_CLASS):
         writeViewer = (
             self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
         )
-        self.workThread = tilingthread.TilingThread(
+
+        tms_convention = self.chkTMSConvention.isChecked()
+        if file_info.suffix().lower() == "mbtiles":
+            tms_convention = True
+
+        use_tms = -1 if tms_convention else 1
+
+        initial_tile = Tile(0, 0, 0, use_tms)
+        min_zoom = self.spnZoomMin.value()
+        max_zoom = self.spnZoomMax.value()
+        render_outside_tiles = self.chkRenderOutsideTiles.isChecked()
+
+        tiles = self.count_tiles(
+            initial_tile,
             layers,
             extent,
-            self.spnZoomMin.value(),
-            self.spnZoomMax.value(),
+            min_zoom,
+            max_zoom,
+            render_outside_tiles,
+        )
+
+        if tiles is None:
+            QMessageBox.warning(
+                self,
+                self.tr("Error"),
+                self.tr(
+                    "The current map extent does not intersect with the tiles. "
+                    "Please check the extent and zoom level. "
+                    "This could be caused by an invalid or out-of-bounds extent."
+                ),
+                QMessageBox.StandardButton.Ok,
+            )
+            return
+
+        osm_restriction = OpenStreetMapRestriction()
+        tiles_count = len(tiles)
+        is_violated, message, updated_layers_list = osm_restriction.check(
+            layers, tiles_count
+        )
+
+        if is_violated:
+            reply = QMessageBox.question(
+                self,
+                self.tr("OpenStreetMap Layer Limitation"),
+                message
+                + "<br><br>Do you want to continue without OpenStreetMap layers?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+
+            if reply == QMessageBox.StandardButton.No:
+                return
+
+            if not updated_layers_list:
+                QMessageBox.warning(
+                    self,
+                    self.tr("No Layers for tiling"),
+                    self.tr(
+                        "There are no layers remaining for tiling. The operation has been cancelled."
+                    ),
+                    QMessageBox.StandardButton.Ok,
+                )
+                return
+
+            layers = updated_layers_list
+
+        self.workThread = tilingthread.TilingThread(
+            tiles,
+            layers,
+            extent,
+            min_zoom,
+            max_zoom,
             self.spnTileWidth.value(),
             self.spnTileHeight.value(),
             self.spnTransparency.value(),
             self.spnQuality.value(),
             self.cmbFormat.currentText(),
-            fileInfo,
+            file_info,
             self.leRootDir.text(),
             self.chkAntialiasing.isChecked(),
-            self.chkTMSConvention.isChecked(),
+            tms_convention,
             self.chkMBTilesCompression.isChecked(),
             self.chkWriteJson.isChecked(),
             self.chkWriteOverview.isChecked(),
-            self.chkRenderOutsideTiles.isChecked(),
             writeMapurl,
             writeViewer,
         )
@@ -396,7 +468,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.btnClose.clicked.connect(self.stopProcessing)
         self.workThread.start()
 
-    def confirmContinueThreshold(self, tilesCountThreshold):
+    @pyqtSlot(int)
+    def confirmContinueThreshold(self, tilesCountThreshold: int) -> None:
         res = QMessageBox.question(
             self.parent(),
             self.tr("Confirmation"),
@@ -410,26 +483,30 @@ class QTilesDialog(QDialog, FORM_CLASS):
         else:
             self.workThread.confirmStop()
 
-    def setProgressRange(self, message, value):
+    @pyqtSlot(str, int)
+    def setProgressRange(self, message: str, value: int) -> None:
         self.progressBar.setFormat(message)
         self.progressBar.setRange(0, value)
 
-    def updateProgress(self):
+    @pyqtSlot()
+    def updateProgress(self) -> None:
         self.progressBar.setValue(self.progressBar.value() + 1)
 
-    def processInterrupted(self):
+    @pyqtSlot()
+    def processInterrupted(self) -> None:
         self.restoreGui()
 
-    def processFinished(self):
+    @pyqtSlot()
+    def processFinished(self) -> None:
         self.stopProcessing()
         self.restoreGui()
 
-    def stopProcessing(self):
+    def stopProcessing(self) -> None:
         if self.workThread is not None:
             self.workThread.stop()
             self.workThread = None
 
-    def restoreGui(self):
+    def restoreGui(self) -> None:
         self.progressBar.setFormat("%p%")
         self.progressBar.setRange(0, 1)
         self.progressBar.setValue(0)
@@ -438,7 +515,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.btnClose.setText(self.tr("Close"))
         self.btnOk.setEnabled(True)
 
-    def __toggleTarget(self, checked):
+    def __toggleTarget(self, checked: bool) -> None:
         if checked:
             if self.sender() is self.rbOutputZip:
                 self.leZipFileName.setEnabled(True)
@@ -489,10 +566,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 self.chkWriteJson.setChecked(False)
                 self.chkWriteJson.setEnabled(False)
 
-    def __toggleLayerSelector(self, checked):
+    def __toggleLayerSelector(self, checked: bool) -> None:
         self.cmbLayers.setEnabled(checked)
 
-    def __toggleHeightEdit(self, state):
+    def __toggleHeightEdit(self, state: int) -> None:
         if state == Qt.Checked:
             self.lblHeight.setEnabled(False)
             self.spnTileHeight.setEnabled(False)
@@ -502,11 +579,11 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.spnTileHeight.setEnabled(True)
 
     @pyqtSlot(int)
-    def __updateTileSize(self, value):
+    def __updateTileSize(self, value: int) -> None:
         if self.chkLockRatio.isChecked():
             self.spnTileHeight.setValue(value)
 
-    def __select_output(self):
+    def __select_output(self) -> None:
         if self.rbOutputZip.isChecked():
             file_directory = QFileInfo(
                 self.settings.value("outputToZip_Path", ".")
@@ -556,3 +633,47 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.settings.setValue(
                 "outputToNGM_Path", QFileInfo(outPath).absoluteFilePath()
             )
+
+    def count_tiles(
+        self,
+        tile: Tile,
+        layers: List[QgsMapLayer],
+        extent: QgsRectangle,
+        min_zoom: int,
+        max_zoom: int,
+        render_outside_tiles: bool,
+    ) -> Optional[List[Tile]]:
+        if not extent.intersects(tile.toRectangle()):
+            return None
+
+        tiles = []
+        if min_zoom <= tile.z and tile.z <= max_zoom:
+            if not render_outside_tiles:
+                for layer in layers:
+                    crs_transform = QgsCoordinateTransform(
+                        layer.crs(),
+                        QgsCoordinateReferenceSystem.fromEpsgId(4326),
+                    )
+                    if crs_transform.transform(layer.extent()).intersects(
+                        tile.toRectangle()
+                    ):
+                        tiles.append(tile)
+                        break
+            else:
+                tiles.append(tile)
+        if tile.z < max_zoom:
+            for x in range(2 * tile.x, 2 * tile.x + 2, 1):
+                for y in range(2 * tile.y, 2 * tile.y + 2, 1):
+                    sub_tile = Tile(x, y, tile.z + 1, tile.tms)
+                    sub_tiles = self.count_tiles(
+                        sub_tile,
+                        layers,
+                        extent,
+                        min_zoom,
+                        max_zoom,
+                        render_outside_tiles,
+                    )
+                    if sub_tiles:
+                        tiles.extend(sub_tiles)
+
+        return tiles

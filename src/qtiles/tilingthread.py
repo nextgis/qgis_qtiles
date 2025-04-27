@@ -26,15 +26,26 @@ import codecs
 import json
 import time
 from string import Template
+from typing import List
 
 from qgis.core import (
+    QgsMapLayer,
     QgsMapRendererCustomPainterJob,
     QgsMapSettings,
     QgsMessageLog,
     QgsProject,
+    QgsRectangle,
     QgsScaleCalculator,
 )
-from qgis.PyQt.QtCore import QFile, QIODevice, QMutex, Qt, QThread, pyqtSignal
+from qgis.PyQt.QtCore import (
+    QFile,
+    QFileInfo,
+    QIODevice,
+    QMutex,
+    Qt,
+    QThread,
+    pyqtSignal,
+)
 from qgis.PyQt.QtGui import QColor, QImage, QPainter
 from qgis.PyQt.QtWidgets import *
 
@@ -64,31 +75,32 @@ class TilingThread(QThread):
 
     def __init__(
         self,
-        layers,
-        extent,
-        minZoom,
-        maxZoom,
-        width,
-        height,
-        transp,
-        quality,
-        format,
-        outputPath,
-        rootDir,
-        antialiasing,
-        tmsConvention,
-        mbtilesCompression,
-        jsonFile,
-        overview,
-        renderOutsideTiles,
-        mapUrl,
-        viewer,
-    ):
+        tiles: List[Tile],
+        layers: List[QgsMapLayer],
+        extent: QgsRectangle,
+        minZoom: int,
+        maxZoom: int,
+        width: int,
+        height: int,
+        transp: int,
+        quality: int,
+        format: str,
+        outputPath: QFileInfo,
+        rootDir: str,
+        antialiasing: bool,
+        tmsConvention: bool,
+        mbtilesCompression: bool,
+        jsonFile: bool,
+        overview: bool,
+        mapUrl: bool,
+        viewer: bool,
+    ) -> None:
         QThread.__init__(self, QThread.currentThread())
         self.mutex = QMutex()
         self.confirmMutex = QMutex()
         self.stopMe = 0
         self.interrupted = False
+        self.tiles = tiles
         self.layers = layers
         self.extent = extent
         self.minZoom = minZoom
@@ -106,7 +118,6 @@ class TilingThread(QThread):
         self.quality = quality
         self.jsonFile = jsonFile
         self.overview = overview
-        self.renderOutsideTiles = renderOutsideTiles
         self.mapurl = mapUrl
         self.viewer = viewer
         if self.output.isDir():
@@ -119,7 +130,6 @@ class TilingThread(QThread):
             self.mode = "MBTILES"
             self.tmsConvention = True
         self.interrupted = False
-        self.tiles = []
         self.layersId = []
         for layer in self.layers:
             self.layersId.append(layer.id())
@@ -171,7 +181,7 @@ class TilingThread(QThread):
         else:
             self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
 
-    def run(self):
+    def run(self) -> None:
         self.mutex.lock()
         self.stopMe = 0
         self.mutex.unlock()
@@ -200,10 +210,6 @@ class TilingThread(QThread):
         if self.overview:
             self.writeOverviewFile()
         self.rangeChanged.emit(self.tr("Searching tiles..."), 0)
-        useTMS = 1
-        if self.tmsConvention:
-            useTMS = -1
-        self.countTiles(Tile(0, 0, 0, useTMS))
 
         if self.interrupted:
             del self.tiles[:]
@@ -238,20 +244,20 @@ class TilingThread(QThread):
         else:
             self.processInterrupted.emit()
 
-    def stop(self):
+    def stop(self) -> None:
         self.mutex.lock()
         self.stopMe = 1
         self.mutex.unlock()
         QThread.wait(self)
 
-    def confirmContinue(self):
+    def confirmContinue(self) -> None:
         self.confirmMutex.unlock()
 
-    def confirmStop(self):
+    def confirmStop(self) -> None:
         self.interrupted = True
         self.confirmMutex.unlock()
 
-    def writeJsonFile(self):
+    def writeJsonFile(self) -> None:
         filePath = "%s.json" % self.output.absoluteFilePath()
         if self.mode == "DIR":
             filePath = "%s/%s.json" % (
@@ -274,7 +280,7 @@ class TilingThread(QThread):
         with open(filePath, "w") as f:
             f.write(json.dumps(info))
 
-    def writeOverviewFile(self):
+    def writeOverviewFile(self) -> None:
         self.settings.setExtent(self.projector.transform(self.extent))
 
         image = QImage(self.settings.outputSize(), QImage.Format_ARGB32)
@@ -306,7 +312,7 @@ class TilingThread(QThread):
             )
         image.save(filePath, self.format, self.quality)
 
-    def writeMapurlFile(self):
+    def writeMapurlFile(self) -> None:
         filePath = "%s/%s.mapurl" % (
             self.output.absoluteFilePath(),
             self.rootDir,
@@ -328,7 +334,7 @@ class TilingThread(QThread):
             )
             mapurl.write("%s=%s\n" % ("type", tileServer))
 
-    def writeLeafletViewer(self):
+    def writeLeafletViewer(self) -> None:
         templateFile = QFile(":/plugins/qtiles/resources/viewer.html")
         if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
             viewer = MyTemplate(str(templateFile.readAll()))
@@ -354,36 +360,7 @@ class TilingThread(QThread):
                 fOut.write(viewer.substitute(substitutions))
             templateFile.close()
 
-    def countTiles(self, tile):
-        if self.interrupted or not self.extent.intersects(tile.toRectangle()):
-            return
-        if self.minZoom <= tile.z and tile.z <= self.maxZoom:
-            if not self.renderOutsideTiles:
-                for layer in self.layers:
-                    t = QgsCoordinateTransform(
-                        layer.crs(),
-                        QgsCoordinateReferenceSystem.fromEpsgId(4326),
-                    )
-                    if t.transform(layer.extent()).intersects(
-                        tile.toRectangle()
-                    ):
-                        self.tiles.append(tile)
-                        break
-            else:
-                self.tiles.append(tile)
-        if tile.z < self.maxZoom:
-            for x in range(2 * tile.x, 2 * tile.x + 2, 1):
-                for y in range(2 * tile.y, 2 * tile.y + 2, 1):
-                    self.mutex.lock()
-                    s = self.stopMe
-                    self.mutex.unlock()
-                    if s == 1:
-                        self.interrupted = True
-                        return
-                    subTile = Tile(x, y, tile.z + 1, tile.tms)
-                    self.countTiles(subTile)
-
-    def render(self, tile):
+    def render(self, tile: Tile) -> None:
         # scale = self.scaleCalc.calculate(
         #    self.projector.transform(tile.toRectangle()), self.width)
 

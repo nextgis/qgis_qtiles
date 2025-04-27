@@ -58,10 +58,20 @@ FORM_CLASS, _ = uic.loadUiType(
 
 
 class QTilesDialog(QDialog, FORM_CLASS):
+    """
+    QTilesDialog is the main dialog for configuring
+    and generating map tiles from a QGIS project.
+    """
+
     # MAX_ZOOM_LEVEL = 18
     MIN_ZOOM_LEVEL = 0
 
     def __init__(self, iface: "QgsInterface") -> None:
+        """
+        Initializes the QTilesDialog with the given QGIS interface.
+
+        :param iface: The QGIS interface object for interacting with the QGIS application.
+        """
         super().__init__()
         self.setupUi(self)
 
@@ -111,6 +121,11 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.manageGui()
 
     def show_output_info(self, href: str) -> None:
+        """
+        Displays information about the selected output type.
+
+        :param href: The hyperlink reference associated with the clicked icon.
+        """
         title = self.tr("Output type info")
         message = ""
         if self.sender() is self.lInfoIconOutputZip:
@@ -143,6 +158,12 @@ class QTilesDialog(QDialog, FORM_CLASS):
         msgBox.exec()
 
     def formatChanged(self) -> None:
+        """
+        Updates the GUI based on the selected output format.
+
+        This method enables or disables certain input fields depending on
+        whether the selected format is JPG or another format.
+        """
         if self.cmbFormat.currentText() == "JPG":
             self.spnTransparency.setEnabled(False)
             self.spnQuality.setEnabled(True)
@@ -151,6 +172,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.spnQuality.setEnabled(False)
 
     def manageGui(self) -> None:
+        """
+        Configures the GUI elements based on saved settings and user input.
+        """
         layers = utils.getMapLayers()
         for layer in sorted(
             iter(list(layers.items())), key=operator.itemgetter(1)
@@ -247,9 +271,25 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.formatChanged()
 
     def reject(self) -> None:
+        """
+        Closes the dialog without saving changes.
+        """
         super().reject()
 
     def accept(self) -> None:
+        """
+        Validates user input and starts the tile generation process.
+
+        This method performs several checks, such as ensuring the output
+        directory is valid, verifying zoom levels, and checking for OSM
+        restrictions. If the tile count exceeds the OpenStreetMap policy
+        limit, the user is prompted to confirm whether to proceed without
+        OSM layers. It also initializes the tiling thread and connects
+        progress signals to update the GUI.
+
+        :raises QMessageBox: If any validation fails, a warning message is
+            displayed to the user.
+        """
         if self.rbOutputZip.isChecked():
             output = self.leZipFileName.text()
         elif self.rbOutputDir.isChecked():
@@ -303,7 +343,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 self,
                 self.tr("Wrong zoom"),
                 self.tr(
-                    "Maximum zoom value is lower than minimum. Please correct this and try again."
+                    "Maximum zoom value is lower than minimum. "
+                    "Please correct this and try again."
                 ),
             )
             return
@@ -427,7 +468,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
                     self,
                     self.tr("No Layers for tiling"),
                     self.tr(
-                        "There are no layers remaining for tiling. The operation has been cancelled."
+                        "There are no layers remaining for tiling. "
+                        "The operation has been cancelled."
                     ),
                     QMessageBox.StandardButton.Ok,
                 )
@@ -469,12 +511,22 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.workThread.start()
 
     @pyqtSlot(int)
-    def confirmContinueThreshold(self, tilesCountThreshold: int) -> None:
+    def confirmContinueThreshold(self, tiles_count_threshold: int) -> None:
+        """
+        Confirms whether to proceed with tile generation
+        when the estimated tile countexceeds a given threshold.
+
+        If the tile count surpasses the specified threshold,
+        this method prompts the user with a confirmation dialog.
+
+        :param tiles_count_threshold: The estimated threshold of tile count
+                                      that triggers the confirmation.
+        """
         res = QMessageBox.question(
             self.parent(),
             self.tr("Confirmation"),
             self.tr("Estimate number of tiles more then %d! Continue?")
-            % tilesCountThreshold,
+            % tiles_count_threshold,
             QMessageBox.Yes | QMessageBox.No,
         )
 
@@ -485,28 +537,52 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
     @pyqtSlot(str, int)
     def setProgressRange(self, message: str, value: int) -> None:
+        """
+        Sets the progress bar range and updates its message.
+
+        :param message: A string containing the message to be displayed
+                        on the progress bar.
+        :param value: The total value indicating the range of progress.
+        """
         self.progressBar.setFormat(message)
         self.progressBar.setRange(0, value)
 
     @pyqtSlot()
     def updateProgress(self) -> None:
+        """
+        Updates the progress bar by incrementing its current value.
+        """
         self.progressBar.setValue(self.progressBar.value() + 1)
 
     @pyqtSlot()
     def processInterrupted(self) -> None:
+        """
+        Restores the GUI state after the tile generation process is interrupted.
+        """
         self.restoreGui()
 
     @pyqtSlot()
     def processFinished(self) -> None:
+        """
+        Restores the GUI state and stops
+        the tile generation process when it is completed.
+        """
         self.stopProcessing()
         self.restoreGui()
 
     def stopProcessing(self) -> None:
+        """
+        Stops the tile generation process if it is running.
+        """
         if self.workThread is not None:
             self.workThread.stop()
             self.workThread = None
 
     def restoreGui(self) -> None:
+        """
+        Restores the initial GUI state
+        after a process has finished or been interrupted.
+        """
         self.progressBar.setFormat("%p%")
         self.progressBar.setRange(0, 1)
         self.progressBar.setValue(0)
@@ -516,6 +592,14 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.btnOk.setEnabled(True)
 
     def __toggleTarget(self, checked: bool) -> None:
+        """
+        Toggles the availability of target-related input fields.
+
+        This method is triggered when the user selects a different output
+        target (e.g., ZIP, directory, or NGM package).
+
+        :param checked: A boolean indicating whether the target is selected.
+        """
         if checked:
             if self.sender() is self.rbOutputZip:
                 self.leZipFileName.setEnabled(True)
@@ -567,9 +651,20 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 self.chkWriteJson.setEnabled(False)
 
     def __toggleLayerSelector(self, checked: bool) -> None:
+        """
+        Toggles the visibility of the layer selector based on user input.
+
+        :param checked: A boolean indicating whether the layer selector should be visible.
+        """
         self.cmbLayers.setEnabled(checked)
 
     def __toggleHeightEdit(self, state: int) -> None:
+        """
+        Enables or disables the height input field based on the lock ratio
+        checkbox.
+
+        :param state: The state of the lock ratio checkbox (checked or unchecked).
+        """
         if state == Qt.Checked:
             self.lblHeight.setEnabled(False)
             self.spnTileHeight.setEnabled(False)
@@ -580,10 +675,21 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
     @pyqtSlot(int)
     def __updateTileSize(self, value: int) -> None:
+        """
+        Updates the tile size based on user input.
+
+        This method ensures that the tile width and height remain consistent
+        when the user changes one of the dimensions.
+
+        :param value: The new value for the tile size.
+        """
         if self.chkLockRatio.isChecked():
             self.spnTileHeight.setValue(value)
 
     def __select_output(self) -> None:
+        """
+        Opens a file dialog for selecting the output path.
+        """
         if self.rbOutputZip.isChecked():
             file_directory = QFileInfo(
                 self.settings.value("outputToZip_Path", ".")
@@ -643,6 +749,22 @@ class QTilesDialog(QDialog, FORM_CLASS):
         max_zoom: int,
         render_outside_tiles: bool,
     ) -> Optional[List[Tile]]:
+        """
+        Recursively counts the number of tiles to be generated.
+
+        This method calculates the tiles required for the specified extent
+        and zoom levels. It supports rendering tiles outside the map extent
+        if enabled.
+
+        :param tile: The initial tile to start counting from.
+        :param layers: A list of map layers to consider for tile generation.
+        :param extent: The geographical extent for tile generation.
+        :param min_zoom: The minimum zoom level.
+        :param max_zoom: The maximum zoom level.
+        :param render_outside_tiles: Whether to include tiles outside themap extent.
+
+        :returns: A list of tiles to be generated or None if no tiles are required.
+        """
         if not extent.intersects(tile.toRectangle()):
             return None
 

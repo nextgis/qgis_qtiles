@@ -6,15 +6,46 @@ from qgis.PyQt.QtCore import QCoreApplication, QUrl
 
 
 class LayerRestriction(ABC):
+    """
+    Abstract base class for defining restrictions on map layers.
+
+    Subclasses must implement the `check` method to enforce specific
+    restrictions on layers and tile counts.
+    """
+
     @abstractmethod
     def check(self, layers, tiles_count) -> Tuple[bool, str, List]:
+        """
+        Checks whether the given layers and tile count meet the restriction.
+
+        This method must be implemented by subclasses to define custom
+        restrictions.
+
+        :param layers: A list of map layers to check.
+        :param tiles_count: The total number of tiles to be generated.
+        """
         pass
 
 
 class OpenStreetMapRestriction(LayerRestriction):
-    MAXIMUM_OPENSTREETMAP_TILES_FETCH = 5000
+    """
+    Restriction for OpenStreetMap layers to prevent bulk downloading.
+
+    This class enforces the OpenStreetMap Tile Usage Policy by skipping
+    layers that would result in excessive tile downloads.
+    """
+
+    MAXIMUM_OPENSTREETMAP_TILES_FETCH: int = 5000
 
     def is_openstreetmap_layer(self, layer: QgsMapLayer) -> bool:
+        """
+        Determines whether a given layer is an OpenStreetMap layer.
+
+        This method checks the provider type and URL of the layer to identify
+        if it belongs to OpenStreetMap.
+
+        :param layer: The map layer to check.
+        """
         if layer.providerType().lower() == "wms":
             metadata = layer.providerMetadata()
             uri = metadata.decodeUri(layer.source())
@@ -27,6 +58,19 @@ class OpenStreetMapRestriction(LayerRestriction):
     def check(
         self, layers: List[QgsMapLayer], tiles_count: int
     ) -> Tuple[bool, str, List[QgsMapLayer]]:
+        """
+        Checks if the tile count exceeds the maximum allowed for OpenStreetMap.
+
+        If the tile count exceeds the limit, this method identifies and skips
+        OpenStreetMap layers to comply with the usage policy.
+
+        :param layers: A list of map layers to check.
+        :param tiles_count: The total number of tiles to be generated.
+
+        :returns: A tuple containing a boolean indicating whether any layers
+            were skipped, a message describing the skipped layers, and the
+            updated list of layers.
+        """
         message = ""
 
         if tiles_count > self.MAXIMUM_OPENSTREETMAP_TILES_FETCH:

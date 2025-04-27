@@ -65,6 +65,10 @@ def printQtilesLog(msg, level=QgsMessageLogInfo):
 
 
 class TilingThread(QThread):
+    """
+    Background thread for generating map tiles.
+    """
+
     rangeChanged = pyqtSignal(str, int)
     updateProgress = pyqtSignal()
     processFinished = pyqtSignal()
@@ -95,6 +99,29 @@ class TilingThread(QThread):
         mapUrl: bool,
         viewer: bool,
     ) -> None:
+        """
+        Initializes the TilingThread with the given parameters.
+
+        :param tiles: A list of tiles to generate.
+        :param layers: A list of map layers to render.
+        :param extent: The geographical extent for tile generation.
+        :param min_zoom: The minimum zoom level.
+        :param max_zoom: The maximum zoom level.
+        :param width: The width of each tile in pixels.
+        :param height: The height of each tile in pixels.
+        :param transp: The transparency level for tiles.
+        :param quality: The quality level for image compression.
+        :param format: The output format (e.g., PNG, JPG).
+        :param output_path: The file path for saving the tiles.
+        :param root_dir: The root directory for output files.
+        :param antialiasing: Whether to enable antialiasing.
+        :param tms_convention: Whether to use TMS naming convention.
+        :param mbtiles_compression: Whether to enable MBTiles compression.
+        :param json_file: Whether to generate a JSON metadata file.
+        :param overview: Whether to generate an overview file.
+        :param map_url: Whether to include a map URL in the output.
+        :param viewer: Whether to generate a viewer for the tiles.
+        """
         QThread.__init__(self, QThread.currentThread())
         self.mutex = QMutex()
         self.confirmMutex = QMutex()
@@ -182,6 +209,13 @@ class TilingThread(QThread):
             self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
 
     def run(self) -> None:
+        """
+        Starts the tile generation process in the background thread.
+        The process renders tiles and writes them to the specified output format.
+        If the tile count exceeds the threshold, the user is asked to confirm continuation.
+        The method processes tiles sequentially until either
+        all tiles are generated or the process is interrupted.
+        """
         self.mutex.lock()
         self.stopMe = 0
         self.mutex.unlock()
@@ -245,19 +279,43 @@ class TilingThread(QThread):
             self.processInterrupted.emit()
 
     def stop(self) -> None:
+        """
+        Stops the tile generation process.
+
+        This method sets a flag to interrupt the thread and halt the
+        generation of remaining tiles.
+        """
         self.mutex.lock()
         self.stopMe = 1
         self.mutex.unlock()
         QThread.wait(self)
 
     def confirmContinue(self) -> None:
+        """
+        Prompts the user to confirm whether to continue the process.
+
+        This method is used when the tile count exceeds a predefined
+        threshold, allowing the user to decide whether to proceed.
+        """
         self.confirmMutex.unlock()
 
     def confirmStop(self) -> None:
+        """
+        Stops the tile generation process by setting the `interrupted` flag to `True`.
+
+        This method is used to stop the process
+        immediately when called by user interaction.
+        """
         self.interrupted = True
         self.confirmMutex.unlock()
 
     def writeJsonFile(self) -> None:
+        """
+        Writes a JSON metadata file that describes the tile set.
+
+        The file contains information about the tile set,
+        such as the format, zoom levels, and geographical bounds.
+        """
         filePath = "%s.json" % self.output.absoluteFilePath()
         if self.mode == "DIR":
             filePath = "%s/%s.json" % (
@@ -281,6 +339,12 @@ class TilingThread(QThread):
             f.write(json.dumps(info))
 
     def writeOverviewFile(self) -> None:
+        """
+        Generates an overview image for the tile set.
+
+        This image represents the entire geographical extent
+        in a single image, useful for creating a preview of the tile set.
+        """
         self.settings.setExtent(self.projector.transform(self.extent))
 
         image = QImage(self.settings.outputSize(), QImage.Format_ARGB32)
@@ -313,6 +377,13 @@ class TilingThread(QThread):
         image.save(filePath, self.format, self.quality)
 
     def writeMapurlFile(self) -> None:
+        """
+        Writes a `.mapurl` file that includes details
+        on how to access the tile server.
+
+        The map URL file contains information about the tile format,
+        zoom levels, and server convention (TMS or Google).
+        """
         filePath = "%s/%s.mapurl" % (
             self.output.absoluteFilePath(),
             self.rootDir,
@@ -335,6 +406,12 @@ class TilingThread(QThread):
             mapurl.write("%s=%s\n" % ("type", tileServer))
 
     def writeLeafletViewer(self) -> None:
+        """
+        Writes an HTML file for a Leaflet viewer to visualize the generated tiles.
+
+        The viewer allows users to interact
+        with the tiles and navigate through the map.
+        """
         templateFile = QFile(":/plugins/qtiles/resources/viewer.html")
         if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
             viewer = MyTemplate(str(templateFile.readAll()))
@@ -361,6 +438,12 @@ class TilingThread(QThread):
             templateFile.close()
 
     def render(self, tile: Tile) -> None:
+        """
+        Renders a single tile based on the provided tile object.
+
+        This method processes a tile by rendering it to an image,
+        using map settings and transforms.
+        """
         # scale = self.scaleCalc.calculate(
         #    self.projector.transform(tile.toRectangle()), self.width)
 
@@ -386,7 +469,25 @@ class TilingThread(QThread):
 
 
 class MyTemplate(Template):
+    """
+    A subclass of Python's built-in Template class
+    that uses a custom delimiter "@" for variable substitution.
+
+    This class allows template substitution
+    using the "@" symbol instead of the default "${}" delimiter.
+    It is used to customize the rendering of template strings
+    for generating HTML files, specifically in the context of creating
+    a Leaflet viewer for the tile generation process.
+    """
+
     delimiter = "@"
 
-    def __init__(self, templateString):
-        Template.__init__(self, templateString)
+    def __init__(self, template_string: str) -> None:
+        """
+        Initializes the MyTemplate class with the provided template string.
+
+        :param templateString: The template string to be processed.
+                               This string can contain placeholders that will be
+                               replaced with actual values during template substitution.
+        """
+        Template.__init__(self, template_string)

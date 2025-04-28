@@ -1,14 +1,22 @@
-from enum import IntEnum
+import importlib.util
+from enum import Enum
 from pathlib import Path
 from typing import Dict, Optional
 
 from qgis.core import QgsSettings
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QFile, QLocale, QSize, Qt, QUrl
+from qgis.PyQt.QtCore import QT_VERSION_STR, QFile, QLocale, QSize, Qt, QUrl
 from qgis.PyQt.QtGui import QDesktopServices, QIcon, QPixmap
-from qgis.PyQt.QtSvg import QSvgWidget
 from qgis.PyQt.QtWidgets import QDialog, QLabel, QWidget
 from qgis.utils import pluginMetadata
+
+QT_MAJOR_VERSION = int(QT_VERSION_STR.split(".")[0])
+if QT_MAJOR_VERSION < 6:
+    from qgis.PyQt.QtSvg import QSvgWidget
+elif importlib.util.find_spec("qgis.PyQt.QtSvgWidgets"):
+    from qgis.PyQt.QtSvgWidgets import QSvgWidget
+else:
+    from PyQt6.QtSvgWidgets import QSvgWidget
 
 CURRENT_PATH = Path(__file__).parent
 UI_PATH = Path(__file__).parent / "ui"
@@ -44,11 +52,14 @@ else:
     raise ImportError
 
 
-class AboutTab(IntEnum):
-    Information = 0
-    License = 1
-    Components = 2
-    Contributors = 3
+class AboutTab(str, Enum):
+    Information = "information_tab"
+    License = "license_tab"
+    Components = "components_tab"
+    Contributors = "contributors_tab"
+
+    def __str__(self) -> str:
+        return str(self.value)
 
 
 class AboutDialog(QDialog, Ui_AboutDialogBase):
@@ -56,6 +67,12 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
         super().__init__(parent)
         self.setupUi(self)
         self.__package_name = package_name
+
+        module_spec = importlib.util.find_spec(self.__package_name)
+        if module_spec and module_spec.origin:
+            self.__package_path = Path(module_spec.origin).parent
+        else:
+            self.__package_path = Path(__file__).parent
 
         self.tab_widget.setCurrentIndex(0)
 
@@ -88,7 +105,7 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
 
         header_size: QSize = self.info_layout.sizeHint()
 
-        icon_path = Path(__file__).parent / str(metadata.get("icon_path"))
+        icon_path = self.__package_path / str(metadata.get("icon_path"))
         svg_icon_path = icon_path.with_suffix(".svg")
 
         if svg_icon_path.exists():
@@ -118,8 +135,7 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
         self.header_layout.insertWidget(0, icon_widget)
 
     def __fill_get_involved(self, metadata: Dict[str, Optional[str]]) -> None:
-        plugin_path = Path(__file__).parent
-        file_path = str(plugin_path / "icons" / "nextgis_logo.svg")
+        file_path = str(self.__package_path / "icons" / "nextgis_logo.svg")
         resources_path = (
             f":/plugins/{self.__package_name}/icons/nextgis_logo.svg"
         )
@@ -139,19 +155,18 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
         self.about_text_browser.setHtml(self.__html(metadata))
 
     def __fill_license(self) -> None:
-        license_path = Path(__file__).parent / "LICENSE"
+        license_path = self.__package_path / "LICENSE"
         if not license_path.exists():
-            self.tab_widget.setTabVisible(AboutTab.License, False)
+            self.tab_widget.removeTab(self.__tab_to_index(AboutTab.License))
             return
 
-        self.tab_widget.setTabVisible(AboutTab.License, True)
         self.license_text_browser.setPlainText(license_path.read_text())
 
     def __fill_components(self) -> None:
-        self.tab_widget.setTabVisible(AboutTab.Components, False)
+        self.tab_widget.removeTab(self.__tab_to_index(AboutTab.Components))
 
     def __fill_contributors(self) -> None:
-        self.tab_widget.setTabVisible(AboutTab.Contributors, False)
+        self.tab_widget.removeTab(self.__tab_to_index(AboutTab.Contributors))
 
     def __locale(self) -> str:
         override_locale = QgsSettings().value(
@@ -204,6 +219,7 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
             "video_url": metadata_value("video"),
             "homepage_url": metadata_value("homepage"),
             "tracker_url": metadata_value("tracker"),
+            "user_guide_url": metadata_value("user_guide"),
             "main_url": main_url,
             "data_url": main_url.replace("://", "://data."),
             "get_involved_url": f"https://nextgis.com/redirect/{locale}/ak45prp5?{utm}",
@@ -219,6 +235,7 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
         titles = {
             "developers_title": self.tr("Developers"),
             "homepage_title": self.tr("Homepage"),
+            "user_guide": self.tr("User Guide"),
             "report_title": self.tr("Please report bugs at"),
             "report_end": report_end,
             "bugtracker_title": self.tr("bugtracker"),
@@ -233,10 +250,16 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
         description = """
             <p>{description}</p>
             <p>{about}</p>
+        """
+
+        if metadata.get("user_guide_url") is not None:
+            description += '<p><b>{user_guide}:</b> <a href="{user_guide_url}{utm}">{user_guide_url}</a></p>'
+
+        description += """
             <p><b>{developers_title}:</b> <a href="{main_url}/{utm}">{authors}</a></p>
             <p><b>{homepage_title}:</b> <a href="{homepage_url}">{homepage_url}</a></p>
             <p><b>{report_title}</b> <a href="{tracker_url}">{bugtracker_title}</a> {report_end}</p>
-            """
+        """
 
         if metadata.get("video_url") is not None:
             description += '<p><b>{video_title}:</b> <a href="{video_url}">{video_url}</a></p>'
@@ -256,3 +279,7 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
         replacements.update(metadata)
 
         return (description + services).format_map(replacements)
+
+    def __tab_to_index(self, tab_name: AboutTab) -> int:
+        tab = self.tab_widget.findChild(QWidget, str(tab_name))
+        return self.tab_widget.indexOf(tab)

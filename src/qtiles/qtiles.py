@@ -33,7 +33,7 @@ from qgis.PyQt.QtCore import (
     QTranslator,
 )
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QMessageBox
+from qgis.PyQt.QtWidgets import QAction, QMenu, QMessageBox
 from pathlib import Path
 
 from . import aboutdialog, qtilesdialog, resources_rc  # noqa: F401
@@ -112,12 +112,16 @@ class QTilesPlugin:
         self.actionAbout.setIcon(QIcon(":/plugins/qtiles/icons/about.png"))
         self.actionAbout.setWhatsThis("About QTiles")
 
-        self.iface.addPluginToMenu(
-            QCoreApplication.translate("QTiles", "QTiles"), self.actionRun
+        self.__qtiles_menu = QMenu(
+            QCoreApplication.translate("QTiles", "QTiles")
         )
-        self.iface.addPluginToMenu(
-            QCoreApplication.translate("QTiles", "QTiles"), self.actionAbout
-        )
+        self.__qtiles_menu.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.png"))
+
+        self.__qtiles_menu.addAction(self.actionRun)
+        self.__qtiles_menu.addAction(self.actionAbout)
+
+        self.iface.pluginMenu().addMenu(self.__qtiles_menu)
+
         self.iface.addToolBarIcon(self.actionRun)
 
         self.actionRun.triggered.connect(self.run)
@@ -128,9 +132,9 @@ class QTilesPlugin:
             "QTiles",
         )
         self.__show_help_action.triggered.connect(self.about)
-        plugin_help_menu = self.iface.pluginHelpMenu()
-        assert plugin_help_menu is not None
-        plugin_help_menu.addAction(self.__show_help_action)
+        self.__plugin_help_menu = self.iface.pluginHelpMenu()
+        assert self.__plugin_help_menu is not None
+        self.__plugin_help_menu.addAction(self.__show_help_action)
 
     def unload(self):
         self.iface.unregisterMainWindowAction(self.actionRun)
@@ -142,6 +146,12 @@ class QTilesPlugin:
         self.iface.removePluginMenu(
             QCoreApplication.translate("QTiles", "QTiles"), self.actionAbout
         )
+        self.__qtiles_menu.deleteLater()
+
+        if self.__plugin_help_menu:
+            self.__plugin_help_menu.removeAction(self.__show_help_action)
+        self.__show_help_action.deleteLater()
+        self.__show_help_action = None
 
     def run(self):
         d = qtilesdialog.QTilesDialog(self.iface)

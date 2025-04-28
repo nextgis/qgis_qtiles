@@ -62,3 +62,4 @@ video[ru]=https://www.youtube.com/watch?v=Lk-i4Az0SEo
 
 experimental=False
 deprecated=False
+supportsQt6=True

@@ -55,6 +55,8 @@ icon=icons/qtiles.png
 tags=raster,tiles
 
 homepage=https://github.com/nextgis/QTiles
+user_guide=https://docs.nextgis.com/docs_ngqgis/source/qtiles.html
+user_guide[ru]=https://docs.nextgis.ru/docs_ngqgis/source/qtiles.html
 tracker=https://github.com/nextgis/QTiles/issues
 repository=https://github.com/nextgis/QTiles
 video=https://www.youtube.com/watch?v=vU4bGCh5khM

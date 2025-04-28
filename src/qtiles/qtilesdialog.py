@@ -76,7 +76,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.setupUi(self)
 
         self.btnOk = self.buttonBox.addButton(
-            self.tr("Run"), QDialogButtonBox.AcceptRole
+            self.tr("Run"), QDialogButtonBox.ButtonRole.AcceptRole
         )
 
         # self.spnZoomMax.setMaximum(self.MAX_ZOOM_LEVEL)
@@ -89,7 +89,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.iface = iface
 
-        self.verticalLayout_2.setAlignment(Qt.AlignTop)
+        self.verticalLayout_2.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.workThread = None
 
@@ -100,7 +100,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.settings = QgsSettings("NextGIS", "QTiles")
         self.grpParameters.setSettings(self.settings)
-        self.btnClose = self.buttonBox.button(QDialogButtonBox.Close)
+        self.btnClose = self.buttonBox.button(
+            QDialogButtonBox.StandardButton.Close
+        )
         self.rbExtentLayer.toggled.connect(self.__toggleLayerSelector)
         self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
         self.spnTileWidth.valueChanged.connect(self.__updateTileSize)
@@ -324,7 +326,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
             file_info.isDir()
             and not len(
                 QDir(output).entryList(
-                    QDir.Dirs | QDir.Files | QDir.NoDotAndDotDot
+                    QDir.Filter.Dirs
+                    | QDir.Filter.Files
+                    | QDir.Filter.NoDotAndDotDot
                 )
             )
             == 0
@@ -333,9 +337,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 self,
                 self.tr("Directory not empty"),
                 self.tr("Selected directory is not empty. Continue?"),
-                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
-            if res == QMessageBox.No:
+            if res == QMessageBox.StandardButton.No:
                 return
 
         if self.spnZoomMin.value() > self.spnZoomMax.value():
@@ -525,10 +529,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.tr("Confirmation"),
             self.tr("Estimate number of tiles more then %d! Continue?")
             % tiles_count_threshold,
-            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             self.workThread.confirmContinue()
         else:
             self.workThread.confirmStop()
@@ -637,7 +641,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
                 self.spnTileWidth.setValue(256)
                 self.spnTileWidth.setEnabled(False)
-                self.chkLockRatio.setCheckState(Qt.Checked)
+                self.chkLockRatio.setCheckState(Qt.CheckState.Checked)
                 self.chkLockRatio.setEnabled(False)
                 self.cmbFormat.setCurrentIndex(0)
                 self.cmbFormat.setEnabled(True)
@@ -663,7 +667,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         :param state: The state of the lock ratio checkbox (checked or unchecked).
         """
-        if state == Qt.Checked:
+        if state == Qt.CheckState.Checked:
             self.lblHeight.setEnabled(False)
             self.spnTileHeight.setEnabled(False)
             self.spnTileHeight.setValue(self.spnTileWidth.value())
@@ -713,7 +717,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 self,
                 self.tr("Save to directory"),
                 dir_directory,
-                QFileDialog.ShowDirsOnly,
+                QFileDialog.Option.ShowDirsOnly,
             )
             if not outPath:
                 return

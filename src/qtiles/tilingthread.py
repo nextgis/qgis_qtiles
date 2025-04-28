@@ -170,7 +170,9 @@ class TilingThread(QThread):
             "Gui", "/CanvasColorBluePart", 255
         )[0]
         self.color = QColor(myRed, myGreen, myBlue, transp)
-        image = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
+        image = QImage(
+            width, height, QImage.Format.Format_ARGB32_Premultiplied
+        )
         self.projector = QgsCoordinateTransform(
             QgsCoordinateReferenceSystem.fromEpsgId(4326),
             QgsCoordinateReferenceSystem.fromEpsgId(3395),
@@ -187,7 +189,9 @@ class TilingThread(QThread):
             self.settings.setCrsTransformEnabled(True)
 
         self.settings.setOutputDpi(image.logicalDpiX())
-        self.settings.setOutputImageFormat(QImage.Format_ARGB32_Premultiplied)
+        self.settings.setOutputImageFormat(
+            QImage.Format.Format_ARGB32_Premultiplied
+        )
         self.settings.setDestinationCrs(
             QgsCoordinateReferenceSystem.fromEpsgId(3395)
         )
@@ -347,8 +351,8 @@ class TilingThread(QThread):
         """
         self.settings.setExtent(self.projector.transform(self.extent))
 
-        image = QImage(self.settings.outputSize(), QImage.Format_ARGB32)
-        image.fill(Qt.transparent)
+        image = QImage(self.settings.outputSize(), QImage.Format.Format_ARGB32)
+        image.fill(Qt.GlobalColor.transparent)
 
         dpm = round(self.settings.outputDpi() / 25.4 * 1000)
         image.setDotsPerMeterX(dpm)
@@ -413,7 +417,9 @@ class TilingThread(QThread):
         with the tiles and navigate through the map.
         """
         templateFile = QFile(":/plugins/qtiles/resources/viewer.html")
-        if templateFile.open(QIODevice.ReadOnly | QIODevice.Text):
+        if templateFile.open(
+            QIODevice.OpenModeFlag.ReadOnly | QIODevice.OpenModeFlag.Text
+        ):
             viewer = MyTemplate(str(templateFile.readAll()))
 
             tilesDir = "%s/%s" % (self.output.absoluteFilePath(), self.rootDir)
@@ -449,8 +455,8 @@ class TilingThread(QThread):
 
         self.settings.setExtent(self.projector.transform(tile.toRectangle()))
 
-        image = QImage(self.settings.outputSize(), QImage.Format_ARGB32)
-        image.fill(Qt.transparent)
+        image = QImage(self.settings.outputSize(), QImage.Format.Format_ARGB32)
+        image.fill(Qt.GlobalColor.transparent)
 
         dpm = round(self.settings.outputDpi() / 25.4 * 1000)
         image.setDotsPerMeterX(dpm)

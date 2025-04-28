@@ -88,12 +88,33 @@ class OpenStreetMapRestriction(LayerRestriction):
                 <p>{
                     QCoreApplication.translate(
                         "LayerRestriction",
-                        "The following OpenStreetMap layers will be skipped because the operation "
+                        "The following OpenStreetMap layers were skipped because the operation "
                         "would lead to bulk downloading, which is prohibited by the "
                         "<a href='https://operations.osmfoundation.org/policies/tiles/'>OpenStreetMap Foundation Tile Usage Policy</a>:",
                     )
                 }</p>
                 <p>{layers_list_html}</p>
+                """
+
+                if not layers:
+                    message += f"""
+                    <p>{
+                        QCoreApplication.translate(
+                            "LayerRestriction",
+                            "There are no layers remaining for tiling. "
+                            "The operation has been cancelled.",
+                        )
+                    }</p>
+                    """
+
+                message += f"""
+                <p>{
+                    QCoreApplication.translate(
+                        "LayerRestriction",
+                        "To avoid this restriction, try reducing the maximum zoom level in the settings "
+                        "or increasing the zoom level in the map extent before running operation.",
+                    )
+                }</p>
                 """
                 return True, message, layers
 

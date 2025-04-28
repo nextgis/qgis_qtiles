@@ -444,35 +444,33 @@ class QTilesDialog(QDialog, FORM_CLASS):
             )
             return
 
-        osm_restriction = OpenStreetMapRestriction()
         tiles_count = len(tiles)
+
+        osm_restriction = OpenStreetMapRestriction()
         is_violated, message, updated_layers_list = osm_restriction.check(
             layers, tiles_count
         )
 
         if is_violated:
+            if not updated_layers_list:
+                QMessageBox.warning(
+                    self,
+                    self.tr("OpenStreetMap Layer Restriction"),
+                    message,
+                    QMessageBox.StandardButton.Ok,
+                )
+                return
+
             reply = QMessageBox.question(
                 self,
-                self.tr("OpenStreetMap Layer Limitation"),
+                self.tr("OpenStreetMap Layer Restriction"),
                 message
-                + "<br><br>Do you want to continue without OpenStreetMap layers?",
+                + "<br><br>Are you sure you want to continue without OpenStreetMap layers?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No,
             )
 
             if reply == QMessageBox.StandardButton.No:
-                return
-
-            if not updated_layers_list:
-                QMessageBox.warning(
-                    self,
-                    self.tr("No Layers for tiling"),
-                    self.tr(
-                        "There are no layers remaining for tiling. "
-                        "The operation has been cancelled."
-                    ),
-                    QMessageBox.StandardButton.Ok,
-                )
                 return
 
             layers = updated_layers_list

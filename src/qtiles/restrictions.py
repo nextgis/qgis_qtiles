@@ -8,21 +8,29 @@ from qgis.PyQt.QtCore import QCoreApplication, QUrl
 class LayerRestriction(ABC):
     """
     Abstract base class for defining restrictions on map layers.
-
-    Subclasses must implement the `check` method to enforce specific
-    restrictions on layers and tile counts.
     """
 
     @abstractmethod
-    def check(self, layers, tiles_count) -> Tuple[bool, str, List]:
+    def validate_restriction(
+        self, layers: List[QgsMapLayer], tiles_count: int
+    ) -> Tuple[bool, str, List[QgsMapLayer]]:
         """
-        Checks whether the given layers and tile count meet the restriction.
+        Validates whether the given layers and tile count meet the restriction.
 
-        This method must be implemented by subclasses to define custom
-        restrictions.
+        Subclasses should implement this method to define their own logic for
+        checking specific restriction (e.g., OpenStreetMap usage policy).
 
         :param layers: A list of map layers to check.
+        :type layers: List[QgsMapLayer]
+
         :param tiles_count: The total number of tiles to be generated.
+        :type tiles_count: int
+
+        :returns: A tuple containing:
+            - **bool** – whether the restriction is violated,
+            - **str** – an HTML message describing skipped layers (if any),
+            - **List[QgsMapLayer]** – list of layers to be skipped.
+        :rtype: Tuple[bool, str, List[QgsMapLayer]]
         """
         pass
 
@@ -46,76 +54,76 @@ class OpenStreetMapRestriction(LayerRestriction):
 
         :param layer: The map layer to check.
         """
-        if layer.providerType().lower() == "wms":
-            metadata = layer.providerMetadata()
-            uri = metadata.decodeUri(layer.source())
-            url = QUrl(uri.get("url", ""))
-            host = url.host().lower()
-            if host.endswith("openstreetmap.org") or host.endswith("osm.org"):
-                return True
-        return False
+        if layer.providerType().lower() != "wms":
+            return False
 
-    def check(
+        metadata = layer.providerMetadata()
+        uri = metadata.decodeUri(layer.source())
+        url = QUrl(uri.get("url", ""))
+        host = url.host().lower()
+
+        return host.endswith("openstreetmap.org") or host.endswith("osm.org")
+
+    def validate_restriction(
         self, layers: List[QgsMapLayer], tiles_count: int
     ) -> Tuple[bool, str, List[QgsMapLayer]]:
         """
         Checks if the tile count exceeds the maximum allowed for OpenStreetMap.
 
-        If the tile count exceeds the limit, this method identifies and skips
-        OpenStreetMap layers to comply with the usage policy.
-
         :param layers: A list of map layers to check.
+        :type layers: List[QgsMapLayer]
+
         :param tiles_count: The total number of tiles to be generated.
+        :type tiles_count: int
 
-        :returns: A tuple containing a boolean indicating whether any layers
-            were skipped, a message describing the skipped layers, and the
-            updated list of layers.
+        :returns: A tuple containing:
+            - **bool** – whether the restriction is violated,
+            - **str** – an HTML message describing skipped layers (if any),
+            - **List[QgsMapLayer]** – list of layers to be skipped.
+        :rtype: Tuple[bool, str, List[QgsMapLayer]]
         """
-        message = ""
+        if tiles_count <= self.MAXIMUM_OPENSTREETMAP_TILES_FETCH:
+            return False, "", []
 
-        if tiles_count > self.MAXIMUM_OPENSTREETMAP_TILES_FETCH:
-            osm_layers = []
-            for layer in layers:
-                if self.is_openstreetmap_layer(layer):
-                    osm_layers.append(layer)
-                    layers.remove(layer)
+        osm_layers = [
+            layer for layer in layers if self.is_openstreetmap_layer(layer)
+        ]
 
-            if osm_layers:
-                layers_list_html = "<br>".join(
-                    [layer.name() for layer in osm_layers]
+        if not osm_layers:
+            return False, "", []
+
+        layers_list_html = "<br>".join(layer.name() for layer in osm_layers)
+        message = f"""
+        <p>{
+            QCoreApplication.translate(
+                "LayerRestriction",
+                "The following OpenStreetMap layers were skipped because the operation "
+                "would lead to bulk downloading, which is prohibited by the "
+                "<a href='https://operations.osmfoundation.org/policies/tiles/'>OpenStreetMap Foundation Tile Usage Policy</a>:",
+            )
+        }</p>
+        <p>{layers_list_html}</p>
+        """
+
+        if len(osm_layers) == len(layers):
+            message += f"""
+            <p>{
+                QCoreApplication.translate(
+                    "LayerRestriction",
+                    "There are no layers remaining for tiling. "
+                    "The operation has been cancelled.",
                 )
-                message = f"""
-                <p>{
-                    QCoreApplication.translate(
-                        "LayerRestriction",
-                        "The following OpenStreetMap layers were skipped because the operation "
-                        "would lead to bulk downloading, which is prohibited by the "
-                        "<a href='https://operations.osmfoundation.org/policies/tiles/'>OpenStreetMap Foundation Tile Usage Policy</a>:",
-                    )
-                }</p>
-                <p>{layers_list_html}</p>
-                """
+            }</p>
+            """
 
-                if not layers:
-                    message += f"""
-                    <p>{
-                        QCoreApplication.translate(
-                            "LayerRestriction",
-                            "There are no layers remaining for tiling. "
-                            "The operation has been cancelled.",
-                        )
-                    }</p>
-                    """
+        message += f"""
+        <p>{
+            QCoreApplication.translate(
+                "LayerRestriction",
+                "To avoid this restriction, try reducing the maximum zoom level in the settings "
+                "or increasing the zoom level in the map extent before running operation.",
+            )
+        }</p>
+        """
 
-                message += f"""
-                <p>{
-                    QCoreApplication.translate(
-                        "LayerRestriction",
-                        "To avoid this restriction, try reducing the maximum zoom level in the settings "
-                        "or increasing the zoom level in the map extent before running operation.",
-                    )
-                }</p>
-                """
-                return True, message, layers
-
-        return False, message, layers
+        return True, message, osm_layers

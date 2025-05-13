@@ -451,12 +451,12 @@ class QTilesDialog(QDialog, FORM_CLASS):
         tiles_count = len(tiles)
 
         osm_restriction = OpenStreetMapRestriction()
-        is_violated, message, updated_layers_list = osm_restriction.check(
-            layers, tiles_count
+        is_violated, message, skipped_layers = (
+            osm_restriction.validate_restriction(layers, tiles_count)
         )
 
         if is_violated:
-            if not updated_layers_list:
+            if len(skipped_layers) == len(layers):
                 QMessageBox.warning(
                     self,
                     self.tr("OpenStreetMap Layer Restriction"),
@@ -477,7 +477,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             if reply == QMessageBox.StandardButton.No:
                 return
 
-            layers = updated_layers_list
+            layers = [layer for layer in layers if layer not in skipped_layers]
 
         self.workThread = tilingthread.TilingThread(
             tiles,

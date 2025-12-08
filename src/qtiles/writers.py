@@ -25,23 +25,24 @@
 #
 # ******************************************************************************
 
+import json
 import sqlite3
 import zipfile
-import json
+from pathlib import Path
+from typing import Dict, List
 
 from qgis.core import QgsRectangle
 from qgis.PyQt.QtCore import (
     QBuffer,
     QByteArray,
-    QFileInfo,
     QIODevice,
     QTemporaryFile,
-    QDir,
 )
 from qgis.PyQt.QtGui import QImage
 
-from .mbutils import *
 from qtiles.tile import Tile
+
+from .mbutils import *
 
 
 class DirectoryWriter:
@@ -53,14 +54,14 @@ class DirectoryWriter:
     dynamically as tiles are written.
     """
 
-    def __init__(self, output_path: QFileInfo, root_dir: str) -> None:
+    def __init__(self, output_path: Path, root_dir: str) -> None:
         """
         Initializes the DirectoryWriter with the output path and root directory.
 
         :param output_path: The base directory where tiles will be saved.
         :param root_dir: The root directory name for the tile structure.
         """
-        self.output = output_path
+        self.output_path = output_path
         self.root_dir = root_dir
 
     def writeTile(
@@ -77,12 +78,11 @@ class DirectoryWriter:
         :param format: The image format (e.g., 'PNG', 'JPEG') to use for saving.
         :param quality: The image quality (0–100), where higher values indicate better quality.
         """
-        path = "%s/%s/%s" % (self.root_dir, tile.z, tile.x)
-        dirPath = "%s/%s" % (self.output.absoluteFilePath(), path)
-        QDir().mkpath(dirPath)
-        image.save(
-            "%s/%s.%s" % (dirPath, tile.y, format.lower()), format, quality
-        )
+        dir_path = self.output_path / self.root_dir / str(tile.z) / str(tile.x)
+        dir_path.mkdir(parents=True, exist_ok=True)
+
+        tile_file = dir_path / f"{tile.y}.{format.lower()}"
+        image.save(str(tile_file), format, quality)
 
     def finalize(self) -> None:
         """
@@ -99,24 +99,24 @@ class ZipWriter:
     structure within the archive based on zoom levels and coordinates.
     """
 
-    def __init__(self, output_path: QFileInfo, root_dir: str) -> None:
+    def __init__(self, output_path: Path, root_dir: str) -> None:
         """
         Initializes the ZipWriter with the output path and root directory.
 
         :param output_path: The path to the ZIP file to be created.
         :param root_dir: The root directory name for the tile structure.
         """
-        self.output = output_path
+        self.output_path = output_path
         self.root_dir = root_dir
 
-        self.zipFile = zipfile.ZipFile(
-            str(self.output.absoluteFilePath()), "w", allowZip64=True
+        self.zip_file = zipfile.ZipFile(
+            str(self.output_path), "w", allowZip64=True
         )
-        self.tempFile = QTemporaryFile()
-        self.tempFile.setAutoRemove(False)
-        self.tempFile.open(QIODevice.OpenModeFlag.WriteOnly)
-        self.tempFileName = self.tempFile.fileName()
-        self.tempFile.close()
+        self.temp_file = QTemporaryFile()
+        self.temp_file.setAutoRemove(False)
+        self.temp_file.open(QIODevice.OpenModeFlag.WriteOnly)
+        self.temp_file_name = self.temp_file.fileName()
+        self.temp_file.close()
 
     def writeTile(
         self, tile: Tile, image: QImage, format: str, quality: int
@@ -129,13 +129,13 @@ class ZipWriter:
         :param format: The image format (e.g., PNG, JPG).
         :param quality: The quality of the saved image.
         """
-        path = "%s/%s/%s" % (self.root_dir, tile.z, tile.x)
-
-        image.save(self.tempFileName, format, quality)
-        tilePath = "%s/%s.%s" % (path, tile.y, format.lower())
-        self.zipFile.write(
-            bytes(str(self.tempFileName).encode("utf8")), tilePath
+        tile_path = (
+            f"{self.root_dir}/{tile.z}/{tile.x}/{tile.y}.{format.lower()}"
         )
+
+        image.save(self.temp_file_name, format, quality)
+
+        self.zip_file.write(self.temp_file_name, arcname=tile_path)
 
     def finalize(self) -> None:
         """
@@ -144,9 +144,9 @@ class ZipWriter:
         This method closes the ZIP file and removes temporary files used
         during the writing process.
         """
-        self.tempFile.close()
-        self.tempFile.remove()
-        self.zipFile.close()
+        self.temp_file.close()
+        self.temp_file.remove()
+        self.zip_file.close()
 
 
 class NGMArchiveWriter(ZipWriter):
@@ -157,15 +157,15 @@ class NGMArchiveWriter(ZipWriter):
     archives, such as tile levels and renderer properties.
     """
 
-    def __init__(self, output_path: QFileInfo, root_dir: str) -> None:
+    def __init__(self, output_path: Path, root_dir: str) -> None:
         """
         Initializes the NGMArchiveWriter with the output path and root directory.
 
         :param output_path: The path to the NGM archive to be created.
         :param root_dir: The root directory name for the tile structure.
         """
-        ZipWriter.__init__(self, output_path, "Mapnik")
-        self.levels = {}
+        super().__init__(output_path, "Mapnik")
+        self.levels: Dict[int, Dict[str, List[int]]] = {}
         self.__layer_name = root_dir
 
     def writeTile(
@@ -179,7 +179,7 @@ class NGMArchiveWriter(ZipWriter):
         :param format: The image format (e.g., PNG, JPG).
         :param quality: The quality of the saved image.
         """
-        ZipWriter.writeTile(self, tile, image, format, quality)
+        super().writeTile(tile, image, format, quality)
         level = self.levels.get(tile.z, {"x": [], "y": []})
         level["x"].append(tile.x)
         level["y"].append(tile.y)
@@ -226,16 +226,11 @@ class NGMArchiveWriter(ZipWriter):
 
             archive_info["levels"].append(level_json)
 
-        tempFile = QTemporaryFile()
-        tempFile.setAutoRemove(False)
-        tempFile.open(QIODevice.OpenModeFlag.WriteOnly)
-        tempFile.write(bytes(json.dumps(archive_info).encode("utf8")))
-        tempFileName = tempFile.fileName()
-        tempFile.close()
+        json_bytes = json.dumps(archive_info).encode("utf-8")
+        json_name = f"{self.root_dir}.json"
+        self.zip_file.writestr(json_name, json_bytes)
 
-        self.zipFile.write(tempFileName, "%s.json" % self.root_dir)
-
-        ZipWriter.finalize(self)
+        super().finalize()
 
 
 class MBTilesWriter:
@@ -248,7 +243,7 @@ class MBTilesWriter:
 
     def __init__(
         self,
-        output_path: QFileInfo,
+        output_path: Path,
         root_dir: str,
         formatext: str,
         min_zoom: int,
@@ -267,19 +262,12 @@ class MBTilesWriter:
         :param extent: The geographic extent (bounding box) of the tiles.
         :param compression: Whether to apply tile data compression after writing.
         """
-        self.output = output_path
+        self.output_path = output_path
         self.root_dir = root_dir
+
         self.compression = compression
-        s = (
-            str(extent.xMinimum())
-            + ","
-            + str(extent.yMinimum())
-            + ","
-            + str(extent.xMaximum())
-            + ","
-            + str(extent.yMaximum())
-        )
-        self.connection = mbtiles_connect(str(self.output.absoluteFilePath()))
+        bounds = f"{extent.xMinimum()},{extent.yMinimum()},{extent.xMaximum()},{extent.yMaximum()}"
+        self.connection = mbtiles_connect(str(self.output_path), silent=False)
         self.cursor = self.connection.cursor()
         optimize_connection(self.cursor)
         mbtiles_setup(self.cursor)
@@ -313,7 +301,7 @@ class MBTilesWriter:
         )
         self.cursor.execute(
             """INSERT INTO metadata(name, value) VALUES (?, ?);""",
-            ("bounds", s),
+            ("bounds", bounds),
         )
         self.connection.commit()
 
@@ -345,7 +333,6 @@ class MBTilesWriter:
         This method optimizes the database, optionally compresses tile data,
         and properly closes the database connection.
         """
-        optimize_database(self.connection)
         self.connection.commit()
         if self.compression:
             # start compression
@@ -353,10 +340,13 @@ class MBTilesWriter:
             self.cursor.execute("select count(zoom_level) from tiles")
             res = self.cursor.fetchone()
             total_tiles = res[0]
-            compression_do(self.cursor, self.connection, total_tiles)
-            compression_finalize(self.cursor)
-            optimize_database(self.connection)
+            compression_do(
+                self.cursor, self.connection, total_tiles, silent=False
+            )
+            compression_finalize(self.cursor, self.connection, silent=False)
             self.connection.commit()
             # end compression
+
+        optimize_database(self.connection, silent=False)
         self.connection.close()
         self.cursor = None

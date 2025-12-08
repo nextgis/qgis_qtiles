@@ -22,7 +22,6 @@
 # MA 02110-1335 USA.
 #
 # ******************************************************************************
-import codecs
 import json
 import time
 from string import Template
@@ -39,7 +38,6 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import (
     QFile,
-    QFileInfo,
     QIODevice,
     QMutex,
     Qt,
@@ -73,30 +71,27 @@ class TilingThread(QThread):
     updateProgress = pyqtSignal()
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
-    threshold = pyqtSignal(int)
-
-    warring_threshold_tiles_count = 10000
 
     def __init__(
         self,
         tiles: List[Tile],
         layers: List[QgsMapLayer],
         extent: QgsRectangle,
-        minZoom: int,
-        maxZoom: int,
+        min_zoom: int,
+        max_zoom: int,
         width: int,
         height: int,
         transp: int,
         quality: int,
         format: str,
-        outputPath: QFileInfo,
-        rootDir: str,
+        output_path: Path,
+        root_dir: str,
         antialiasing: bool,
-        tmsConvention: bool,
-        mbtilesCompression: bool,
-        jsonFile: bool,
+        tms_convention: bool,
+        mbtiles_compression: bool,
+        json_file: bool,
         overview: bool,
-        mapUrl: bool,
+        map_url: bool,
         viewer: bool,
     ) -> None:
         """
@@ -122,7 +117,7 @@ class TilingThread(QThread):
         :param map_url: Whether to include a map URL in the output.
         :param viewer: Whether to generate a viewer for the tiles.
         """
-        QThread.__init__(self, QThread.currentThread())
+        super().__init__()
         self.mutex = QMutex()
         self.confirmMutex = QMutex()
         self.stopMe = 0
@@ -130,32 +125,34 @@ class TilingThread(QThread):
         self.tiles = tiles
         self.layers = layers
         self.extent = extent
-        self.minZoom = minZoom
-        self.maxZoom = maxZoom
-        self.output = outputPath
+        self.min_zoom = min_zoom
+        self.max_zoom = max_zoom
+        self.output_path = output_path
         self.width = width
-        if rootDir:
-            self.rootDir = rootDir
+        if root_dir:
+            self.root_dir = root_dir
         else:
-            self.rootDir = "tileset_%s" % str(time.time()).split(".")[0]
+            self.root_dir = "tileset_%s" % str(time.time()).split(".")[0]
         self.antialias = antialiasing
-        self.tmsConvention = tmsConvention
-        self.mbtilesCompression = mbtilesCompression
+        self.tms_convention = tms_convention
+        self.mbtiles_compression = mbtiles_compression
         self.format = format
         self.quality = quality
-        self.jsonFile = jsonFile
+        self.json_file = json_file
         self.overview = overview
-        self.mapurl = mapUrl
+        self.mapurl = map_url
         self.viewer = viewer
-        if self.output.isDir():
+
+        if self.output_path.is_dir():
             self.mode = "DIR"
-        elif self.output.suffix().lower() == "zip":
+        elif self.output_path.suffix.lower() == ".zip":
             self.mode = "ZIP"
-        elif self.output.suffix().lower() == "ngrc":
+        elif self.output_path.suffix.lower() == ".ngrc":
             self.mode = "NGM"
-        elif self.output.suffix().lower() == "mbtiles":
+        elif self.output_path.suffix.lower() == ".mbtiles":
             self.mode = "MBTILES"
-            self.tmsConvention = True
+            self.tms_convention = True
+
         self.interrupted = False
         self.layersId = []
         for layer in self.layers:
@@ -224,50 +221,47 @@ class TilingThread(QThread):
         self.stopMe = 0
         self.mutex.unlock()
         if self.mode == "DIR":
-            self.writer = DirectoryWriter(self.output, self.rootDir)
+            self.writer = DirectoryWriter(self.output_path, self.root_dir)
             if self.mapurl:
                 self.writeMapurlFile()
             if self.viewer:
                 self.writeLeafletViewer()
         elif self.mode == "ZIP":
-            self.writer = ZipWriter(self.output, self.rootDir)
+            self.writer = ZipWriter(self.output_path, self.root_dir)
         elif self.mode == "NGM":
-            self.writer = NGMArchiveWriter(self.output, self.rootDir)
+            self.writer = NGMArchiveWriter(self.output_path, self.root_dir)
         elif self.mode == "MBTILES":
             self.writer = MBTilesWriter(
-                self.output,
-                self.rootDir,
+                self.output_path,
+                self.root_dir,
                 self.format,
-                self.minZoom,
-                self.maxZoom,
+                self.min_zoom,
+                self.max_zoom,
                 self.extent,
-                self.mbtilesCompression,
+                self.mbtiles_compression,
             )
-        if self.jsonFile:
+        if self.json_file:
             self.writeJsonFile()
         if self.overview:
             self.writeOverviewFile()
         self.rangeChanged.emit(self.tr("Searching tiles..."), 0)
 
         if self.interrupted:
-            del self.tiles[:]
-            self.tiles = None
+            self.tiles.clear()
             self.processInterrupted.emit()
+            return
+
         self.rangeChanged.emit(
             self.tr("Rendering: %v from %m (%p%)"), len(self.tiles)
         )
-
-        if len(self.tiles) > self.warring_threshold_tiles_count:
-            self.confirmMutex.lock()
-            self.threshold.emit(self.warring_threshold_tiles_count)
 
         self.confirmMutex.lock()
         if self.interrupted:
             self.processInterrupted.emit()
             return
 
-        for t in self.tiles:
-            self.render(t)
+        for tile in self.tiles:
+            self.render(tile)
             self.updateProgress.emit()
             self.mutex.lock()
             s = self.stopMe
@@ -294,25 +288,6 @@ class TilingThread(QThread):
         self.mutex.unlock()
         QThread.wait(self)
 
-    def confirmContinue(self) -> None:
-        """
-        Prompts the user to confirm whether to continue the process.
-
-        This method is used when the tile count exceeds a predefined
-        threshold, allowing the user to decide whether to proceed.
-        """
-        self.confirmMutex.unlock()
-
-    def confirmStop(self) -> None:
-        """
-        Stops the tile generation process by setting the `interrupted` flag to `True`.
-
-        This method is used to stop the process
-        immediately when called by user interaction.
-        """
-        self.interrupted = True
-        self.confirmMutex.unlock()
-
     def writeJsonFile(self) -> None:
         """
         Writes a JSON metadata file that describes the tile set.
@@ -320,17 +295,17 @@ class TilingThread(QThread):
         The file contains information about the tile set,
         such as the format, zoom levels, and geographical bounds.
         """
-        filePath = "%s.json" % self.output.absoluteFilePath()
         if self.mode == "DIR":
-            filePath = "%s/%s.json" % (
-                self.output.absoluteFilePath(),
-                self.rootDir,
-            )
+            file_path = self.output_path / f"{self.root_dir}.json"
+        else:
+            base_name = self.output_path.stem
+            file_path = self.output_path.parent / f"{base_name}.json"
+
         info = {
-            "name": self.rootDir,
+            "name": self.root_dir,
             "format": self.format.lower(),
-            "minZoom": self.minZoom,
-            "maxZoom": self.maxZoom,
+            "minZoom": self.min_zoom,
+            "maxZoom": self.max_zoom,
             "bounds": str(self.extent.xMinimum())
             + ","
             + str(self.extent.yMinimum())
@@ -339,8 +314,9 @@ class TilingThread(QThread):
             + ","
             + str(self.extent.yMaximum()),
         }
-        with open(filePath, "w") as f:
-            f.write(json.dumps(info))
+
+        with open(str(file_path), "w", encoding="utf-8") as json_file:
+            json.dump(info, json_file)
 
     def writeOverviewFile(self) -> None:
         """
@@ -368,17 +344,17 @@ class TilingThread(QThread):
         job.renderSynchronously()
         painter.end()
 
-        filePath = "%s.%s" % (
-            self.output.absoluteFilePath(),
-            self.format.lower(),
-        )
         if self.mode == "DIR":
-            filePath = "%s/%s.%s" % (
-                self.output.absoluteFilePath(),
-                self.rootDir,
-                self.format.lower(),
+            file_path = (
+                self.output_path / f"{self.root_dir}.{self.format.lower()}"
             )
-        image.save(filePath, self.format, self.quality)
+        else:
+            base_name = self.output_path.stem
+            file_path = (
+                self.output_path.parent / f"{base_name}.{self.format.lower()}"
+            )
+
+        image.save(str(file_path), self.format, self.quality)
 
     def writeMapurlFile(self) -> None:
         """
@@ -388,17 +364,14 @@ class TilingThread(QThread):
         The map URL file contains information about the tile format,
         zoom levels, and server convention (TMS or Google).
         """
-        filePath = "%s/%s.mapurl" % (
-            self.output.absoluteFilePath(),
-            self.rootDir,
-        )
-        tileServer = "tms" if self.tmsConvention else "google"
-        with open(filePath, "w") as mapurl:
+        file_path = self.output_path / f"{self.root_dir}.mapurl"
+        tileServer = "tms" if self.tms_convention else "google"
+        with open(str(file_path), "w", encoding="utf-8") as mapurl:
             mapurl.write(
-                "%s=%s\n" % ("url", self.rootDir + "/ZZZ/XXX/YYY.png")
+                "%s=%s\n" % ("url", self.root_dir + "/ZZZ/XXX/YYY.png")
             )
-            mapurl.write("%s=%s\n" % ("minzoom", self.minZoom))
-            mapurl.write("%s=%s\n" % ("maxzoom", self.maxZoom))
+            mapurl.write("%s=%s\n" % ("minzoom", self.min_zoom))
+            mapurl.write("%s=%s\n" % ("maxzoom", self.max_zoom))
             mapurl.write(
                 "%s=%f %f\n"
                 % (
@@ -416,32 +389,33 @@ class TilingThread(QThread):
         The viewer allows users to interact
         with the tiles and navigate through the map.
         """
-        templateFile = QFile(":/plugins/qtiles/resources/viewer.html")
-        if templateFile.open(
-            QIODevice.OpenModeFlag.ReadOnly | QIODevice.OpenModeFlag.Text
-        ):
-            viewer = MyTemplate(str(templateFile.readAll()))
+        template_file = QFile(":/plugins/qtiles/resources/viewer.html")
+        if not template_file.open(QIODevice.OpenModeFlag.ReadOnly):
+            return
 
-            tilesDir = "%s/%s" % (self.output.absoluteFilePath(), self.rootDir)
-            useTMS = "true" if self.tmsConvention else "false"
-            substitutions = {
-                "tilesdir": tilesDir,
-                "tilesext": self.format.lower(),
-                "tilesetname": self.rootDir,
-                "tms": useTMS,
-                "centerx": self.extent.center().x(),
-                "centery": self.extent.center().y(),
-                "avgzoom": (self.maxZoom + self.minZoom) / 2,
-                "maxzoom": self.maxZoom,
-            }
+        html = template_file.readAll().data().decode()
+        viewer = MyTemplate(html)
 
-            filePath = "%s/%s.html" % (
-                self.output.absoluteFilePath(),
-                self.rootDir,
-            )
-            with codecs.open(filePath, "w", "utf-8") as fOut:
-                fOut.write(viewer.substitute(substitutions))
-            templateFile.close()
+        tiles_dir = self.output_path / self.root_dir
+        use_tms = "true" if self.tms_convention else "false"
+        substitutions = {
+            "tilesdir": str(tiles_dir),
+            "tilesext": self.format.lower(),
+            "tilesetname": self.root_dir,
+            "tms": use_tms,
+            "centerx": self.extent.center().x(),
+            "centery": self.extent.center().y(),
+            "avgzoom": (self.max_zoom + self.min_zoom) / 2,
+            "maxzoom": self.max_zoom,
+        }
+
+        file_path = self.output_path / f"{self.root_dir}.html"
+
+        with open(str(file_path), "wb") as viewer_file:
+            substitution = viewer.substitute(substitutions)
+            viewer_file.write(substitution.encode("utf-8"))
+
+        template_file.close()
 
     def render(self, tile: Tile) -> None:
         """

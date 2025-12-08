@@ -22,17 +22,19 @@
 # MA 02110-1335 USA.
 #
 # ******************************************************************************
-import math
 import operator
 import os
+import shutil
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
     from qgis.gui import QgsInterface
 
-from qgis.core import QgsMapLayer, QgsRectangle
+from qgis.core import QgsFileUtils, QgsMapLayer
+from qgis.gui import QgsGui
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QDir, QFileInfo, Qt, pyqtSlot
+from qgis.PyQt.QtCore import QFileInfo, Qt, pyqtSlot
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QDialog,
@@ -41,16 +43,12 @@ from qgis.PyQt.QtWidgets import (
     QMessageBox,
 )
 
-from . import qtiles_utils as utils
-from . import tilingthread
-from .compat import (
-    QgsCoordinateReferenceSystem,
-    QgsCoordinateTransform,
-    QgsSettings,
-    getSaveFileName,
-)
 from qtiles.restrictions import OpenStreetMapRestriction
 from qtiles.tile import Tile
+
+from . import qtiles_utils as utils
+from . import tilingthread
+from .compat import QgsSettings
 
 FORM_CLASS, _ = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "ui/qtilesdialogbase.ui")
@@ -74,6 +72,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         super().__init__()
         self.setupUi(self)
+
+        self.setObjectName("qtiles_main_window")
+        QgsGui.enableAutoGeometryRestore(self, "qtiles_main_window")
 
         self.btnOk = self.buttonBox.addButton(
             self.tr("Run"), QDialogButtonBox.ButtonRole.AcceptRole
@@ -281,110 +282,33 @@ class QTilesDialog(QDialog, FORM_CLASS):
     def accept(self) -> None:
         """
         Validates user input and starts the tile generation process.
-
-        This method performs several checks, such as ensuring the output
-        directory is valid, verifying zoom levels, and checking for OSM
-        restrictions. If the tile count exceeds the OpenStreetMap policy
-        limit, the user is prompted to confirm whether to proceed without
-        OSM layers. It also initializes the tiling thread and connects
-        progress signals to update the GUI.
-
-        :raises QMessageBox: If any validation fails, a warning message is
-            displayed to the user.
         """
         if self.rbOutputZip.isChecked():
-            output = self.leZipFileName.text()
+            output_path_str = self.leZipFileName.text()
         elif self.rbOutputDir.isChecked():
-            output = self.leDirectoryName.text()
-            if not QFileInfo(output).exists():
-                os.mkdir(QFileInfo(output).absoluteFilePath())
+            output_path_str = self.leDirectoryName.text()
         elif self.rbOutputNGM.isChecked():
-            output = self.leTilesFroNGM.text()
+            output_path_str = self.leTilesFroNGM.text()
+        else:
+            output_path_str = ""
 
-        if (
-            self.rbExtentLayer.isChecked()
-            and self.cmbLayers.currentIndex() < 0
-        ):
+        if not output_path_str:
             QMessageBox.warning(
                 self,
-                self.tr("Layer not selected"),
-                self.tr("Please select a layer and try again."),
+                self.tr("Output not set"),
+                self.tr("Output path is not set. Please specify a path."),
             )
             return
 
-        if not output:
-            QMessageBox.warning(
-                self,
-                self.tr("No output"),
-                self.tr(
-                    "Output path is not set. Please enter correct path and try again."
-                ),
-            )
-            return
-        file_info = QFileInfo(output)
-        if (
-            file_info.isDir()
-            and not len(
-                QDir(output).entryList(
-                    QDir.Filter.Dirs
-                    | QDir.Filter.Files
-                    | QDir.Filter.NoDotAndDotDot
-                )
-            )
-            == 0
-        ):
-            res = QMessageBox.warning(
-                self,
-                self.tr("Directory not empty"),
-                self.tr("Selected directory is not empty. Continue?"),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            )
-            if res == QMessageBox.StandardButton.No:
-                return
+        output_path = Path(output_path_str)
 
-        if self.spnZoomMin.value() > self.spnZoomMax.value():
-            QMessageBox.warning(
-                self,
-                self.tr("Wrong zoom"),
-                self.tr(
-                    "Maximum zoom value is lower than minimum. "
-                    "Please correct this and try again."
-                ),
-            )
+        tileset_name = self.leRootDir.text()
+        if not self.__is_tileset_name_valid(tileset_name):
             return
-        self.settings.setValue("rootDir", self.leRootDir.text())
-        self.settings.setValue("outputToZip", self.rbOutputZip.isChecked())
-        self.settings.setValue("outputToDir", self.rbOutputDir.isChecked())
-        self.settings.setValue("outputToNGM", self.rbOutputNGM.isChecked())
-        self.settings.setValue("extentCanvas", self.rbExtentCanvas.isChecked())
-        self.settings.setValue("extentFull", self.rbExtentFull.isChecked())
-        self.settings.setValue("extentLayer", self.rbExtentLayer.isChecked())
-        self.settings.setValue("minZoom", self.spnZoomMin.value())
-        self.settings.setValue("maxZoom", self.spnZoomMax.value())
-        self.settings.setValue("keepRatio", self.chkLockRatio.isChecked())
-        self.settings.setValue("tileWidth", self.spnTileWidth.value())
-        self.settings.setValue("tileHeight", self.spnTileHeight.value())
-        self.settings.setValue("format", self.cmbFormat.currentIndex())
-        self.settings.setValue("transparency", self.spnTransparency.value())
-        self.settings.setValue("quality", self.spnQuality.value())
-        self.settings.setValue(
-            "enable_antialiasing", self.chkAntialiasing.isChecked()
-        )
-        self.settings.setValue(
-            "use_tms_filenames", self.chkTMSConvention.isChecked()
-        )
-        self.settings.setValue(
-            "use_mbtiles_compression", self.chkMBTilesCompression.isChecked()
-        )
-        self.settings.setValue("write_json", self.chkWriteJson.isChecked())
-        self.settings.setValue(
-            "write_overview", self.chkWriteOverview.isChecked()
-        )
-        self.settings.setValue("write_mapurl", self.chkWriteMapurl.isChecked())
-        self.settings.setValue("write_viewer", self.chkWriteViewer.isChecked())
-        self.settings.setValue(
-            "renderOutsideTiles", self.chkRenderOutsideTiles.isChecked()
-        )
+
+        if not self.__is_input_parameters_valid():
+            return
+
         canvas = self.iface.mapCanvas()
         if self.rbExtentCanvas.isChecked():
             extent = canvas.extent()
@@ -398,25 +322,12 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 layer, layer.extent()
             )
 
-        extent = QgsCoordinateTransform(
-            canvas.mapSettings().destinationCrs(),
-            QgsCoordinateReferenceSystem.fromEpsgId(4326),
-        ).transform(extent)
+        target_extent = utils.compute_target_extent(canvas, extent)
 
-        arctanSinhPi = math.degrees(math.atan(math.sinh(math.pi)))
-        extent = extent.intersect(
-            QgsRectangle(-180, -arctanSinhPi, 180, arctanSinhPi)
-        )
         layers = canvas.layers()
-        writeMapurl = (
-            self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
-        )
-        writeViewer = (
-            self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
-        )
 
         tms_convention = self.chkTMSConvention.isChecked()
-        if file_info.suffix().lower() == "mbtiles":
+        if output_path.suffix.lower() == ".mbtiles":
             tms_convention = True
 
         use_tms = -1 if tms_convention else 1
@@ -426,10 +337,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
         max_zoom = self.spnZoomMax.value()
         render_outside_tiles = self.chkRenderOutsideTiles.isChecked()
 
-        tiles = self.count_tiles(
+        tiles = utils.count_tiles(
             initial_tile,
             layers,
-            extent,
+            target_extent,
             min_zoom,
             max_zoom,
             render_outside_tiles,
@@ -450,39 +361,42 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         tiles_count = len(tiles)
 
-        osm_restriction = OpenStreetMapRestriction()
-        is_violated, message, skipped_layers = (
-            osm_restriction.validate_restriction(layers, tiles_count)
+        if tiles_count > utils.TILES_COUNT_TRESHOLD:
+            if not self.__confirm_continue_threshold(
+                utils.TILES_COUNT_TRESHOLD
+            ):
+                return
+
+        layers = self.__validate_osm_restriction(layers, tiles_count)
+        if layers is None:
+            return
+
+        if self.rbOutputZip.isChecked() or self.rbOutputNGM.isChecked():
+            if output_path.exists():
+                if not self.__confirm_and_overwrite_output_file(output_path):
+                    return
+
+        elif self.rbOutputDir.isChecked():
+            tileset_dir = output_path / tileset_name
+            if tileset_dir.exists():
+                if not self.__confirm_and_overwrite_tileset_directory(
+                    tileset_dir
+                ):
+                    return
+
+        self.__save_settings()
+
+        write_mapurl = (
+            self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
         )
-
-        if is_violated:
-            if len(skipped_layers) == len(layers):
-                QMessageBox.warning(
-                    self,
-                    self.tr("OpenStreetMap Layer Restriction"),
-                    message,
-                    QMessageBox.StandardButton.Ok,
-                )
-                return
-
-            reply = QMessageBox.question(
-                self,
-                self.tr("OpenStreetMap Layer Restriction"),
-                message
-                + "<br><br>Are you sure you want to continue without OpenStreetMap layers?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-
-            if reply == QMessageBox.StandardButton.No:
-                return
-
-            layers = [layer for layer in layers if layer not in skipped_layers]
+        write_viewer = (
+            self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
+        )
 
         self.workThread = tilingthread.TilingThread(
             tiles,
             layers,
-            extent,
+            target_extent,
             min_zoom,
             max_zoom,
             self.spnTileWidth.value(),
@@ -490,52 +404,45 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.spnTransparency.value(),
             self.spnQuality.value(),
             self.cmbFormat.currentText(),
-            file_info,
+            output_path,
             self.leRootDir.text(),
             self.chkAntialiasing.isChecked(),
             tms_convention,
             self.chkMBTilesCompression.isChecked(),
             self.chkWriteJson.isChecked(),
             self.chkWriteOverview.isChecked(),
-            writeMapurl,
-            writeViewer,
+            write_mapurl,
+            write_viewer,
         )
 
         self.workThread.rangeChanged.connect(self.setProgressRange)
         self.workThread.updateProgress.connect(self.updateProgress)
         self.workThread.processFinished.connect(self.processFinished)
         self.workThread.processInterrupted.connect(self.processInterrupted)
-        self.workThread.threshold.connect(self.confirmContinueThreshold)
         self.btnOk.setEnabled(False)
         self.btnClose.setText(self.tr("Cancel"))
         self.buttonBox.rejected.disconnect(self.reject)
         self.btnClose.clicked.connect(self.stopProcessing)
         self.workThread.start()
 
-    @pyqtSlot(int)
-    def confirmContinueThreshold(self, tiles_count_threshold: int) -> None:
+    def __confirm_continue_threshold(self, tiles_count_threshold: int) -> bool:
         """
         Confirms whether to proceed with tile generation
-        when the estimated tile countexceeds a given threshold.
-
-        If the tile count surpasses the specified threshold,
-        this method prompts the user with a confirmation dialog.
+        when the estimated tile count exceeds a given threshold.
 
         :param tiles_count_threshold: The estimated threshold of tile count
                                       that triggers the confirmation.
         """
-        res = QMessageBox.question(
-            self.parent(),
+        reply = QMessageBox.question(
+            self,
             self.tr("Confirmation"),
-            self.tr("Estimate number of tiles more then %d! Continue?")
-            % tiles_count_threshold,
+            self.tr("Estimate number of tiles more then {}! Continue?").format(
+                tiles_count_threshold
+            ),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
-        if res == QMessageBox.StandardButton.Yes:
-            self.workThread.confirmContinue()
-        else:
-            self.workThread.confirmStop()
+        return reply == QMessageBox.StandardButton.Yes
 
     @pyqtSlot(str, int)
     def setProgressRange(self, message: str, value: int) -> None:
@@ -696,108 +603,270 @@ class QTilesDialog(QDialog, FORM_CLASS):
             file_directory = QFileInfo(
                 self.settings.value("outputToZip_Path", ".")
             ).absolutePath()
-            outPath = getSaveFileName(
+            output_path, output_filter = QFileDialog.getSaveFileName(
                 self,
                 self.tr("Save to file"),
                 file_directory,
                 ";;".join(iter(list(self.FORMATS.keys()))),
             )
-            if not outPath:
+            if not output_path:
                 return
-            self.leZipFileName.setText(outPath)
+
+            ext = ".zip" if "zip" in output_filter.lower() else ".mbtiles"
+
+            output_path = QgsFileUtils.ensureFileNameHasExtension(
+                output_path, [ext]
+            )
+
+            self.leZipFileName.setText(output_path)
             self.settings.setValue(
-                "outputToZip_Path", QFileInfo(outPath).absoluteFilePath()
+                "outputToZip_Path", QFileInfo(output_path).absoluteFilePath()
             )
 
         elif self.rbOutputDir.isChecked():
             dir_directory = QFileInfo(
                 self.settings.value("outputToDir_Path", ".")
             ).absolutePath()
-            outPath = QFileDialog.getExistingDirectory(
+            output_path = QFileDialog.getExistingDirectory(
                 self,
                 self.tr("Save to directory"),
                 dir_directory,
                 QFileDialog.Option.ShowDirsOnly,
             )
-            if not outPath:
+            if not output_path:
                 return
-            self.leDirectoryName.setText(outPath)
+            self.leDirectoryName.setText(output_path)
             self.settings.setValue(
-                "outputToDir_Path", QFileInfo(outPath).absoluteFilePath()
+                "outputToDir_Path", QFileInfo(output_path).absoluteFilePath()
             )
 
         elif self.rbOutputNGM.isChecked():
             zip_directory = QFileInfo(
                 self.settings.value("outputToNGM_Path", ".")
             ).absolutePath()
-            outPath = getSaveFileName(
-                self, self.tr("Save to file"), zip_directory, "ngrc"
+            output_path, output_filter = QFileDialog.getSaveFileName(
+                self, self.tr("Save to file"), zip_directory, "NGRC (*.ngrc)"
             )
-            if not outPath:
+            if not output_path:
                 return
-            if not outPath.lower().endswith("ngrc"):
-                outPath += ".ngrc"
-            self.leTilesFroNGM.setText(outPath)
-            self.settings.setValue(
-                "outputToNGM_Path", QFileInfo(outPath).absoluteFilePath()
+
+            output_path = QgsFileUtils.ensureFileNameHasExtension(
+                output_path, [".ngrc"]
             )
 
-    def count_tiles(
-        self,
-        tile: Tile,
-        layers: List[QgsMapLayer],
-        extent: QgsRectangle,
-        min_zoom: int,
-        max_zoom: int,
-        render_outside_tiles: bool,
-    ) -> Optional[List[Tile]]:
+            self.leTilesFroNGM.setText(output_path)
+            self.settings.setValue(
+                "outputToNGM_Path", QFileInfo(output_path).absoluteFilePath()
+            )
+
+    def __is_input_parameters_valid(self) -> bool:
+        if (
+            self.rbExtentLayer.isChecked()
+            and self.cmbLayers.currentIndex() < 0
+        ):
+            QMessageBox.warning(
+                self,
+                self.tr("Layer not selected"),
+                self.tr("Please select a layer and try again."),
+            )
+            return False
+
+        min_zoom = self.spnZoomMin.value()
+        max_zoom = self.spnZoomMax.value()
+        if min_zoom > max_zoom:
+            QMessageBox.warning(
+                self,
+                self.tr("Wrong zoom"),
+                self.tr(
+                    "Maximum zoom value is lower than minimum. Please correct this and try again."
+                ),
+            )
+            return False
+
+        return True
+
+    def __save_settings(self) -> None:
+        self.settings.setValue("rootDir", self.leRootDir.text())
+        self.settings.setValue("outputToZip", self.rbOutputZip.isChecked())
+        self.settings.setValue("outputToDir", self.rbOutputDir.isChecked())
+        self.settings.setValue("outputToNGM", self.rbOutputNGM.isChecked())
+        self.settings.setValue("extentCanvas", self.rbExtentCanvas.isChecked())
+        self.settings.setValue("extentFull", self.rbExtentFull.isChecked())
+        self.settings.setValue("extentLayer", self.rbExtentLayer.isChecked())
+        self.settings.setValue("minZoom", self.spnZoomMin.value())
+        self.settings.setValue("maxZoom", self.spnZoomMax.value())
+        self.settings.setValue("keepRatio", self.chkLockRatio.isChecked())
+        self.settings.setValue("tileWidth", self.spnTileWidth.value())
+        self.settings.setValue("tileHeight", self.spnTileHeight.value())
+        self.settings.setValue("format", self.cmbFormat.currentIndex())
+        self.settings.setValue("transparency", self.spnTransparency.value())
+        self.settings.setValue("quality", self.spnQuality.value())
+        self.settings.setValue(
+            "enable_antialiasing", self.chkAntialiasing.isChecked()
+        )
+        self.settings.setValue(
+            "use_tms_filenames", self.chkTMSConvention.isChecked()
+        )
+        self.settings.setValue(
+            "use_mbtiles_compression", self.chkMBTilesCompression.isChecked()
+        )
+        self.settings.setValue("write_json", self.chkWriteJson.isChecked())
+        self.settings.setValue(
+            "write_overview", self.chkWriteOverview.isChecked()
+        )
+        self.settings.setValue("write_mapurl", self.chkWriteMapurl.isChecked())
+        self.settings.setValue("write_viewer", self.chkWriteViewer.isChecked())
+        self.settings.setValue(
+            "renderOutsideTiles", self.chkRenderOutsideTiles.isChecked()
+        )
+
+    def __validate_osm_restriction(
+        self, layers: List[QgsMapLayer], tiles_count: int
+    ) -> Optional[List[QgsMapLayer]]:
         """
-        Recursively counts the number of tiles to be generated.
+        Validates OSM tile usage restrictions and optionally filters out
+        prohibited layers after user confirmation.
 
-        This method calculates the tiles required for the specified extent
-        and zoom levels. It supports rendering tiles outside the map extent
-        if enabled.
-
-        :param tile: The initial tile to start counting from.
-        :param layers: A list of map layers to consider for tile generation.
-        :param extent: The geographical extent for tile generation.
-        :param min_zoom: The minimum zoom level.
-        :param max_zoom: The maximum zoom level.
-        :param render_outside_tiles: Whether to include tiles outside themap extent.
-
-        :returns: A list of tiles to be generated or None if no tiles are required.
+        :param layers: List of canvas layers.
+        :param tiles_count: Final number of tiles to be generated.
+        :returns:
+            - Updated list of layers if generation can continue.
+            - None if the user cancels or all OSM layers must be skipped.
         """
-        if not extent.intersects(tile.toRectangle()):
+        osm_restriction = OpenStreetMapRestriction()
+        is_violated, message, skipped_layers = (
+            osm_restriction.validate_restriction(layers, tiles_count)
+        )
+
+        if not is_violated:
+            return layers
+
+        if len(skipped_layers) == len(layers):
+            QMessageBox.warning(
+                self,
+                self.tr("OpenStreetMap Layer Restriction"),
+                message,
+                QMessageBox.StandardButton.Ok,
+            )
             return None
 
-        tiles = []
-        if min_zoom <= tile.z and tile.z <= max_zoom:
-            if not render_outside_tiles:
-                for layer in layers:
-                    crs_transform = QgsCoordinateTransform(
-                        layer.crs(),
-                        QgsCoordinateReferenceSystem.fromEpsgId(4326),
-                    )
-                    if crs_transform.transform(layer.extent()).intersects(
-                        tile.toRectangle()
-                    ):
-                        tiles.append(tile)
-                        break
-            else:
-                tiles.append(tile)
-        if tile.z < max_zoom:
-            for x in range(2 * tile.x, 2 * tile.x + 2, 1):
-                for y in range(2 * tile.y, 2 * tile.y + 2, 1):
-                    sub_tile = Tile(x, y, tile.z + 1, tile.tms)
-                    sub_tiles = self.count_tiles(
-                        sub_tile,
-                        layers,
-                        extent,
-                        min_zoom,
-                        max_zoom,
-                        render_outside_tiles,
-                    )
-                    if sub_tiles:
-                        tiles.extend(sub_tiles)
+        reply = QMessageBox.question(
+            self,
+            self.tr("OpenStreetMap Layer Restriction"),
+            message
+            + "<br><br>"
+            + self.tr(
+                "Are you sure you want to continue without OpenStreetMap layers?"
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
 
-        return tiles
+        if reply == QMessageBox.StandardButton.No:
+            return None
+
+        return [layer for layer in layers if layer not in skipped_layers]
+
+    def __confirm_and_overwrite_output_file(self, output_path: Path) -> bool:
+        """
+        Confirms overwriting the output file (ZIP, MBTiles, NGM) and removes it.
+
+        :param output_path: Path to the existing output file.
+        :return: True if removed successfully or user confirmed, False otherwise.
+        """
+        reply = QMessageBox.question(
+            self,
+            self.tr("File exists"),
+            self.tr(
+                "The file already exists and will be overwritten. Continue?"
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return False
+
+        try:
+            output_path.unlink()
+            return True
+        except Exception as error:
+            QMessageBox.critical(
+                self,
+                self.tr("Cannot overwrite file"),
+                self.tr("Failed to delete file:\n{}\nError: {}").format(
+                    str(output_path), str(error)
+                ),
+            )
+            return False
+
+    def __confirm_and_overwrite_tileset_directory(
+        self, tileset_dir: Path
+    ) -> bool:
+        """
+        Confirms overwriting the tileset directory and removes it completely.
+
+        :param tileset_dir: Full path to the tileset directory that already exists.
+        :return: True if removed successfully, False otherwise.
+        """
+        reply = QMessageBox.question(
+            self,
+            self.tr("Directory exists"),
+            self.tr(
+                "Target tileset directory already exists and will be fully "
+                "removed:\n{}\nContinue?"
+            ).format(str(tileset_dir)),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return False
+
+        try:
+            shutil.rmtree(tileset_dir)
+            return True
+        except Exception as error:
+            QMessageBox.critical(
+                self,
+                self.tr("Cannot overwrite directory"),
+                self.tr("Failed to delete directory:\n{}\nError: {}").format(
+                    str(tileset_dir), str(error)
+                ),
+            )
+            return False
+
+    def __is_tileset_name_valid(self, tileset_name: str) -> bool:
+        """
+        Validates the tileset name to ensure it is safe for use as a folder name.
+
+        :param tileset_name: The name of the tileset folder provided by the user.
+        :return: True if the tileset name is valid, False otherwise.
+        """
+        forbidden_names = {".", ".."}
+        forbidden_chars = {"/", "\\", ":", "*", "?", '"', "<", ">", "|"}
+
+        if not tileset_name.strip():
+            QMessageBox.warning(
+                self,
+                self.tr("Invalid tileset name"),
+                self.tr(
+                    "Tileset name cannot be empty. Please specify a name."
+                ),
+            )
+            return False
+
+        if tileset_name in forbidden_names or any(
+            char in tileset_name for char in forbidden_chars
+        ):
+            QMessageBox.warning(
+                self,
+                self.tr("Invalid tileset name"),
+                self.tr(
+                    "Tileset name contains forbidden characters or reserved names. "
+                    "Please choose a different name."
+                ),
+            )
+            return False
+
+        return True

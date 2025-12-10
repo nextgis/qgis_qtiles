@@ -6,5 +6,12 @@
     <file>icons/ngm_index_24x24.png</file>
     <file>icons/info.png</file>
     <file>resources/viewer.html</file>
+    <file>resources/css/jquery-ui.min.css</file>
+    <file>resources/css/leaflet.css</file>
+    <file>resources/css/images/layers.png</file>
+    <file>resources/js/jquery-ui.min.js</file>
+    <file>resources/js/jquery.min.js</file>
+    <file>resources/js/leaflet.js</file>
+    <file>resources/js/images/ui-bg_flat_75_ffffff_40x100.png</file>
   </qresource>
 </RCC>

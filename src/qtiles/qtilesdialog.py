@@ -372,19 +372,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
             return
 
         if self.rbOutputZip.isChecked() or self.rbOutputNGM.isChecked():
-            if output_path.exists():
-                if not self.__confirm_and_overwrite_output_file(output_path):
-                    return
-
-        elif self.rbOutputDir.isChecked():
-            tileset_dir = output_path / tileset_name
-            if tileset_dir.exists():
-                if not self.__confirm_and_overwrite_tileset_directory(
-                    tileset_dir
-                ):
-                    return
-
-        self.__save_settings()
+            if not self.__confirm_and_overwrite_output_path(
+                output_path, self.tr("tileset output file"), is_directory=False
+            ):
+                return
 
         write_mapurl = (
             self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
@@ -392,6 +383,24 @@ class QTilesDialog(QDialog, FORM_CLASS):
         write_viewer = (
             self.chkWriteViewer.isEnabled() and self.chkWriteViewer.isChecked()
         )
+
+        if write_viewer:
+            viewer_dir = output_path / f"{tileset_name}_viewer"
+            if not self.__confirm_and_overwrite_output_path(
+                viewer_dir, self.tr("viewer directory"), is_directory=True
+            ):
+                return
+
+        if self.rbOutputDir.isChecked():
+            tileset_dir = output_path / tileset_name
+            if not self.__confirm_and_overwrite_output_path(
+                tileset_dir,
+                self.tr("tileset output directory"),
+                is_directory=True,
+            ):
+                return
+
+        self.__save_settings()
 
         self.workThread = tilingthread.TilingThread(
             tiles,
@@ -767,55 +776,34 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         return [layer for layer in layers if layer not in skipped_layers]
 
-    def __confirm_and_overwrite_output_file(self, output_path: Path) -> bool:
-        """
-        Confirms overwriting the output file (ZIP, MBTiles, NGM) and removes it.
-
-        :param output_path: Path to the existing output file.
-        :return: True if removed successfully or user confirmed, False otherwise.
-        """
-        reply = QMessageBox.question(
-            self,
-            self.tr("File exists"),
-            self.tr(
-                "The file already exists and will be overwritten. Continue?"
-            ),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-
-        if reply != QMessageBox.StandardButton.Yes:
-            return False
-
-        try:
-            output_path.unlink()
-            return True
-        except Exception as error:
-            QMessageBox.critical(
-                self,
-                self.tr("Cannot overwrite file"),
-                self.tr("Failed to delete file:\n{}\nError: {}").format(
-                    str(output_path), str(error)
-                ),
-            )
-            return False
-
-    def __confirm_and_overwrite_tileset_directory(
-        self, tileset_dir: Path
+    def __confirm_and_overwrite_output_path(
+        self, output_path: Path, description: str, is_directory: bool = False
     ) -> bool:
         """
-        Confirms overwriting the tileset directory and removes it completely.
+        Checks if a file or directory exists, prompts the user for confirmation
+        to overwrite, and attempts to remove it.
 
-        :param tileset_dir: Full path to the tileset directory that already exists.
-        :return: True if removed successfully, False otherwise.
+        :param output_path: The path to the file or directory.
+        :param description: Human-readable description of the object
+            (e.g., 'tileset directory', 'viewer directory', 'output file').
+        :param is_directory: True if the path is a directory, False if a file.
+
+        :return: True if path was successfully removed or did not exist;
+            False if user cancelled or an error occurred.
         """
+        if not output_path.exists():
+            return True
+
+        message = self.tr(
+            "The {desc} already exists and will be overwritten:\n"
+            "{path}\n\n"
+            "Are you sure you want to continue?"
+        ).format(desc=description, path=str(output_path))
+
         reply = QMessageBox.question(
             self,
-            self.tr("Directory exists"),
-            self.tr(
-                "Target tileset directory already exists and will be fully "
-                "removed:\n{}\nContinue?"
-            ).format(str(tileset_dir)),
+            self.tr("Output path exists"),
+            message,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
@@ -824,14 +812,19 @@ class QTilesDialog(QDialog, FORM_CLASS):
             return False
 
         try:
-            shutil.rmtree(tileset_dir)
+            if is_directory:
+                shutil.rmtree(output_path)
+            else:
+                output_path.unlink()
             return True
         except Exception as error:
             QMessageBox.critical(
                 self,
-                self.tr("Cannot overwrite directory"),
-                self.tr("Failed to delete directory:\n{}\nError: {}").format(
-                    str(tileset_dir), str(error)
+                self.tr("Cannot overwrite"),
+                self.tr(
+                    "Failed to overwrite {desc}:\n{path}\n\nError: {err}"
+                ).format(
+                    desc=description, path=str(output_path), err=str(error)
                 ),
             )
             return False

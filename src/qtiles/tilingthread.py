@@ -47,6 +47,8 @@ from qgis.PyQt.QtCore import (
 from qgis.PyQt.QtGui import QColor, QImage, QPainter
 from qgis.PyQt.QtWidgets import *
 
+from qtiles.qtiles_utils import create_viewer_directory
+
 from . import resources_rc  # noqa: F401
 from .compat import (
     QGIS_VERSION_3,
@@ -394,28 +396,29 @@ class TilingThread(QThread):
             return
 
         html = template_file.readAll().data().decode()
-        viewer = MyTemplate(html)
+        template_file.close()
+        viewer_template = MyTemplate(html)
 
-        tiles_dir = self.output_path / self.root_dir
-        use_tms = "true" if self.tms_convention else "false"
+        viewer_dir = self.output_path / f"{self.root_dir}_viewer"
+
+        create_viewer_directory(viewer_dir)
+
+        tiles_dir_relative = f"../{self.root_dir}"
         substitutions = {
-            "tilesdir": str(tiles_dir),
+            "tilesdir": tiles_dir_relative,
             "tilesext": self.format.lower(),
             "tilesetname": self.root_dir,
-            "tms": use_tms,
+            "tms": "true" if self.tms_convention else "false",
             "centerx": self.extent.center().x(),
             "centery": self.extent.center().y(),
             "avgzoom": (self.max_zoom + self.min_zoom) / 2,
             "maxzoom": self.max_zoom,
         }
 
-        file_path = self.output_path / f"{self.root_dir}.html"
-
-        with open(str(file_path), "wb") as viewer_file:
-            substitution = viewer.substitute(substitutions)
-            viewer_file.write(substitution.encode("utf-8"))
-
-        template_file.close()
+        output_html = viewer_template.substitute(substitutions)
+        index_path = viewer_dir / "index.html"
+        with open(str(index_path), "wb") as html_viewer:
+            html_viewer.write(output_html.encode("utf-8"))
 
     def render(self, tile: Tile) -> None:
         """

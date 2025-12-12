@@ -40,9 +40,8 @@ from qgis.PyQt.QtCore import (
 )
 from qgis.PyQt.QtGui import QImage
 
+from qtiles.external.mbutil import mbutils
 from qtiles.tile import Tile
-
-from .mbutils import *
 
 
 class DirectoryWriter:
@@ -267,10 +266,12 @@ class MBTilesWriter:
 
         self.compression = compression
         bounds = f"{extent.xMinimum()},{extent.yMinimum()},{extent.xMaximum()},{extent.yMaximum()}"
-        self.connection = mbtiles_connect(str(self.output_path), silent=False)
+        self.connection = mbutils.mbtiles_connect(
+            str(self.output_path), silent=False
+        )
         self.cursor = self.connection.cursor()
-        optimize_connection(self.cursor)
-        mbtiles_setup(self.cursor)
+        mbutils.optimize_connection(self.cursor)
+        mbutils.mbtiles_setup(self.cursor)
         self.cursor.execute(
             """INSERT INTO metadata(name, value) VALUES (?, ?);""",
             ("name", self.root_dir),
@@ -336,17 +337,19 @@ class MBTilesWriter:
         self.connection.commit()
         if self.compression:
             # start compression
-            compression_prepare(self.cursor, self.connection)
+            mbutils.compression_prepare(self.cursor, self.connection)
             self.cursor.execute("select count(zoom_level) from tiles")
             res = self.cursor.fetchone()
             total_tiles = res[0]
-            compression_do(
+            mbutils.compression_do(
                 self.cursor, self.connection, total_tiles, silent=False
             )
-            compression_finalize(self.cursor, self.connection, silent=False)
+            mbutils.compression_finalize(
+                self.cursor, self.connection, silent=False
+            )
             self.connection.commit()
             # end compression
 
-        optimize_database(self.connection, silent=False)
+        mbutils.optimize_database(self.connection, silent=False)
         self.connection.close()
         self.cursor = None

@@ -1,0 +1,163 @@
+import sqlite3
+from pathlib import Path
+
+from qgis.core import QgsRectangle
+from qgis.PyQt.QtCore import QBuffer, QByteArray
+from qgis.PyQt.QtGui import QImage
+
+from qtiles.external.mbutil import mbutils
+from qtiles.tile import Tile
+from qtiles.writers.abstract_tiles_writer import AbstractTilesWriter
+
+
+class MBTilesWriter(AbstractTilesWriter):
+    """
+    Writes tiles into an MBTiles SQLite database.
+
+    This writer stores tiles and required MBTiles metadata,
+    and optionally applies tile compression on finalize.
+    """
+
+    def __init__(
+        self,
+        output_path: Path,
+        root_dir: str,
+        image_format: str,
+        min_zoom: int,
+        max_zoom: int,
+        extent: QgsRectangle,
+        compression: bool,
+    ) -> None:
+        """
+        Initializes the MBTiles writer and prepares database schema.
+
+        :param output_path: Path to the MBTiles file.
+        :type output_path: Path
+        :param root_dir: Logical tile set name stored in metadata.
+        :type root_dir: str
+        :param image_format: Image format (e.g. 'PNG', 'JPEG').
+        :type image_format: str
+        :param min_zoom: Minimum zoom level.
+        :type min_zoom: int
+        :param max_zoom: Maximum zoom level.
+        :type max_zoom: int
+        :param extent: Geographic extent of the tileset.
+        :type extent: QgsRectangle
+        :param compression: Whether to apply tile compression.
+        :type compression: bool
+        """
+        self.__compression = compression
+
+        bounds = (
+            f"{extent.xMinimum()},"
+            f"{extent.yMinimum()},"
+            f"{extent.xMaximum()},"
+            f"{extent.yMaximum()}"
+        )
+
+        self.__connection = mbutils.mbtiles_connect(
+            str(output_path),
+            silent=False,
+        )
+        self.__cursor = self.__connection.cursor()
+
+        mbutils.optimize_connection(self.__cursor)
+        mbutils.mbtiles_setup(self.__cursor)
+
+        self.__cursor.executemany(
+            """INSERT INTO metadata(name, value) VALUES (?, ?);""",
+            [
+                ("name", root_dir),
+                ("description", "Created with QTiles"),
+                ("format", image_format.lower()),
+                ("minZoom", str(min_zoom)),
+                ("maxZoom", str(max_zoom)),
+                ("type", "baselayer"),
+                ("version", "1.1"),
+                ("bounds", bounds),
+            ],
+        )
+
+        self.__connection.commit()
+
+    def write_tile(
+        self,
+        tile: Tile,
+        image: QImage,
+        image_format: str,
+        quality: int,
+    ) -> None:
+        """
+        Inserts a single tile into the MBTiles database.
+
+        :param tile: Tile descriptor containing z, x, y coordinates.
+        :type tile: Tile
+        :param image: Rendered tile image.
+        :type image: QImage
+        :param image_format: Image format (e.g., 'PNG', 'JPEG').
+        :type image_format: str
+        :param quality: Image quality (0–100).
+        :type quality: int
+
+        :returns: None
+        """
+        data = QByteArray()
+        buffer = QBuffer(data)
+        buffer.open(QBuffer.OpenModeFlag.WriteOnly)
+
+        image.save(buffer, image_format, quality)
+
+        self.__cursor.execute(
+            """
+            INSERT INTO tiles(
+                zoom_level,
+                tile_column,
+                tile_row,
+                tile_data
+            )
+            VALUES (?, ?, ?, ?);
+            """,
+            (
+                tile.z,
+                tile.x,
+                tile.y,
+                sqlite3.Binary(data),
+            ),
+        )
+
+        buffer.close()
+
+    def finalize(self) -> None:
+        """
+        Finalizes MBTiles writing.
+
+        Commits pending changes, optionally compresses tile data,
+        optimizes the database, and closes the connection.
+
+        :returns: None
+        """
+        self.__connection.commit()
+
+        if self.__compression:
+            mbutils.compression_prepare(self.__cursor, self.__connection)
+
+            self.__cursor.execute("SELECT COUNT(zoom_level) FROM tiles;")
+            total_tiles = self.__cursor.fetchone()[0]
+
+            mbutils.compression_do(
+                self.__cursor,
+                self.__connection,
+                total_tiles,
+                silent=False,
+            )
+            mbutils.compression_finalize(
+                self.__cursor,
+                self.__connection,
+                silent=False,
+            )
+            self.__connection.commit()
+
+        mbutils.optimize_database(self.__connection, silent=False)
+        self.__connection.close()
+
+        self.__cursor = None

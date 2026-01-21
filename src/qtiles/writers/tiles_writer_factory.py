@@ -3,6 +3,7 @@ from qtiles.writers.directory_tiles_writer import DirectoryTilesWriter
 from qtiles.writers.enums import TilesWriterMode
 from qtiles.writers.mbtiles_writer import MBTilesWriter
 from qtiles.writers.ngm_archive_tiles_writer import NGMArchiveTilesWriter
+from qtiles.writers.pmtiles_writer import PMTilesWriter
 from qtiles.writers.save_tiles_options import SaveTilesOptions
 from qtiles.writers.zip_tiles_writer import ZipTilesWriter
 
@@ -51,4 +52,13 @@ class TilesWriterFactory:
                 max_zoom=options.max_zoom,
                 extent=options.extent,
                 compression=options.compression,
+            )
+        if mode is TilesWriterMode.PMTILES:
+            return PMTilesWriter(
+                output_path=options.output_path,
+                root_dir=options.root_dir,
+                image_format=options.image_format,
+                min_zoom=options.min_zoom,
+                max_zoom=options.max_zoom,
+                extent=options.extent,
             )

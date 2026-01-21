@@ -27,13 +27,14 @@ from pathlib import Path
 from typing import List
 
 from qgis.core import (
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsLabelingEngineSettings,
     QgsMapLayer,
     QgsMapRendererCustomPainterJob,
     QgsMapSettings,
-    QgsMessageLog,
     QgsProject,
     QgsRectangle,
-    QgsScaleCalculator,
 )
 from qgis.PyQt.QtCore import (
     QMutex,
@@ -43,6 +44,7 @@ from qgis.PyQt.QtCore import (
 )
 from qgis.PyQt.QtGui import QColor, QImage, QPainter
 from qgis.PyQt.QtWidgets import *
+from qgis.utils import iface
 
 from qtiles.writers.enums import TilesWriterMode
 from qtiles.writers.save_tiles_options import SaveTilesOptions
@@ -50,17 +52,7 @@ from qtiles.writers.tiles_artifacts_writer import TilesetArtifactsWriter
 from qtiles.writers.tiles_writer_factory import TilesWriterFactory
 
 from . import resources_rc  # noqa: F401
-from .compat import (
-    QGIS_VERSION_3,
-    QgsCoordinateReferenceSystem,
-    QgsCoordinateTransform,
-    QgsMessageLogInfo,
-)
 from .tile import Tile
-
-
-def printQtilesLog(msg, level=QgsMessageLogInfo):
-    QgsMessageLog.logMessage(msg, "QTiles", level)
 
 
 class TilingThread(QThread):
@@ -84,6 +76,7 @@ class TilingThread(QThread):
         height: int,
         transp: int,
         quality: int,
+        dpi: int,
         format: str,
         output_path: Path,
         root_dir: str,
@@ -107,6 +100,7 @@ class TilingThread(QThread):
         :param height: The height of each tile in pixels.
         :param transp: The transparency level for tiles.
         :param quality: The quality level for image compression.
+        :param dpi: Output DPI used for map rendering.
         :param format: The output format (e.g., PNG, JPG).
         :param output_path: The file path for saving the tiles.
         :param root_dir: The root directory for output files.
@@ -129,7 +123,6 @@ class TilingThread(QThread):
         self.min_zoom = min_zoom
         self.max_zoom = max_zoom
         self.output_path = output_path
-        self.width = width
         if root_dir:
             self.root_dir = root_dir
         else:
@@ -139,6 +132,7 @@ class TilingThread(QThread):
         self.mbtiles_compression = mbtiles_compression
         self.format = format
         self.quality = quality
+        self.dpi = dpi
         self.json_file = json_file
         self.overview = overview
         self.mapurl = map_url
@@ -150,59 +144,64 @@ class TilingThread(QThread):
         self.layersId = []
         for layer in self.layers:
             self.layersId.append(layer.id())
-        myRed = QgsProject.instance().readNumEntry(
-            "Gui", "/CanvasColorRedPart", 255
-        )[0]
-        myGreen = QgsProject.instance().readNumEntry(
-            "Gui", "/CanvasColorGreenPart", 255
-        )[0]
-        myBlue = QgsProject.instance().readNumEntry(
-            "Gui", "/CanvasColorBluePart", 255
-        )[0]
-        self.color = QColor(myRed, myGreen, myBlue, transp)
         image = QImage(
             width, height, QImage.Format.Format_ARGB32_Premultiplied
         )
         self.projector = QgsCoordinateTransform(
             QgsCoordinateReferenceSystem.fromEpsgId(4326),
-            QgsCoordinateReferenceSystem.fromEpsgId(3395),
+            QgsCoordinateReferenceSystem.fromEpsgId(3857),
+            QgsProject.instance(),
         )
 
-        self.scaleCalc = QgsScaleCalculator()
-        self.scaleCalc.setDpi(image.logicalDpiX())
-        self.scaleCalc.setMapUnits(
-            QgsCoordinateReferenceSystem.fromEpsgId(3395).mapUnits()
+        canvas_settings = iface.mapCanvas().mapSettings()
+        self.render_settings = QgsMapSettings(canvas_settings)
+
+        self.render_settings.setDestinationCrs(
+            QgsCoordinateReferenceSystem.fromEpsgId(3857)
         )
-        self.settings = QgsMapSettings()
-        self.settings.setExtent(self.projector.transform(self.extent))
-        self.settings.setBackgroundColor(self.color)
-
-        if not QGIS_VERSION_3:
-            self.settings.setCrsTransformEnabled(True)
-
-        self.settings.setOutputDpi(image.logicalDpiX())
-        self.settings.setOutputImageFormat(
-            QImage.Format.Format_ARGB32_Premultiplied
-        )
-        self.settings.setDestinationCrs(
-            QgsCoordinateReferenceSystem.fromEpsgId(3395)
-        )
-        self.settings.setOutputSize(image.size())
-
-        if QGIS_VERSION_3:
-            self.settings.setLayers(self.layers)
-        else:
-            self.settings.setLayers(self.layersId)
-
-        if not QGIS_VERSION_3:
-            self.settings.setMapUnits(
-                QgsCoordinateReferenceSystem.fromEpsgId(3395).mapUnits()
-            )
+        self.render_settings.setLayers(self.layers)
+        self.render_settings.setOutputDpi(self.dpi)
+        self.render_settings.setOutputSize(image.size())
+        self.render_settings.setDevicePixelRatio(1.0)
 
         if self.antialias:
-            self.settings.setFlag(QgsMapSettings.Antialiasing, True)
-        else:
-            self.settings.setFlag(QgsMapSettings.DrawLabeling, True)
+            self.render_settings.setFlag(QgsMapSettings.Antialiasing, True)
+
+        self.render_settings.setFlag(QgsMapSettings.DrawLabeling, True)
+        self.render_settings.setFlag(
+            QgsMapSettings.RenderMapTile,
+            True,
+        )
+
+        labeling_settings = self.render_settings.labelingEngineSettings()
+        labeling_settings.setFlag(
+            QgsLabelingEngineSettings.UsePartialCandidates, False
+        )
+        self.render_settings.setLabelingEngineSettings(labeling_settings)
+
+        background_red = QgsProject.instance().readNumEntry(
+            "Gui", "/CanvasColorRedPart", 255
+        )[0]
+        background_green = QgsProject.instance().readNumEntry(
+            "Gui", "/CanvasColorGreenPart", 255
+        )[0]
+        background_blue = QgsProject.instance().readNumEntry(
+            "Gui", "/CanvasColorBluePart", 255
+        )[0]
+        background_color = QColor(
+            background_red, background_green, background_blue, transp
+        )
+
+        self.render_settings.setBackgroundColor(background_color)
+
+        self.image = QImage(
+            self.render_settings.outputSize(),
+            QImage.Format.Format_ARGB32_Premultiplied,
+        )
+
+        dpm = round(self.dpi / 25.4 * 1000)
+        self.image.setDotsPerMeterX(dpm)
+        self.image.setDotsPerMeterY(dpm)
 
     def run(self) -> None:
         """
@@ -216,7 +215,7 @@ class TilingThread(QThread):
         self.stopMe = 0
         self.mutex.unlock()
 
-        overview_map_settings = QgsMapSettings(self.settings)
+        overview_map_settings = QgsMapSettings(self.render_settings)
 
         save_options = SaveTilesOptions(
             output_path=self.output_path,
@@ -252,8 +251,6 @@ class TilingThread(QThread):
         if self.interrupted:
             self.processInterrupted.emit()
             return
-
-        overview_map_settings = QgsMapSettings(self.settings)
 
         for tile in self.tiles:
             self.render(tile)
@@ -294,17 +291,14 @@ class TilingThread(QThread):
         This method processes a tile by rendering it to an image,
         using map settings and transforms.
         """
-        self.settings.setExtent(self.projector.transform(tile.toRectangle()))
+        tile_extent = self.projector.transform(tile.toRectangle())
+        self.render_settings.setExtent(tile_extent)
 
-        image = QImage(self.settings.outputSize(), QImage.Format.Format_ARGB32)
-        image.fill(Qt.GlobalColor.transparent)
+        self.image.fill(Qt.GlobalColor.transparent)
 
-        dpm = round(self.settings.outputDpi() / 25.4 * 1000)
-        image.setDotsPerMeterX(dpm)
-        image.setDotsPerMeterY(dpm)
-
-        painter = QPainter(image)
-        job = QgsMapRendererCustomPainterJob(self.settings, painter)
+        painter = QPainter(self.image)
+        job = QgsMapRendererCustomPainterJob(self.render_settings, painter)
         job.renderSynchronously()
         painter.end()
-        self.writer.write_tile(tile, image, self.format, self.quality)
+
+        self.writer.write_tile(tile, self.image, self.format, self.quality)

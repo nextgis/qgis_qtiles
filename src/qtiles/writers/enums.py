@@ -13,6 +13,7 @@ class TilesWriterMode(Enum):
     ZIP = "ZIP"
     NGM = "NGM"
     MBTILES = "MBTILES"
+    PMTILES = "PMTILES"
 
     @staticmethod
     def from_output_path(path: Path) -> "TilesWriterMode":
@@ -35,6 +36,8 @@ class TilesWriterMode(Enum):
             return TilesWriterMode.NGM
         if suffix == ".mbtiles":
             return TilesWriterMode.MBTILES
+        if suffix == ".pmtiles":
+            return TilesWriterMode.PMTILES
 
         raise ValueError(
             QCoreApplication.translate(

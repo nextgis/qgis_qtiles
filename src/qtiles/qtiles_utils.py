@@ -116,11 +116,12 @@ def count_tiles(
 
     :returns: A list of tiles to be generated or None if no tiles are required.
     """
+    tile_extent = tile.toRectangle()
     if not extent.intersects(tile.toRectangle()):
         return None
 
     tiles = []
-    if min_zoom <= tile.z and tile.z <= max_zoom:
+    if min_zoom <= tile.z <= max_zoom:
         if not render_outside_tiles:
             for layer in layers:
                 crs_transform = QgsCoordinateTransform(
@@ -128,15 +129,15 @@ def count_tiles(
                     QgsCoordinateReferenceSystem.fromEpsgId(4326),
                 )
                 if crs_transform.transform(layer.extent()).intersects(
-                    tile.toRectangle()
+                    tile_extent
                 ):
                     tiles.append(tile)
                     break
         else:
             tiles.append(tile)
     if tile.z < max_zoom:
-        for x in range(2 * tile.x, 2 * tile.x + 2, 1):
-            for y in range(2 * tile.y, 2 * tile.y + 2, 1):
+        for x in (2 * tile.x, 2 * tile.x + 1):
+            for y in (2 * tile.y, 2 * tile.y + 1):
                 sub_tile = Tile(x, y, tile.z + 1, tile.tms)
                 sub_tiles = count_tiles(
                     sub_tile,

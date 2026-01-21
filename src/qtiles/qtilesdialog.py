@@ -97,6 +97,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.FORMATS = {
             self.tr("ZIP archives (*.zip *.ZIP)"): ".zip",
             self.tr("MBTiles databases (*.mbtiles *.MBTILES)"): ".mbtiles",
+            self.tr("PMTiles archives (*.pmtiles *.PMTILES)"): ".pmtiles",
         }
 
         self.settings = QgsSettings("NextGIS", "QTiles")
@@ -326,7 +327,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         layers = canvas.layers()
 
-        tms_convention = self.chkTMSConvention.isChecked()
+        tms_convention = (
+            self.chkTMSConvention.isChecked()
+            and self.chkTMSConvention.isEnabled()
+        )
         if output_path.suffix.lower() == ".mbtiles":
             tms_convention = True
 
@@ -412,6 +416,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.spnTileHeight.value(),
             self.spnTransparency.value(),
             self.spnQuality.value(),
+            self.spin_box_dpi.value(),
             self.cmbFormat.currentText(),
             output_path,
             self.leRootDir.text(),
@@ -621,7 +626,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
             if not output_path:
                 return
 
-            ext = ".zip" if "zip" in output_filter.lower() else ".mbtiles"
+            ext = self.FORMATS.get(output_filter)
+            if not ext:
+                return
 
             output_path = QgsFileUtils.ensureFileNameHasExtension(
                 output_path, [ext]
@@ -631,6 +638,14 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.settings.setValue(
                 "outputToZip_Path", QFileInfo(output_path).absoluteFilePath()
             )
+
+            if ext == ".pmtiles":
+                self.spnTileWidth.setValue(512)
+                self.spnTileHeight.setValue(512)
+
+                self.chkTMSConvention.setEnabled(False)
+            else:
+                self.chkTMSConvention.setEnabled(True)
 
         elif self.rbOutputDir.isChecked():
             dir_directory = QFileInfo(

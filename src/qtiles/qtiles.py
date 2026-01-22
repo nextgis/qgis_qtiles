@@ -24,6 +24,8 @@
 # ******************************************************************************
 
 
+from pathlib import Path
+
 from qgis.core import *
 from qgis.PyQt.QtCore import (
     QCoreApplication,
@@ -34,15 +36,18 @@ from qgis.PyQt.QtCore import (
 )
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QMenu, QMessageBox
-from pathlib import Path
 
-from . import aboutdialog, qtilesdialog, resources_rc  # noqa: F401
+from qtiles import resources_rc  # noqa: F401
+from qtiles.aboutdialog import AboutDialog
+from qtiles.qtilesdialog import QTilesDialog
+
 from .compat import QGis, qgisUserDatabaseFilePath
 
 
 class QTilesPlugin:
     def __init__(self, iface):
         self.iface = iface
+        self.qtiles_dialog = None
 
         self.qgsVersion = str(QGis.QGIS_VERSION_INT)
 
@@ -153,12 +158,25 @@ class QTilesPlugin:
         self.__show_help_action.deleteLater()
         self.__show_help_action = None
 
-    def run(self):
-        d = qtilesdialog.QTilesDialog(self.iface)
-        d.show()
-        d.exec()
+    def run(self) -> None:
+        """
+        Show the main QTiles dialog.
+
+        Ensures that only a single non-modal instance of the dialog exists.
+
+        :return: None
+        """
+        if self.qtiles_dialog is None:
+            self.qtiles_dialog = QTilesDialog(self.iface)
+            self.qtiles_dialog.finished.connect(
+                lambda _: setattr(self, "qtiles_dialog", None)
+            )
+            self.qtiles_dialog.show()
+        else:
+            self.qtiles_dialog.raise_()
+            self.qtiles_dialog.activateWindow()
 
     def about(self):
         package_name = str(Path(__file__).parent.name)
-        d = aboutdialog.AboutDialog(package_name)
+        d = AboutDialog(package_name)
         d.exec()

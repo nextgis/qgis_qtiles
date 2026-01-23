@@ -43,6 +43,7 @@ from qgis.PyQt.QtWidgets import (
     QMessageBox,
 )
 
+from qtiles.aboutdialog import AboutDialog
 from qtiles.restrictions import OpenStreetMapRestriction
 from qtiles.tile import Tile
 
@@ -123,6 +124,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.lInfoIconOutputZip.linkActivated.connect(self.show_output_info)
         self.lInfoIconOutputDir.linkActivated.connect(self.show_output_info)
         self.lInfoIconOutputNGM.linkActivated.connect(self.show_output_info)
+
+        self.about_button.clicked.connect(self.__show_about)
 
         self.manageGui()
 
@@ -274,7 +277,18 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.settings.value("renderOutsideTiles", True, type=bool)
         )
 
+        self.progressBar.setVisible(False)
+
         self.formatChanged()
+
+    @pyqtSlot()
+    def __show_about(self) -> None:
+        """
+        Displays the About dialog for the QTiles plugin.
+        """
+        package_name = str(Path(__file__).parent.name)
+        about_dialog = AboutDialog(package_name)
+        about_dialog.exec()
 
     def reject(self) -> None:
         """
@@ -439,6 +453,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.btnClose.setText(self.tr("Cancel"))
         self.buttonBox.rejected.disconnect(self.reject)
         self.btnClose.clicked.connect(self.stopProcessing)
+        self.progressBar.setVisible(True)
         self.workThread.start()
 
     def __confirm_continue_threshold(self, tiles_count_threshold: int) -> bool:
@@ -511,6 +526,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.progressBar.setFormat("%p%")
         self.progressBar.setRange(0, 1)
         self.progressBar.setValue(0)
+        self.progressBar.setVisible(False)
+
         self.buttonBox.rejected.connect(self.reject)
         self.btnClose.clicked.disconnect(self.stopProcessing)
         self.btnClose.setText(self.tr("Close"))

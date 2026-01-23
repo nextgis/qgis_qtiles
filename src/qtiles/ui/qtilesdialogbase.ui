@@ -306,7 +306,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>Browse...</string>
+               <string>Browse…</string>
               </property>
              </widget>
             </item>
@@ -559,7 +559,7 @@
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  top: 1px;},  QgsCollapsibleGroupBoxBasic { border: none; }QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  margin-right: 5px;  left: 0px;  top: 2px;}QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  margin-right: 5px;  left: 0px;  top: 2px;}QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  margin-right: 5px;  left: 0px;  top: 2px;}QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  margin-right: 5px;  left: 0px;  top: 2px;}</string>
+          <string notr="true">QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  top: 1px;}, QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  margin-right: 5px;  left: 0px;  top: 2px;}QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  margin-right: 5px;  left: 0px;  top: 2px;}QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  margin-right: 5px;  left: 0px;  top: 2px;}QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  margin-right: 5px;  left: 0px;  top: 2px;}QgsCollapsibleGroupBoxBasic::title, QgsCollapsibleGroupBox::title {  subcontrol-origin: margin;  subcontrol-position: top left;  margin-left: 20px;  margin-right: 5px;  left: 0px;  top: 2px;}</string>
          </property>
          <property name="title">
           <string>Parameters</string>
@@ -1015,7 +1015,7 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_5">
+    <layout class="QGridLayout" name="gridLayout" columnstretch="0,1,0">
      <property name="leftMargin">
       <number>0</number>
      </property>
@@ -1028,7 +1028,20 @@
      <property name="bottomMargin">
       <number>6</number>
      </property>
-     <item>
+     <item row="0" column="0">
+      <widget class="QPushButton" name="about_button">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>About plugin…</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
       <widget class="QProgressBar" name="progressBar">
        <property name="value">
         <number>0</number>
@@ -1041,7 +1054,7 @@
        </property>
       </widget>
      </item>
-     <item>
+     <item row="0" column="2">
       <widget class="QDialogButtonBox" name="buttonBox">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">

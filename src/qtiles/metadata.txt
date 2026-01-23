@@ -50,7 +50,7 @@ changelog=
         * add MBTiles initialize arguments for Geopaparazzi4
         * take into account the actual zoom level when generating tiles
 
-icon=icons/qtiles.png
+icon=icons/qtiles.svg
 
 tags=raster,tiles
 

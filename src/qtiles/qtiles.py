@@ -108,7 +108,7 @@ class QTilesPlugin:
             self.iface.mainWindow(),
         )
         self.iface.registerMainWindowAction(self.actionRun, "Shift+T")
-        self.actionRun.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.png"))
+        self.actionRun.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
         self.actionRun.setWhatsThis("Generate tiles from current project")
         self.actionAbout = QAction(
             QCoreApplication.translate("QTiles", "About QTiles..."),
@@ -120,7 +120,7 @@ class QTilesPlugin:
         self.__qtiles_menu = QMenu(
             QCoreApplication.translate("QTiles", "QTiles")
         )
-        self.__qtiles_menu.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.png"))
+        self.__qtiles_menu.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
 
         self.__qtiles_menu.addAction(self.actionRun)
         self.__qtiles_menu.addAction(self.actionAbout)
@@ -133,7 +133,7 @@ class QTilesPlugin:
         self.actionAbout.triggered.connect(self.about)
 
         self.__show_help_action = QAction(
-            QIcon(":/plugins/qtiles/icons/qtiles.png"),
+            QIcon(":/plugins/qtiles/icons/qtiles.svg"),
             "QTiles",
         )
         self.__show_help_action.triggered.connect(self.about)

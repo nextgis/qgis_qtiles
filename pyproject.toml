@@ -6,7 +6,7 @@ license = { file = "LICENSE" }
 
 
 [tool.qgspb.package-data]
-"qtiles.icons" = ["qtiles.png"]
+"qtiles.icons" = ["qtiles.svg"]
 
 [tool.qgspb.forms]
 ui-files = ["src/qtiles/ui/*.ui"]

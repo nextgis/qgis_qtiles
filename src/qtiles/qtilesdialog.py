@@ -76,7 +76,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.setObjectName("qtiles_main_window")
         QgsGui.enableAutoGeometryRestore(self, "qtiles_main_window")
 
-        self.setWindowIcon(QIcon(":/plugins/qtiles/icons/qtiles.png"))
+        self.setWindowIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
 
         self.btnOk = self.buttonBox.addButton(
             self.tr("Run"), QDialogButtonBox.ButtonRole.AcceptRole

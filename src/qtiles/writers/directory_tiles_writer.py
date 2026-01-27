@@ -11,7 +11,7 @@ class DirectoryTilesWriter(AbstractTilesWriter):
     Writes tiles to a directory structure on disk.
     """
 
-    def __init__(self, output_path: Path, root_dir: str) -> None:
+    def __init__(self, *, output_path: Path, root_dir: str) -> None:
         """
         Initializes the DirectoryWriter with the output path and root directory.
 

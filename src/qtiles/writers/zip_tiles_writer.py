@@ -17,7 +17,7 @@ class ZipTilesWriter(AbstractTilesWriter):
     <root_dir>/<z>/<x>/<y>.<format>.
     """
 
-    def __init__(self, output_path: Path, root_dir: str) -> None:
+    def __init__(self, *, output_path: Path, root_dir: str) -> None:
         """
         Initializes the ZIP tiles writer.
 

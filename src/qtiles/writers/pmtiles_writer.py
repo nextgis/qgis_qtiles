@@ -17,6 +17,7 @@ class PMTilesWriter(AbstractTilesWriter):
 
     def __init__(
         self,
+        *,
         output_path: Path,
         root_dir: str,
         image_format: str,

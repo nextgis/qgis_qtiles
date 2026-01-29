@@ -29,67 +29,32 @@ from typing import List, Optional
 
 from qgis.core import (
     QgsMapLayer,
-    QgsProject,
     QgsRectangle,
 )
-from qgis.gui import QgsMapCanvas
 
 from qtiles.compat import (
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
-    mapLayers,
 )
 from qtiles.tile import Tile
 
 TILES_COUNT_TRESHOLD = 10000
 
 
-def getMapLayers():
-    layers = dict()
-    for name, layer in list(mapLayers().items()):
-        if layer.type() == QgsMapLayer.VectorLayer:
-            if layer.id() not in list(layers.keys()):
-                layers[layer.id()] = str(layer.name())
-        if (
-            layer.type() == QgsMapLayer.RasterLayer
-            and layer.providerType() == "gdal"
-        ):
-            if layer.id() not in list(layers.keys()):
-                layers[layer.id()] = str(layer.name())
-    return layers
+def compute_target_extent(extent: QgsRectangle) -> QgsRectangle:
+    """
+    Clamps a WGS84 extent to valid Web Mercator geographic bounds.
 
+    :param extent: The geographic extent to clamp.
+    :type extent: QgsRectangle
 
-def getLayerById(layerId):
-    for name, layer in list(mapLayers().items()):
-        if layer.id() == layerId:
-            if layer.isValid():
-                return layer
-            else:
-                return None
-
-
-def getLayerGroup(layerId):
-    return (
-        QgsProject.instance()
-        .layerTreeRoot()
-        .findLayer(layerId)
-        .parent()
-        .name()
-    )
-
-
-def compute_target_extent(canvas: QgsMapCanvas, extent) -> QgsRectangle:
-    transformed_extent = QgsCoordinateTransform(
-        canvas.mapSettings().destinationCrs(),
-        QgsCoordinateReferenceSystem.fromEpsgId(4326),
-    ).transform(extent)
-
+    :return: The clamped extent within valid geographic bounds.
+    :rtype: QgsRectangle
+    """
     arctan_sinh_pi = math.degrees(math.atan(math.sinh(math.pi)))
-    target_extent = transformed_extent.intersect(
+    return extent.intersect(
         QgsRectangle(-180, -arctan_sinh_pi, 180, arctan_sinh_pi)
     )
-
-    return target_extent
 
 
 def count_tiles(

@@ -22,7 +22,6 @@
 # MA 02110-1335 USA.
 #
 # ******************************************************************************
-import operator
 import os
 import shutil
 from pathlib import Path
@@ -74,10 +73,16 @@ class QTilesDialog(QDialog, FORM_CLASS):
         super().__init__()
         self.setupUi(self)
 
+        self.iface = iface
+
         self.setObjectName("qtiles_main_window")
         QgsGui.enableAutoGeometryRestore(self, "qtiles_main_window")
 
         self.setWindowIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
+
+        self.extent_widget.toggleDialogVisibility.connect(
+            self.__on_extent_toggle_dialog_visibility
+        )
 
         self.btnOk = self.buttonBox.addButton(
             self.tr("Run"), QDialogButtonBox.ButtonRole.AcceptRole
@@ -90,8 +95,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.spnZoomMin.valueChanged.connect(self.spnZoomMax.setMinimum)
         self.spnZoomMax.valueChanged.connect(self.spnZoomMin.setMaximum)
-
-        self.iface = iface
 
         self.verticalLayout_2.setAlignment(Qt.AlignmentFlag.AlignTop)
 
@@ -108,7 +111,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.btnClose = self.buttonBox.button(
             QDialogButtonBox.StandardButton.Close
         )
-        self.rbExtentLayer.toggled.connect(self.__toggleLayerSelector)
+
         self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
         self.spnTileWidth.valueChanged.connect(self.__updateTileSize)
         self.btnBrowse.clicked.connect(self.__select_output)
@@ -184,18 +187,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         Configures the GUI elements based on saved settings and user input.
         """
-        layers = utils.getMapLayers()
-        for layer in sorted(
-            iter(list(layers.items())), key=operator.itemgetter(1)
-        ):
-            groupName = utils.getLayerGroup(layer[0])
-            if groupName == "":
-                self.cmbLayers.addItem(layer[1], layer[0])
-            else:
-                self.cmbLayers.addItem(
-                    "%s - %s" % (layer[1], groupName), layer[0]
-                )
-
         self.rbOutputZip.setChecked(
             self.settings.value("outputToZip", True, type=bool)
         )
@@ -224,18 +215,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.settings.value("outputToDir_Path", "")
         )
         self.leTilesFroNGM.setText(self.settings.value("outputToNGM_Path", ""))
-
-        self.cmbLayers.setEnabled(False)
         self.leRootDir.setText(self.settings.value("rootDir", "Mapnik"))
-        self.rbExtentCanvas.setChecked(
-            self.settings.value("extentCanvas", True, type=bool)
-        )
-        self.rbExtentFull.setChecked(
-            self.settings.value("extentFull", False, type=bool)
-        )
-        self.rbExtentLayer.setChecked(
-            self.settings.value("extentLayer", False, type=bool)
-        )
         self.spnZoomMin.setValue(self.settings.value("minZoom", 0, type=int))
         self.spnZoomMax.setValue(self.settings.value("maxZoom", 18, type=int))
         self.chkLockRatio.setChecked(
@@ -327,18 +307,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             return
 
         canvas = self.iface.mapCanvas()
-        if self.rbExtentCanvas.isChecked():
-            extent = canvas.extent()
-        elif self.rbExtentFull.isChecked():
-            extent = canvas.fullExtent()
-        else:
-            layer = utils.getLayerById(
-                self.cmbLayers.itemData(self.cmbLayers.currentIndex())
-            )
-            extent = canvas.mapSettings().layerExtentToOutputExtent(
-                layer, layer.extent()
-            )
-
+        extent = self.extent_widget.outputExtent()
         target_extent = utils.compute_target_extent(canvas, extent)
 
         layers = canvas.layers()
@@ -592,14 +561,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 self.chkWriteJson.setChecked(False)
                 self.chkWriteJson.setEnabled(False)
 
-    def __toggleLayerSelector(self, checked: bool) -> None:
-        """
-        Toggles the visibility of the layer selector based on user input.
-
-        :param checked: A boolean indicating whether the layer selector should be visible.
-        """
-        self.cmbLayers.setEnabled(checked)
-
     def __toggleHeightEdit(self, state: int) -> None:
         """
         Enables or disables the height input field based on the lock ratio
@@ -703,14 +664,11 @@ class QTilesDialog(QDialog, FORM_CLASS):
             )
 
     def __is_input_parameters_valid(self) -> bool:
-        if (
-            self.rbExtentLayer.isChecked()
-            and self.cmbLayers.currentIndex() < 0
-        ):
+        if not self.extent_widget.isValid():
             QMessageBox.warning(
                 self,
-                self.tr("Layer not selected"),
-                self.tr("Please select a layer and try again."),
+                self.tr("Extent not set"),
+                self.tr("Please specify a valid map extent."),
             )
             return False
 
@@ -733,9 +691,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.settings.setValue("outputToZip", self.rbOutputZip.isChecked())
         self.settings.setValue("outputToDir", self.rbOutputDir.isChecked())
         self.settings.setValue("outputToNGM", self.rbOutputNGM.isChecked())
-        self.settings.setValue("extentCanvas", self.rbExtentCanvas.isChecked())
-        self.settings.setValue("extentFull", self.rbExtentFull.isChecked())
-        self.settings.setValue("extentLayer", self.rbExtentLayer.isChecked())
         self.settings.setValue("minZoom", self.spnZoomMin.value())
         self.settings.setValue("maxZoom", self.spnZoomMax.value())
         self.settings.setValue("keepRatio", self.chkLockRatio.isChecked())
@@ -897,3 +852,23 @@ class QTilesDialog(QDialog, FORM_CLASS):
             return False
 
         return True
+
+    @pyqtSlot(bool)
+    def __on_extent_toggle_dialog_visibility(self, visible: bool) -> None:
+        """
+        Shows or hides the dialog while the user is interactively
+        defining an extent on the map canvas.
+
+        This slot is connected to :py:signal:`QgsExtentWidget.toggleDialogVisibility`
+        and is triggered when the extent widget enters or leaves the
+        "Select extent on map" interaction mode.
+
+        :param visible: Whether the dialog should be visible.
+        :type visible: bool
+        """
+        if visible:
+            self.show()
+            self.raise_()
+            self.activateWindow()
+        else:
+            self.hide()

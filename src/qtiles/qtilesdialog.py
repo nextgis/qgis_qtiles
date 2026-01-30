@@ -114,6 +114,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
         self.spnTileWidth.valueChanged.connect(self.__updateTileSize)
+
+        self._reposition_tile_size_lock_controls()
+
         self.btnBrowse.clicked.connect(self.__select_output)
         self.cmbFormat.activated.connect(self.formatChanged)
 
@@ -124,50 +127,19 @@ class QTilesDialog(QDialog, FORM_CLASS):
             QIcon(":/plugins/qtiles/icons/ngm_index_24x24.png")
         )
 
-        self.lInfoIconOutputZip.linkActivated.connect(self.show_output_info)
-        self.lInfoIconOutputDir.linkActivated.connect(self.show_output_info)
-        self.lInfoIconOutputNGM.linkActivated.connect(self.show_output_info)
+        self.lInfoIconOutputZip.setToolTip(
+            self.tr("Save tiles as a single file: ZIP, MBTiles, or PMTiles")
+        )
+        self.lInfoIconOutputDir.setToolTip(
+            self.tr("Save tiles as a directory structure")
+        )
+        self.lInfoIconOutputNGM.setToolTip(
+            self.tr("Prepare tile package for NextGIS Mobile")
+        )
 
         self.about_button.clicked.connect(self.__show_about)
 
         self.manageGui()
-
-    def show_output_info(self, href: str) -> None:
-        """
-        Displays information about the selected output type.
-
-        :param href: The hyperlink reference associated with the clicked icon.
-        """
-        title = self.tr("Output type info")
-        message = ""
-        if self.sender() is self.lInfoIconOutputZip:
-            message = self.tr("Save tiles as Zip or MBTiles")
-        elif self.sender() is self.lInfoIconOutputDir:
-            message = self.tr("Save tiles as directory structure")
-        elif self.sender() is self.lInfoIconOutputNGM:
-            message = (
-                "<table cellspacing='10'> <tr> \
-                        <td> \
-                            <img src=':/plugins/qtiles/icons/ngm_index_24x24.png'/> \
-                        </td> \
-                        <td> \
-                            %s \
-                        </td> \
-                    </tr> </table>"
-                % self.tr(
-                    "Prepare package for <a href='http://nextgis.ru/en/nextgis-mobile/'> NextGIS Mobile </a>"
-                )
-            )
-
-        # QMessageBox.information(
-        #     self,
-        #     title,
-        #     message
-        # )
-        msgBox = QMessageBox()
-        msgBox.setWindowTitle(title)
-        msgBox.setText(message)
-        msgBox.exec()
 
     def formatChanged(self) -> None:
         """
@@ -261,6 +233,26 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.formatChanged()
 
+    def _reposition_tile_size_lock_controls(self) -> None:
+        """
+        Moves the tile size / aspect ratio lock controls
+        to span two rows in the tile parameters grid layout.
+        """
+        grid_layout = self.tile_parameters_grid_layout
+        tile_size_lock_layout = self.tile_size_lock_vertical_layout
+
+        item = grid_layout.itemAtPosition(0, 2)
+        if item:
+            grid_layout.removeItem(item)
+
+        grid_layout.addLayout(
+            tile_size_lock_layout,
+            0,  # fromRow
+            2,  # fromColumn
+            2,  # rowSpan
+            1,  # columnSpan
+        )
+
     @pyqtSlot()
     def __show_about(self) -> None:
         """
@@ -308,7 +300,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         canvas = self.iface.mapCanvas()
         extent = self.extent_widget.outputExtent()
-        target_extent = utils.compute_target_extent(canvas, extent)
+        target_extent = utils.compute_target_extent(extent)
 
         layers = canvas.layers()
 

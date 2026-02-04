@@ -1,5 +1,5 @@
 from enum import Enum
-from pathlib import Path
+from typing import Optional
 
 from qgis.PyQt.QtCore import QCoreApplication
 
@@ -15,32 +15,58 @@ class TilesWriterMode(Enum):
     MBTILES = "MBTILES"
     PMTILES = "PMTILES"
 
-    @staticmethod
-    def from_output_path(path: Path) -> "TilesWriterMode":
+    @classmethod
+    def tr(cls, text: str) -> str:
         """
-        Detects writer mode from output path.
+        Translate text in TilesWriterMode context.
 
-        :param path: Output path provided by the user.
-        :type path: Path
+        :param text: Source text.
 
-        :returns: Detected tile writer mode.
-        :rtype: TilesWriterMode
+        :returns: Translated text.
         """
-        if path.is_dir():
-            return TilesWriterMode.DIR
+        return QCoreApplication.translate(cls.__name__, text)
 
-        suffix = path.suffix.lower()
-        if suffix == ".zip":
-            return TilesWriterMode.ZIP
-        if suffix == ".ngrc":
-            return TilesWriterMode.NGM
-        if suffix == ".mbtiles":
-            return TilesWriterMode.MBTILES
-        if suffix == ".pmtiles":
-            return TilesWriterMode.PMTILES
+    @property
+    def file_extension(self) -> Optional[str]:
+        """
+        Return the file extension associated with the writer mode.
 
-        raise ValueError(
-            QCoreApplication.translate(
-                "TilesWritersMode", "Unsupported writer mode: {}"
-            ).format(suffix)
-        )
+        :returns: File extension including the leading dot
+        """
+        file_extension_mapping = {
+            TilesWriterMode.ZIP: ".zip",
+            TilesWriterMode.MBTILES: ".mbtiles",
+            TilesWriterMode.PMTILES: ".pmtiles",
+            TilesWriterMode.NGM: ".ngrc",
+        }
+
+        return file_extension_mapping.get(self)
+
+    @property
+    def is_directory(self) -> bool:
+        """
+        Return whether the writer mode outputs to a directory.
+
+        :returns: ``True`` if the output target is a directory.
+        """
+        return self is TilesWriterMode.DIR
+
+    @property
+    def file_dialog_filter(self) -> Optional[str]:
+        """
+        Return QFileDialog filter string for the writer mode.
+
+        :returns: File dialog filter or ``None`` for directory mode.
+        """
+        file_dialog_filter_mapping = {
+            TilesWriterMode.ZIP: self.tr("ZIP archives (*.zip *.ZIP)"),
+            TilesWriterMode.MBTILES: self.tr(
+                "MBTiles databases (*.mbtiles *.MBTILES)"
+            ),
+            TilesWriterMode.PMTILES: self.tr(
+                "PMTiles archives (*.pmtiles *.PMTILES)"
+            ),
+            TilesWriterMode.NGM: self.tr("NextGIS Mobile archive (*.ngrc)"),
+        }
+
+        return file_dialog_filter_mapping.get(self)

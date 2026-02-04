@@ -25,26 +25,29 @@
 import os
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 if TYPE_CHECKING:
     from qgis.gui import QgsInterface
 
-from qgis.core import QgsFileUtils, QgsMapLayer
-from qgis.gui import QgsGui
+from qgis.core import QgsApplication, QgsMapLayer
+from qgis.gui import QgsFileWidget, QgsGui
 from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QFileInfo, Qt, pyqtSlot
+from qgis.PyQt.QtCore import QSize, Qt, pyqtSlot
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
+    QComboBox,
     QDialog,
     QDialogButtonBox,
-    QFileDialog,
     QMessageBox,
+    QSizePolicy,
+    QToolButton,
 )
 
 from qtiles.aboutdialog import AboutDialog
 from qtiles.restrictions import OpenStreetMapRestriction
 from qtiles.tile import Tile
+from qtiles.writers.enums import TilesWriterMode
 
 from . import qtiles_utils as utils
 from . import tilingthread
@@ -80,6 +83,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.setWindowIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
 
+        self.output_format_combo_box.currentIndexChanged.connect(
+            self.__on_output_format_changed
+        )
+
         self.extent_widget.toggleDialogVisibility.connect(
             self.__on_extent_toggle_dialog_visibility
         )
@@ -100,12 +107,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.workThread = None
 
-        self.FORMATS = {
-            self.tr("ZIP archives (*.zip *.ZIP)"): ".zip",
-            self.tr("MBTiles databases (*.mbtiles *.MBTILES)"): ".mbtiles",
-            self.tr("PMTiles archives (*.pmtiles *.PMTILES)"): ".pmtiles",
-        }
-
         self.settings = QgsSettings("NextGIS", "QTiles")
         self.grpParameters.setSettings(self.settings)
         self.btnClose = self.buttonBox.button(
@@ -114,28 +115,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
         self.spnTileWidth.valueChanged.connect(self.__updateTileSize)
-
-        self._reposition_tile_size_lock_controls()
-
-        self.btnBrowse.clicked.connect(self.__select_output)
         self.cmbFormat.activated.connect(self.formatChanged)
 
-        self.rbOutputZip.toggled.connect(self.__toggleTarget)
-        self.rbOutputDir.toggled.connect(self.__toggleTarget)
-        self.rbOutputNGM.toggled.connect(self.__toggleTarget)
-        self.rbOutputNGM.setIcon(
-            QIcon(":/plugins/qtiles/icons/ngm_index_24x24.png")
-        )
-
-        self.lInfoIconOutputZip.setToolTip(
-            self.tr("Save tiles as a single file: ZIP, MBTiles, or PMTiles")
-        )
-        self.lInfoIconOutputDir.setToolTip(
-            self.tr("Save tiles as a directory structure")
-        )
-        self.lInfoIconOutputNGM.setToolTip(
-            self.tr("Prepare tile package for NextGIS Mobile")
-        )
+        self._reposition_tile_size_lock_controls()
 
         self.about_button.clicked.connect(self.__show_about)
 
@@ -159,34 +141,34 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         Configures the GUI elements based on saved settings and user input.
         """
-        self.rbOutputZip.setChecked(
-            self.settings.value("outputToZip", True, type=bool)
+        file_widget_buttons = self.output_path_file_widget.findChildren(
+            QToolButton
         )
-        self.rbOutputDir.setChecked(
-            self.settings.value("outputToDir", False, type=bool)
-        )
-        self.rbOutputNGM.setChecked(
-            self.settings.value("outputToNGM", False, type=bool)
-        )
-        if self.rbOutputZip.isChecked():
-            self.leDirectoryName.setEnabled(False)
-            self.leTilesFroNGM.setEnabled(False)
-        elif self.rbOutputDir.isChecked():
-            self.leZipFileName.setEnabled(False)
-            self.leTilesFroNGM.setEnabled(False)
-        elif self.rbOutputNGM.isChecked():
-            self.leZipFileName.setEnabled(False)
-            self.leDirectoryName.setEnabled(False)
-        else:
-            self.leZipFileName.setEnabled(False)
-            self.leDirectoryName.setEnabled(False)
-            self.leTilesFroNGM.setEnabled(False)
+        if file_widget_buttons:
+            file_widget_buttons[1].setIcon(
+                QgsApplication.getThemeIcon("mActionFileOpen.svg")
+            )
 
-        self.leZipFileName.setText(self.settings.value("outputToZip_Path", ""))
-        self.leDirectoryName.setText(
-            self.settings.value("outputToDir_Path", "")
+        file_widget_line_edit = self.output_path_file_widget.lineEdit()
+
+        preffered_policy = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
         )
-        self.leTilesFroNGM.setText(self.settings.value("outputToNGM_Path", ""))
+        file_widget_line_edit.setSizePolicy(preffered_policy)
+
+        self.output_path_file_widget.setConfirmOverwrite(False)
+        file_widget_line_edit.setReadOnly(True)
+        file_widget_line_edit.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        file_widget_line_edit.setPlaceholderText(
+            self.tr("Select output path…")
+        )
+
+        self.output_path_file_widget.setDefaultRoot(
+            self.settings.value("last_output_dir", str(Path.home()))
+        )
+
+        self.__populate_output_format_combo_box()
+
         self.leRootDir.setText(self.settings.value("rootDir", "Mapnik"))
         self.spnZoomMin.setValue(self.settings.value("minZoom", 0, type=int))
         self.spnZoomMax.setValue(self.settings.value("maxZoom", 18, type=int))
@@ -231,6 +213,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.progressBar.setVisible(False)
 
+        self.about_button.setIcon(
+            QgsApplication.getThemeIcon("mActionPropertiesWidget.svg")
+        )
+
         self.formatChanged()
 
     def _reposition_tile_size_lock_controls(self) -> None:
@@ -272,14 +258,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         Validates user input and starts the tile generation process.
         """
-        if self.rbOutputZip.isChecked():
-            output_path_str = self.leZipFileName.text()
-        elif self.rbOutputDir.isChecked():
-            output_path_str = self.leDirectoryName.text()
-        elif self.rbOutputNGM.isChecked():
-            output_path_str = self.leTilesFroNGM.text()
-        else:
-            output_path_str = ""
+        output_path_str = self.output_path_file_widget.filePath()
 
         if not output_path_str:
             QMessageBox.warning(
@@ -304,13 +283,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         layers = canvas.layers()
 
-        tms_convention = (
-            self.chkTMSConvention.isChecked()
-            and self.chkTMSConvention.isEnabled()
-        )
-        if output_path.suffix.lower() == ".mbtiles":
-            tms_convention = True
-
+        tms_convention = self.chkTMSConvention.isChecked()
         use_tms = -1 if tms_convention else 1
 
         initial_tile = Tile(0, 0, 0, use_tms)
@@ -352,11 +325,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
         if layers is None:
             return
 
-        if self.rbOutputZip.isChecked() or self.rbOutputNGM.isChecked():
-            if not self.__confirm_and_overwrite_output_path(
-                output_path, self.tr("tileset output file"), is_directory=False
-            ):
-                return
+        writer_mode: TilesWriterMode = (
+            self.output_format_combo_box.currentData()
+        )
 
         write_mapurl = (
             self.chkWriteMapurl.isEnabled() and self.chkWriteMapurl.isChecked()
@@ -372,12 +343,19 @@ class QTilesDialog(QDialog, FORM_CLASS):
             ):
                 return
 
-        if self.rbOutputDir.isChecked():
-            tileset_dir = output_path / tileset_name
+        if writer_mode.is_directory:
+            tileset_path = output_path / tileset_name
             if not self.__confirm_and_overwrite_output_path(
-                tileset_dir,
+                tileset_path,
                 self.tr("tileset output directory"),
                 is_directory=True,
+            ):
+                return
+        else:
+            if not self.__confirm_and_overwrite_output_path(
+                output_path,
+                self.tr("tileset output file"),
+                is_directory=False,
             ):
                 return
 
@@ -386,6 +364,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.workThread = tilingthread.TilingThread(
             tiles,
             layers,
+            writer_mode,
             target_extent,
             min_zoom,
             max_zoom,
@@ -494,64 +473,76 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.btnClose.setText(self.tr("Close"))
         self.btnOk.setEnabled(True)
 
-    def __toggleTarget(self, checked: bool) -> None:
+    def __on_output_format_changed(self, index: int) -> None:
         """
-        Toggles the availability of target-related input fields.
-
-        This method is triggered when the user selects a different output
-        target (e.g., ZIP, directory, or NGM package).
-
-        :param checked: A boolean indicating whether the target is selected.
+        Update UI state according to selected tiles writer mode.
         """
-        if checked:
-            if self.sender() is self.rbOutputZip:
-                self.leZipFileName.setEnabled(True)
-                self.leDirectoryName.setEnabled(False)
-                self.leTilesFroNGM.setEnabled(False)
-                self.chkWriteMapurl.setEnabled(False)
-                self.chkWriteViewer.setEnabled(False)
-                self.chkWriteJson.setEnabled(True)
+        mode: Optional[TilesWriterMode] = (
+            self.output_format_combo_box.itemData(index)
+        )
 
-                self.spnTileWidth.setEnabled(True)
-                self.chkLockRatio.setEnabled(True)
-                self.cmbFormat.setEnabled(True)
-                self.chkMBTilesCompression.setEnabled(True)
+        if mode is None:
+            return
 
-                self.chkWriteOverview.setEnabled(True)
-            elif self.sender() is self.rbOutputDir:
-                self.leZipFileName.setEnabled(False)
-                self.leDirectoryName.setEnabled(True)
-                self.leTilesFroNGM.setEnabled(False)
-                self.chkWriteMapurl.setEnabled(True)
-                self.chkWriteViewer.setEnabled(True)
-                self.chkWriteJson.setEnabled(True)
-                self.chkMBTilesCompression.setEnabled(False)
+        self.__configure_output_path_file_widget(mode)
 
-                self.spnTileWidth.setEnabled(True)
-                self.chkLockRatio.setEnabled(True)
-                self.cmbFormat.setEnabled(True)
+        self.chkWriteOverview.setEnabled(True)
+        self.chkWriteJson.setEnabled(True)
+        self.chkWriteMapurl.setEnabled(False)
+        self.chkWriteViewer.setEnabled(False)
 
-                self.chkWriteOverview.setEnabled(True)
-            elif self.sender() is self.rbOutputNGM:
-                self.leZipFileName.setEnabled(False)
-                self.leDirectoryName.setEnabled(False)
-                self.leTilesFroNGM.setEnabled(True)
-                self.chkWriteMapurl.setEnabled(False)
-                self.chkWriteViewer.setEnabled(False)
-                self.chkMBTilesCompression.setEnabled(False)
+        self.chkMBTilesCompression.setEnabled(False)
 
-                self.spnTileWidth.setValue(256)
-                self.spnTileWidth.setEnabled(False)
-                self.chkLockRatio.setCheckState(Qt.CheckState.Checked)
-                self.chkLockRatio.setEnabled(False)
-                self.cmbFormat.setCurrentIndex(0)
-                self.cmbFormat.setEnabled(True)
+        self.spnTileWidth.setEnabled(True)
+        self.spnTileHeight.setEnabled(True)
+        self.chkLockRatio.setEnabled(True)
 
-                self.chkWriteOverview.setChecked(False)
-                self.chkWriteOverview.setEnabled(False)
+        self.chkTMSConvention.setEnabled(True)
 
-                self.chkWriteJson.setChecked(False)
-                self.chkWriteJson.setEnabled(False)
+        if mode.is_directory:
+            self.chkWriteMapurl.setEnabled(True)
+            self.chkWriteViewer.setEnabled(True)
+            return
+
+        self.chkWriteMapurl.setChecked(False)
+        self.chkWriteViewer.setChecked(False)
+
+        if mode is TilesWriterMode.MBTILES:
+            self.chkLockRatio.setChecked(True)
+            self.chkLockRatio.setEnabled(False)
+
+            self.chkMBTilesCompression.setEnabled(True)
+
+            self.chkTMSConvention.setChecked(True)
+            self.chkTMSConvention.setEnabled(False)
+            return
+
+        if mode is TilesWriterMode.PMTILES:
+            self.chkLockRatio.setChecked(True)
+            self.chkLockRatio.setEnabled(False)
+
+            self.spnTileWidth.setValue(512)
+            self.spnTileHeight.setValue(512)
+
+            self.chkTMSConvention.setChecked(False)
+            self.chkTMSConvention.setEnabled(False)
+            return
+
+        if mode is TilesWriterMode.NGM:
+            self.spnTileWidth.setValue(256)
+            self.spnTileHeight.setValue(256)
+
+            self.spnTileWidth.setEnabled(False)
+            self.spnTileHeight.setEnabled(False)
+
+            self.chkLockRatio.setChecked(True)
+            self.chkLockRatio.setEnabled(False)
+
+            self.chkWriteOverview.setChecked(False)
+            self.chkWriteOverview.setEnabled(False)
+
+            self.chkWriteJson.setChecked(False)
+            self.chkWriteJson.setEnabled(False)
 
     def __toggleHeightEdit(self, state: int) -> None:
         """
@@ -581,80 +572,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
         if self.chkLockRatio.isChecked():
             self.spnTileHeight.setValue(value)
 
-    def __select_output(self) -> None:
-        """
-        Opens a file dialog for selecting the output path.
-        """
-        if self.rbOutputZip.isChecked():
-            file_directory = QFileInfo(
-                self.settings.value("outputToZip_Path", ".")
-            ).absolutePath()
-            output_path, output_filter = QFileDialog.getSaveFileName(
-                self,
-                self.tr("Save to file"),
-                file_directory,
-                ";;".join(iter(list(self.FORMATS.keys()))),
-            )
-            if not output_path:
-                return
-
-            ext = self.FORMATS.get(output_filter)
-            if not ext:
-                return
-
-            output_path = QgsFileUtils.ensureFileNameHasExtension(
-                output_path, [ext]
-            )
-
-            self.leZipFileName.setText(output_path)
-            self.settings.setValue(
-                "outputToZip_Path", QFileInfo(output_path).absoluteFilePath()
-            )
-
-            if ext == ".pmtiles":
-                self.spnTileWidth.setValue(512)
-                self.spnTileHeight.setValue(512)
-
-                self.chkTMSConvention.setEnabled(False)
-            else:
-                self.chkTMSConvention.setEnabled(True)
-
-        elif self.rbOutputDir.isChecked():
-            dir_directory = QFileInfo(
-                self.settings.value("outputToDir_Path", ".")
-            ).absolutePath()
-            output_path = QFileDialog.getExistingDirectory(
-                self,
-                self.tr("Save to directory"),
-                dir_directory,
-                QFileDialog.Option.ShowDirsOnly,
-            )
-            if not output_path:
-                return
-            self.leDirectoryName.setText(output_path)
-            self.settings.setValue(
-                "outputToDir_Path", QFileInfo(output_path).absoluteFilePath()
-            )
-
-        elif self.rbOutputNGM.isChecked():
-            zip_directory = QFileInfo(
-                self.settings.value("outputToNGM_Path", ".")
-            ).absolutePath()
-            output_path, output_filter = QFileDialog.getSaveFileName(
-                self, self.tr("Save to file"), zip_directory, "NGRC (*.ngrc)"
-            )
-            if not output_path:
-                return
-
-            output_path = QgsFileUtils.ensureFileNameHasExtension(
-                output_path, [".ngrc"]
-            )
-
-            self.leTilesFroNGM.setText(output_path)
-            self.settings.setValue(
-                "outputToNGM_Path", QFileInfo(output_path).absoluteFilePath()
-            )
-
     def __is_input_parameters_valid(self) -> bool:
         if not self.extent_widget.isValid():
             QMessageBox.warning(
@@ -680,9 +597,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
     def __save_settings(self) -> None:
         self.settings.setValue("rootDir", self.leRootDir.text())
-        self.settings.setValue("outputToZip", self.rbOutputZip.isChecked())
-        self.settings.setValue("outputToDir", self.rbOutputDir.isChecked())
-        self.settings.setValue("outputToNGM", self.rbOutputNGM.isChecked())
         self.settings.setValue("minZoom", self.spnZoomMin.value())
         self.settings.setValue("maxZoom", self.spnZoomMax.value())
         self.settings.setValue("keepRatio", self.chkLockRatio.isChecked())
@@ -864,3 +778,67 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.activateWindow()
         else:
             self.hide()
+
+    def __populate_output_format_combo_box(self) -> None:
+        """
+        Populate the output format combo box with supported tiles writer modes.
+        """
+        self.output_format_combo_box.clear()
+        self.output_format_combo_box.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToContents
+        )
+
+        writer_modes: Dict[TilesWriterMode, str] = {
+            TilesWriterMode.DIR: self.tr("Directory"),
+            TilesWriterMode.ZIP: self.tr("ZIP archive"),
+            TilesWriterMode.MBTILES: self.tr("MBTiles"),
+            TilesWriterMode.PMTILES: self.tr("PMTiles"),
+            TilesWriterMode.NGM: self.tr("NextGIS Mobile"),
+        }
+
+        for mode, label in writer_modes.items():
+            self.output_format_combo_box.addItem(label, mode)
+
+            if mode is TilesWriterMode.NGM:
+                index: int = self.output_format_combo_box.count() - 1
+
+                self.output_format_combo_box.setItemIcon(
+                    index,
+                    QIcon(":/plugins/qtiles/icons/ngm_logo.svg"),
+                )
+
+                font_metrics = self.output_format_combo_box.fontMetrics()
+                icon_size = font_metrics.height()
+
+                self.output_format_combo_box.setIconSize(
+                    QSize(icon_size, icon_size)
+                )
+
+                self.output_format_combo_box.setItemData(
+                    index,
+                    self.tr("Archive format for NextGIS Mobile (.ngrc)"),
+                    Qt.ItemDataRole.ToolTipRole,
+                )
+
+    def __configure_output_path_file_widget(
+        self, mode: TilesWriterMode
+    ) -> None:
+        """
+        Configure output path file widget according to selected writer mode.
+
+        :param mode: Selected tiles writer mode.
+        """
+        self.output_path_file_widget.setFilePath("")
+
+        if mode.is_directory:
+            self.output_path_file_widget.setStorageMode(
+                QgsFileWidget.StorageMode.GetDirectory
+            )
+            self.output_path_file_widget.setFilter("")
+        else:
+            self.output_path_file_widget.setStorageMode(
+                QgsFileWidget.StorageMode.SaveFile
+            )
+            self.output_path_file_widget.setFilter(
+                mode.file_dialog_filter or ""
+            )

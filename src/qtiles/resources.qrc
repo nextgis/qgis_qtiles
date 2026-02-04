@@ -2,9 +2,7 @@
   <qresource prefix="/plugins/qtiles/">
     <file>icons/nextgis_logo.svg</file>
     <file>icons/qtiles.svg</file>
-    <file>icons/about.png</file>
-    <file>icons/ngm_index_24x24.png</file>
-    <file>icons/info.png</file>
+    <file>icons/ngm_logo.svg</file>
     <file>resources/viewer.html</file>
     <file>resources/css/jquery-ui.min.css</file>
     <file>resources/css/leaflet.css</file>

@@ -69,6 +69,7 @@ class TilingThread(QThread):
         self,
         tiles: List[Tile],
         layers: List[QgsMapLayer],
+        writer_mode: TilesWriterMode,
         extent: QgsRectangle,
         min_zoom: int,
         max_zoom: int,
@@ -93,6 +94,7 @@ class TilingThread(QThread):
 
         :param tiles: A list of tiles to generate.
         :param layers: A list of map layers to render.
+        :param writer_mode: Selected tiles writer mode.
         :param extent: The geographical extent for tile generation.
         :param min_zoom: The minimum zoom level.
         :param max_zoom: The maximum zoom level.
@@ -119,6 +121,7 @@ class TilingThread(QThread):
         self.interrupted = False
         self.tiles = tiles
         self.layers = layers
+        self.writer_mode = writer_mode
         self.extent = extent
         self.min_zoom = min_zoom
         self.max_zoom = max_zoom
@@ -137,8 +140,6 @@ class TilingThread(QThread):
         self.overview = overview
         self.mapurl = map_url
         self.viewer = viewer
-
-        self.mode = TilesWriterMode.from_output_path(self.output_path)
 
         self.interrupted = False
         self.layersId = []
@@ -234,7 +235,7 @@ class TilingThread(QThread):
             overview_map_settings=overview_map_settings,
         )
 
-        self.writer = TilesWriterFactory.create(self.mode, save_options)
+        self.writer = TilesWriterFactory.create(self.writer_mode, save_options)
 
         self.rangeChanged.emit(self.tr("Searching tiles..."), 0)
 

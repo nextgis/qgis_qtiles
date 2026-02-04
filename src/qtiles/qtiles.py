@@ -114,7 +114,9 @@ class QTilesPlugin:
             QCoreApplication.translate("QTiles", "About QTiles..."),
             self.iface.mainWindow(),
         )
-        self.actionAbout.setIcon(QIcon(":/plugins/qtiles/icons/about.png"))
+        self.actionAbout.setIcon(
+            QgsApplication.getThemeIcon("mActionPropertiesWidget.svg")
+        )
         self.actionAbout.setWhatsThis("About QTiles")
 
         self.__qtiles_menu = QMenu(

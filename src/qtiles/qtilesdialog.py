@@ -113,11 +113,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             QDialogButtonBox.StandardButton.Close
         )
 
-        self.chkLockRatio.stateChanged.connect(self.__toggleHeightEdit)
-        self.spnTileWidth.valueChanged.connect(self.__updateTileSize)
         self.cmbFormat.activated.connect(self.formatChanged)
-
-        self._reposition_tile_size_lock_controls()
 
         self.about_button.clicked.connect(self.__show_about)
 
@@ -131,11 +127,13 @@ class QTilesDialog(QDialog, FORM_CLASS):
         whether the selected format is JPG or another format.
         """
         if self.cmbFormat.currentText() == "JPG":
-            self.spnTransparency.setEnabled(False)
             self.spnQuality.setEnabled(True)
+            self.transparent_background_checkbox.setEnabled(False)
+            self.transparent_background_checkbox.setChecked(False)
         else:
-            self.spnTransparency.setEnabled(True)
             self.spnQuality.setEnabled(False)
+            self.transparent_background_checkbox.setEnabled(True)
+            self.transparent_background_checkbox.setChecked(True)
 
     def manageGui(self) -> None:
         """
@@ -172,17 +170,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.leRootDir.setText(self.settings.value("rootDir", "Mapnik"))
         self.spnZoomMin.setValue(self.settings.value("minZoom", 0, type=int))
         self.spnZoomMax.setValue(self.settings.value("maxZoom", 18, type=int))
-        self.chkLockRatio.setChecked(
-            self.settings.value("keepRatio", True, type=bool)
-        )
-        self.spnTileWidth.setValue(
+        self.tile_size_spinbox.setValue(
             self.settings.value("tileWidth", 256, type=int)
-        )
-        self.spnTileHeight.setValue(
-            self.settings.value("tileHeight", 256, type=int)
-        )
-        self.spnTransparency.setValue(
-            self.settings.value("transparency", 255, type=int)
         )
         self.spnQuality.setValue(self.settings.value("quality", 70, type=int))
         self.cmbFormat.setCurrentIndex(int(self.settings.value("format", 0)))
@@ -217,27 +206,62 @@ class QTilesDialog(QDialog, FORM_CLASS):
             QgsApplication.getThemeIcon("mActionPropertiesWidget.svg")
         )
 
-        self.formatChanged()
-
-    def _reposition_tile_size_lock_controls(self) -> None:
-        """
-        Moves the tile size / aspect ratio lock controls
-        to span two rows in the tile parameters grid layout.
-        """
-        grid_layout = self.tile_parameters_grid_layout
-        tile_size_lock_layout = self.tile_size_lock_vertical_layout
-
-        item = grid_layout.itemAtPosition(0, 2)
-        if item:
-            grid_layout.removeItem(item)
-
-        grid_layout.addLayout(
-            tile_size_lock_layout,
-            0,  # fromRow
-            2,  # fromColumn
-            2,  # rowSpan
-            1,  # columnSpan
+        self.chkAntialiasing.setToolTip(
+            self.tr(
+                "Renders lines with antialiasing to reduce jagged edges. "
+                "May reduce drawing performance."
+            )
         )
+
+        self.transparent_background_checkbox.setToolTip(
+            self.tr(
+                "Renders tiles with a transparent background using the current "
+                "map canvas background color."
+            )
+        )
+
+        self.chkRenderOutsideTiles.setToolTip(
+            self.tr(
+                "Generates all tiles within the target extent, even if they do not "
+                "intersect any layer. May significantly increase the number of tiles."
+            )
+        )
+
+        self.chkTMSConvention.setToolTip(
+            self.tr(
+                "Switches tile Y-axis orientation between TMS and Slippy Map conventions. "
+                "If disabled, the Slippy Map convention is used by default."
+            )
+        )
+
+        self.chkMBTilesCompression.setToolTip(
+            self.tr(
+                "Reduces MBTiles file size at the cost of processing time."
+            )
+        )
+
+        self.chkWriteJson.setToolTip(
+            self.tr("Writes a JSON file with basic tile set metadata.")
+        )
+
+        self.chkWriteOverview.setToolTip(
+            self.tr(
+                "Generates a single overview image of the entire tile set."
+            )
+        )
+
+        self.chkWriteMapurl.setToolTip(
+            self.tr("Writes a MapURL file describing the tile set.")
+        )
+
+        self.chkWriteViewer.setToolTip(
+            self.tr(
+                "Generates a simple Leaflet-based HTML viewer for the exported "
+                "tile set."
+            )
+        )
+
+        self.formatChanged()
 
     @pyqtSlot()
     def __show_about(self) -> None:
@@ -368,15 +392,14 @@ class QTilesDialog(QDialog, FORM_CLASS):
             target_extent,
             min_zoom,
             max_zoom,
-            self.spnTileWidth.value(),
-            self.spnTileHeight.value(),
-            self.spnTransparency.value(),
+            self.tile_size_spinbox.value(),
             self.spnQuality.value(),
             self.spin_box_dpi.value(),
             self.cmbFormat.currentText(),
             output_path,
             self.leRootDir.text(),
             self.chkAntialiasing.isChecked(),
+            self.transparent_background_checkbox.isChecked(),
             tms_convention,
             self.chkMBTilesCompression.isChecked(),
             self.chkWriteJson.isChecked(),
@@ -477,14 +500,14 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         Update UI state according to selected tiles writer mode.
         """
-        mode: Optional[TilesWriterMode] = (
+        writer_mode: Optional[TilesWriterMode] = (
             self.output_format_combo_box.itemData(index)
         )
 
-        if mode is None:
+        if writer_mode is None:
             return
 
-        self.__configure_output_path_file_widget(mode)
+        self.__configure_output_path_file_widget(writer_mode)
 
         self.chkWriteOverview.setEnabled(True)
         self.chkWriteJson.setEnabled(True)
@@ -493,13 +516,11 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.chkMBTilesCompression.setEnabled(False)
 
-        self.spnTileWidth.setEnabled(True)
-        self.spnTileHeight.setEnabled(True)
-        self.chkLockRatio.setEnabled(True)
+        self.tile_size_spinbox.setEnabled(True)
 
         self.chkTMSConvention.setEnabled(True)
 
-        if mode.is_directory:
+        if writer_mode.is_directory:
             self.chkWriteMapurl.setEnabled(True)
             self.chkWriteViewer.setEnabled(True)
             return
@@ -507,70 +528,29 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.chkWriteMapurl.setChecked(False)
         self.chkWriteViewer.setChecked(False)
 
-        if mode is TilesWriterMode.MBTILES:
-            self.chkLockRatio.setChecked(True)
-            self.chkLockRatio.setEnabled(False)
-
+        if writer_mode is TilesWriterMode.MBTILES:
             self.chkMBTilesCompression.setEnabled(True)
 
             self.chkTMSConvention.setChecked(True)
             self.chkTMSConvention.setEnabled(False)
             return
 
-        if mode is TilesWriterMode.PMTILES:
-            self.chkLockRatio.setChecked(True)
-            self.chkLockRatio.setEnabled(False)
-
-            self.spnTileWidth.setValue(512)
-            self.spnTileHeight.setValue(512)
+        if writer_mode is TilesWriterMode.PMTILES:
+            self.tile_size_spinbox.setValue(512)
 
             self.chkTMSConvention.setChecked(False)
             self.chkTMSConvention.setEnabled(False)
             return
 
-        if mode is TilesWriterMode.NGM:
-            self.spnTileWidth.setValue(256)
-            self.spnTileHeight.setValue(256)
-
-            self.spnTileWidth.setEnabled(False)
-            self.spnTileHeight.setEnabled(False)
-
-            self.chkLockRatio.setChecked(True)
-            self.chkLockRatio.setEnabled(False)
+        if writer_mode is TilesWriterMode.NGM:
+            self.tile_size_spinbox.setValue(256)
+            self.tile_size_spinbox.setEnabled(False)
 
             self.chkWriteOverview.setChecked(False)
             self.chkWriteOverview.setEnabled(False)
 
             self.chkWriteJson.setChecked(False)
             self.chkWriteJson.setEnabled(False)
-
-    def __toggleHeightEdit(self, state: int) -> None:
-        """
-        Enables or disables the height input field based on the lock ratio
-        checkbox.
-
-        :param state: The state of the lock ratio checkbox (checked or unchecked).
-        """
-        if state == Qt.CheckState.Checked:
-            self.lblHeight.setEnabled(False)
-            self.spnTileHeight.setEnabled(False)
-            self.spnTileHeight.setValue(self.spnTileWidth.value())
-        else:
-            self.lblHeight.setEnabled(True)
-            self.spnTileHeight.setEnabled(True)
-
-    @pyqtSlot(int)
-    def __updateTileSize(self, value: int) -> None:
-        """
-        Updates the tile size based on user input.
-
-        This method ensures that the tile width and height remain consistent
-        when the user changes one of the dimensions.
-
-        :param value: The new value for the tile size.
-        """
-        if self.chkLockRatio.isChecked():
-            self.spnTileHeight.setValue(value)
 
     def __is_input_parameters_valid(self) -> bool:
         if not self.extent_widget.isValid():
@@ -599,11 +579,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.settings.setValue("rootDir", self.leRootDir.text())
         self.settings.setValue("minZoom", self.spnZoomMin.value())
         self.settings.setValue("maxZoom", self.spnZoomMax.value())
-        self.settings.setValue("keepRatio", self.chkLockRatio.isChecked())
-        self.settings.setValue("tileWidth", self.spnTileWidth.value())
-        self.settings.setValue("tileHeight", self.spnTileHeight.value())
+        self.settings.setValue("tileWidth", self.tile_size_spinbox.value())
         self.settings.setValue("format", self.cmbFormat.currentIndex())
-        self.settings.setValue("transparency", self.spnTransparency.value())
         self.settings.setValue("quality", self.spnQuality.value())
         self.settings.setValue(
             "enable_antialiasing", self.chkAntialiasing.isChecked()
@@ -796,10 +773,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
             TilesWriterMode.NGM: self.tr("NextGIS Mobile"),
         }
 
-        for mode, label in writer_modes.items():
-            self.output_format_combo_box.addItem(label, mode)
+        for writer_mode, label in writer_modes.items():
+            self.output_format_combo_box.addItem(label, writer_mode)
 
-            if mode is TilesWriterMode.NGM:
+            if writer_mode is TilesWriterMode.NGM:
                 index: int = self.output_format_combo_box.count() - 1
 
                 self.output_format_combo_box.setItemIcon(
@@ -821,16 +798,16 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 )
 
     def __configure_output_path_file_widget(
-        self, mode: TilesWriterMode
+        self, writer_mode: TilesWriterMode
     ) -> None:
         """
         Configure output path file widget according to selected writer mode.
 
-        :param mode: Selected tiles writer mode.
+        :param writer_mode: Selected tiles writer mode.
         """
         self.output_path_file_widget.setFilePath("")
 
-        if mode.is_directory:
+        if writer_mode.is_directory:
             self.output_path_file_widget.setStorageMode(
                 QgsFileWidget.StorageMode.GetDirectory
             )
@@ -840,5 +817,5 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 QgsFileWidget.StorageMode.SaveFile
             )
             self.output_path_file_widget.setFilter(
-                mode.file_dialog_filter or ""
+                writer_mode.file_dialog_filter or ""
             )

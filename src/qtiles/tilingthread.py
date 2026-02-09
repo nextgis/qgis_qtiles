@@ -73,15 +73,14 @@ class TilingThread(QThread):
         extent: QgsRectangle,
         min_zoom: int,
         max_zoom: int,
-        width: int,
-        height: int,
-        transp: int,
+        tile_size: int,
         quality: int,
         dpi: int,
         format: str,
         output_path: Path,
         root_dir: str,
         antialiasing: bool,
+        is_background_transparent: bool,
         tms_convention: bool,
         mbtiles_compression: bool,
         json_file: bool,
@@ -98,15 +97,15 @@ class TilingThread(QThread):
         :param extent: The geographical extent for tile generation.
         :param min_zoom: The minimum zoom level.
         :param max_zoom: The maximum zoom level.
-        :param width: The width of each tile in pixels.
-        :param height: The height of each tile in pixels.
-        :param transp: The transparency level for tiles.
+        :param tile_size: The size of each tile in pixels (square tiles).
         :param quality: The quality level for image compression.
         :param dpi: Output DPI used for map rendering.
         :param format: The output format (e.g., PNG, JPG).
         :param output_path: The file path for saving the tiles.
         :param root_dir: The root directory for output files.
         :param antialiasing: Whether to enable antialiasing.
+        :param is_background_transparent: Whether the tile background
+            should be rendered as transparent.
         :param tms_convention: Whether to use TMS naming convention.
         :param mbtiles_compression: Whether to enable MBTiles compression.
         :param json_file: Whether to generate a JSON metadata file.
@@ -120,7 +119,6 @@ class TilingThread(QThread):
         self.stopMe = 0
         self.interrupted = False
         self.tiles = tiles
-        self.layers = layers
         self.writer_mode = writer_mode
         self.extent = extent
         self.min_zoom = min_zoom
@@ -130,7 +128,7 @@ class TilingThread(QThread):
             self.root_dir = root_dir
         else:
             self.root_dir = "tileset_%s" % str(time.time()).split(".")[0]
-        self.antialias = antialiasing
+
         self.tms_convention = tms_convention
         self.mbtiles_compression = mbtiles_compression
         self.format = format
@@ -143,11 +141,13 @@ class TilingThread(QThread):
 
         self.interrupted = False
         self.layersId = []
-        for layer in self.layers:
+        for layer in layers:
             self.layersId.append(layer.id())
+
         image = QImage(
-            width, height, QImage.Format.Format_ARGB32_Premultiplied
+            tile_size, tile_size, QImage.Format.Format_ARGB32_Premultiplied
         )
+
         self.projector = QgsCoordinateTransform(
             QgsCoordinateReferenceSystem.fromEpsgId(4326),
             QgsCoordinateReferenceSystem.fromEpsgId(3857),
@@ -160,12 +160,12 @@ class TilingThread(QThread):
         self.render_settings.setDestinationCrs(
             QgsCoordinateReferenceSystem.fromEpsgId(3857)
         )
-        self.render_settings.setLayers(self.layers)
+        self.render_settings.setLayers(layers)
         self.render_settings.setOutputDpi(self.dpi)
         self.render_settings.setOutputSize(image.size())
         self.render_settings.setDevicePixelRatio(1.0)
 
-        if self.antialias:
+        if antialiasing:
             self.render_settings.setFlag(QgsMapSettings.Antialiasing, True)
 
         self.render_settings.setFlag(QgsMapSettings.DrawLabeling, True)
@@ -189,8 +189,13 @@ class TilingThread(QThread):
         background_blue = QgsProject.instance().readNumEntry(
             "Gui", "/CanvasColorBluePart", 255
         )[0]
+
+        alpha = 0 if is_background_transparent else 255
         background_color = QColor(
-            background_red, background_green, background_blue, transp
+            background_red,
+            background_green,
+            background_blue,
+            alpha,
         )
 
         self.render_settings.setBackgroundColor(background_color)

@@ -103,36 +103,50 @@ class QTilesPlugin:
             )
             return None
 
-        self.actionRun = QAction(
+        self.__action_run = QAction(
             QCoreApplication.translate("QTiles", "QTiles"),
             self.iface.mainWindow(),
         )
-        self.iface.registerMainWindowAction(self.actionRun, "Shift+T")
-        self.actionRun.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
-        self.actionRun.setWhatsThis("Generate tiles from current project")
-        self.actionAbout = QAction(
+        self.__action_run.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
+        self.__action_run.setWhatsThis(
+            QCoreApplication.translate(
+                "QTiles", "Generate tiles from current project"
+            )
+        )
+        self.__action_run.triggered.connect(self.run)
+
+        self.iface.registerMainWindowAction(self.__action_run, "Shift+T")
+
+        self.__action_about = QAction(
             QCoreApplication.translate("QTiles", "About QTiles..."),
             self.iface.mainWindow(),
         )
-        self.actionAbout.setIcon(
+        self.__action_about.setIcon(
             QgsApplication.getThemeIcon("mActionPropertiesWidget.svg")
         )
-        self.actionAbout.setWhatsThis("About QTiles")
+        self.__action_about.setWhatsThis("About QTiles")
+        self.__action_about.triggered.connect(self.about)
 
         self.__qtiles_menu = QMenu(
             QCoreApplication.translate("QTiles", "QTiles")
         )
         self.__qtiles_menu.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
 
-        self.__qtiles_menu.addAction(self.actionRun)
-        self.__qtiles_menu.addAction(self.actionAbout)
+        self.__qtiles_menu.addAction(self.__action_run)
+        self.__qtiles_menu.addAction(self.__action_about)
 
-        self.iface.pluginMenu().addMenu(self.__qtiles_menu)
+        raster_menu = self.iface.rasterMenu()
+        assert raster_menu is not None
+        raster_menu.addMenu(self.__qtiles_menu)
 
-        self.iface.addToolBarIcon(self.actionRun)
+        self.__qtiles_toolbar = self.iface.addToolBar("QTiles Toolbar")
+        assert self.__qtiles_toolbar is not None
 
-        self.actionRun.triggered.connect(self.run)
-        self.actionAbout.triggered.connect(self.about)
+        self.__qtiles_toolbar.setObjectName("QTilesToolbar")
+        self.__qtiles_toolbar.addAction(self.__action_run)
+        self.__qtiles_toolbar.setToolTip(
+            QCoreApplication.translate("QTiles", "QTiles Toolbar")
+        )
 
         self.__show_help_action = QAction(
             QIcon(":/plugins/qtiles/icons/qtiles.svg"),
@@ -144,16 +158,23 @@ class QTilesPlugin:
         self.__plugin_help_menu.addAction(self.__show_help_action)
 
     def unload(self):
-        self.iface.unregisterMainWindowAction(self.actionRun)
+        self.iface.unregisterMainWindowAction(self.__action_run)
 
-        self.iface.removeToolBarIcon(self.actionRun)
-        self.iface.removePluginMenu(
-            QCoreApplication.translate("QTiles", "QTiles"), self.actionRun
-        )
-        self.iface.removePluginMenu(
-            QCoreApplication.translate("QTiles", "QTiles"), self.actionAbout
-        )
-        self.__qtiles_menu.deleteLater()
+        raster_menu = self.iface.rasterMenu()
+        assert raster_menu is not None
+
+        if self.__qtiles_menu is not None:
+            raster_menu.removeAction(self.__qtiles_menu.menuAction())
+            self.__qtiles_menu.deleteLater()
+            self.__qtiles_menu = None
+
+        assert self.__qtiles_toolbar is not None
+        self.__qtiles_toolbar.hide()
+        self.__qtiles_toolbar.deleteLater()
+
+        self.__action_run.deleteLater()
+
+        self.__action_about.deleteLater()
 
         if self.__plugin_help_menu:
             self.__plugin_help_menu.removeAction(self.__show_help_action)

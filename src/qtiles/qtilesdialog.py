@@ -64,9 +64,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
     and generating map tiles from a QGIS project.
     """
 
-    # MAX_ZOOM_LEVEL = 18
-    MIN_ZOOM_LEVEL = 0
-
     def __init__(self, iface: "QgsInterface") -> None:
         """
         Initializes the QTilesDialog with the given QGIS interface.
@@ -95,13 +92,13 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.tr("Run"), QDialogButtonBox.ButtonRole.AcceptRole
         )
 
-        # self.spnZoomMax.setMaximum(self.MAX_ZOOM_LEVEL)
-        self.spnZoomMax.setMinimum(self.MIN_ZOOM_LEVEL)
-        # self.spnZoomMin.setMaximum(self.MAX_ZOOM_LEVEL)
-        self.spnZoomMin.setMinimum(self.MIN_ZOOM_LEVEL)
+        self.min_zoom_level_spinbox.value_changed.connect(
+            self.__on_min_zoom_level_changed
+        )
 
-        self.spnZoomMin.valueChanged.connect(self.spnZoomMax.setMinimum)
-        self.spnZoomMax.valueChanged.connect(self.spnZoomMin.setMaximum)
+        self.max_zoom_level_spinbox.value_changed.connect(
+            self.__on_max_zoom_level_changed
+        )
 
         self.verticalLayout_2.setAlignment(Qt.AlignmentFlag.AlignTop)
 
@@ -168,8 +165,12 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.__populate_output_format_combo_box()
 
         self.leRootDir.setText(self.settings.value("rootDir", "Mapnik"))
-        self.spnZoomMin.setValue(self.settings.value("minZoom", 0, type=int))
-        self.spnZoomMax.setValue(self.settings.value("maxZoom", 18, type=int))
+        self.min_zoom_level_spinbox.set_value(
+            self.settings.value("minZoom", 0, type=int)
+        )
+        self.max_zoom_level_spinbox.set_value(
+            self.settings.value("maxZoom", 18, type=int)
+        )
         self.tile_size_spinbox.setValue(
             self.settings.value("tileWidth", 256, type=int)
         )
@@ -311,8 +312,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
         use_tms = -1 if tms_convention else 1
 
         initial_tile = Tile(0, 0, 0, use_tms)
-        min_zoom = self.spnZoomMin.value()
-        max_zoom = self.spnZoomMax.value()
+        min_zoom = self.min_zoom_level_spinbox.value()
+        max_zoom = self.max_zoom_level_spinbox.value()
         render_outside_tiles = self.chkRenderOutsideTiles.isChecked()
 
         tiles = utils.count_tiles(
@@ -552,6 +553,48 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.chkWriteJson.setChecked(False)
             self.chkWriteJson.setEnabled(False)
 
+    @pyqtSlot(int)
+    def __on_min_zoom_level_changed(self, min_zoom_level: int) -> None:
+        """
+        Synchronizes the maximum zoom level spin box when the minimum zoom level changes.
+
+        Ensures that the invariant ``min_zoom_level <= max_zoom_level`` is preserved.
+        The maximum zoom level spin box minimum boundary is updated to match the
+        new minimum zoom level. If the current maximum zoom level is lower than
+        the updated minimum, it is automatically adjusted to the same value.
+
+        :param min_zoom_level: The newly selected minimum zoom level.
+
+        :return: None
+        """
+        max_zoom_level = self.max_zoom_level_spinbox.value()
+
+        self.max_zoom_level_spinbox.set_minimum(min_zoom_level)
+
+        if min_zoom_level > max_zoom_level:
+            self.max_zoom_level_spinbox.set_value(min_zoom_level)
+
+    @pyqtSlot(int)
+    def __on_max_zoom_level_changed(self, max_zoom_level: int) -> None:
+        """
+        Synchronizes the minimum zoom level spin box when the maximum zoom level changes.
+
+        Ensures that the invariant ``min_zoom_level <= max_zoom_level`` is preserved.
+        The minimum zoom level spin box maximum boundary is updated to match the
+        new maximum zoom level. If the current minimum zoom level exceeds
+        the updated maximum, it is automatically adjusted to the same value.
+
+        :param max_zoom_level: The newly selected maximum zoom level.
+        :type max_zoom_level: int
+        :return: None
+        """
+        min_zoom_level = self.min_zoom_level_spinbox.value()
+
+        self.min_zoom_level_spinbox.set_maximum(max_zoom_level)
+
+        if min_zoom_level > max_zoom_level:
+            self.min_zoom_level_spinbox.set_value(max_zoom_level)
+
     def __is_input_parameters_valid(self) -> bool:
         if not self.extent_widget.isValid():
             QMessageBox.warning(
@@ -561,8 +604,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
             )
             return False
 
-        min_zoom = self.spnZoomMin.value()
-        max_zoom = self.spnZoomMax.value()
+        min_zoom = self.min_zoom_level_spinbox.value()
+        max_zoom = self.max_zoom_level_spinbox.value()
         if min_zoom > max_zoom:
             QMessageBox.warning(
                 self,
@@ -577,8 +620,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
     def __save_settings(self) -> None:
         self.settings.setValue("rootDir", self.leRootDir.text())
-        self.settings.setValue("minZoom", self.spnZoomMin.value())
-        self.settings.setValue("maxZoom", self.spnZoomMax.value())
+        self.settings.setValue("minZoom", self.min_zoom_level_spinbox.value())
+        self.settings.setValue("maxZoom", self.max_zoom_level_spinbox.value())
         self.settings.setValue("tileWidth", self.tile_size_spinbox.value())
         self.settings.setValue("format", self.cmbFormat.currentIndex())
         self.settings.setValue("quality", self.spnQuality.value())

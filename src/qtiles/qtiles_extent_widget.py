@@ -1,6 +1,6 @@
 from typing import Optional
 
-from qgis.core import QgsCoordinateReferenceSystem
+from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
 from qgis.gui import QgsExtentWidget
 from qgis.PyQt.QtWidgets import QAction, QToolButton, QWidget
 from qgis.utils import iface
@@ -40,17 +40,54 @@ class QTilesExtentWidget(QgsExtentWidget):
             return
 
         menu.addSeparator()
+        menu.setToolTipsVisible(True)
 
-        action_full_extent = QAction(self.tr("Full project extent"), self)
-        action_full_extent.triggered.connect(self._set_full_project_extent)
+        action_visible_extent = QAction(
+            QgsApplication.getThemeIcon("mActionZoomFullExtent.svg"),
+            self.tr("Extent of visible layers"),
+            self,
+        )
+        action_visible_extent.setToolTip(
+            self.tr(
+                "Sets the extent to include all currently visible layers "
+                "in the map canvas."
+            )
+        )
+        action_visible_extent.triggered.connect(
+            self._set_visible_layers_extent
+        )
 
-        menu.addAction(action_full_extent)
+        action_project_extent = QAction(
+            QgsApplication.getThemeIcon("mIconQgsProjectFile.svg"),
+            self.tr("Full project extent"),
+            self,
+        )
+        action_project_extent.setToolTip(
+            self.tr(
+                "Sets the extent to the full extent of the QGIS project, "
+                "including layers which are not currently visible."
+            )
+        )
+        action_project_extent.triggered.connect(self._set_project_extent)
 
-    def _set_full_project_extent(self) -> None:
+        menu.addAction(action_visible_extent)
+        menu.addAction(action_project_extent)
+
+    def _set_visible_layers_extent(self) -> None:
         """
-        Sets the extent to the full extent of the current QGIS project.
+        Sets the extent to the combined extent of all visible layers.
         """
         extent = self._map_canvas.fullExtent()
+        crs = self._map_canvas.mapSettings().destinationCrs()
+
+        self.setOutputExtentFromUser(extent, crs)
+
+    def _set_project_extent(self) -> None:
+        """
+        Sets the extent to the full extent of the QGIS project,
+        regardless of layer visibility.
+        """
+        extent = self._map_canvas.projectExtent()
         crs = self._map_canvas.mapSettings().destinationCrs()
 
         self.setOutputExtentFromUser(extent, crs)

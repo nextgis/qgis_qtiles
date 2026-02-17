@@ -44,14 +44,13 @@ from qgis.PyQt.QtWidgets import (
     QToolButton,
 )
 
+from qtiles import qtiles_utils as utils
 from qtiles.aboutdialog import AboutDialog
+from qtiles.core.settings import QTilesSettings
 from qtiles.restrictions import OpenStreetMapRestriction
 from qtiles.tile import Tile
+from qtiles.tilingthread import TilingThread
 from qtiles.writers.enums import TilesWriterMode
-
-from . import qtiles_utils as utils
-from . import tilingthread
-from .compat import QgsSettings
 
 FORM_CLASS, _ = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "ui/qtilesdialogbase.ui")
@@ -88,7 +87,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.__on_extent_toggle_dialog_visibility
         )
 
-        self.btnOk = self.buttonBox.addButton(
+        self.button_run = self.buttonBox.addButton(
             self.tr("Run"), QDialogButtonBox.ButtonRole.AcceptRole
         )
 
@@ -102,11 +101,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.verticalLayout_2.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.workThread = None
+        self.work_thread = None
 
-        self.settings = QgsSettings("NextGIS", "QTiles")
-        self.grpParameters.setSettings(self.settings)
-        self.btnClose = self.buttonBox.button(
+        self.button_close = self.buttonBox.button(
             QDialogButtonBox.StandardButton.Close
         )
 
@@ -158,48 +155,32 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.tr("Select output path…")
         )
 
-        self.output_path_file_widget.setDefaultRoot(
-            self.settings.value("last_output_dir", str(Path.home()))
-        )
-
         self.__populate_output_format_combo_box()
 
-        self.leRootDir.setText(self.settings.value("rootDir", "Mapnik"))
-        self.min_zoom_level_spinbox.set_value(
-            self.settings.value("minZoom", 0, type=int)
+        settings = QTilesSettings()
+
+        self.output_path_file_widget.setDefaultRoot(settings.last_output_dir)
+        self.leRootDir.setText(settings.tileset_name)
+        self.output_format_combo_box.setCurrentIndex(
+            settings.tiles_writer_mode
         )
-        self.max_zoom_level_spinbox.set_value(
-            self.settings.value("maxZoom", 18, type=int)
+        self.min_zoom_level_spinbox.set_value(settings.min_zoom)
+        self.max_zoom_level_spinbox.set_value(settings.max_zoom)
+        self.tile_size_spinbox.setValue(settings.tile_size)
+        self.spinbox_dpi.setValue(settings.dpi)
+        self.cmbFormat.setCurrentIndex(settings.tile_output_format)
+        self.spnQuality.setValue(settings.jpg_quality)
+        self.chkAntialiasing.setChecked(settings.enable_antialiasing)
+        self.transparent_background_checkbox.setChecked(
+            settings.transparent_background
         )
-        self.tile_size_spinbox.setValue(
-            self.settings.value("tileWidth", 256, type=int)
-        )
-        self.spnQuality.setValue(self.settings.value("quality", 70, type=int))
-        self.cmbFormat.setCurrentIndex(int(self.settings.value("format", 0)))
-        self.chkAntialiasing.setChecked(
-            self.settings.value("enable_antialiasing", False, type=bool)
-        )
-        self.chkTMSConvention.setChecked(
-            self.settings.value("use_tms_filenames", False, type=bool)
-        )
-        self.chkMBTilesCompression.setChecked(
-            self.settings.value("use_mbtiles_compression", False, type=bool)
-        )
-        self.chkWriteJson.setChecked(
-            self.settings.value("write_json", False, type=bool)
-        )
-        self.chkWriteOverview.setChecked(
-            self.settings.value("write_overview", False, type=bool)
-        )
-        self.chkWriteMapurl.setChecked(
-            self.settings.value("write_mapurl", False, type=bool)
-        )
-        self.chkWriteViewer.setChecked(
-            self.settings.value("write_viewer", False, type=bool)
-        )
-        self.chkRenderOutsideTiles.setChecked(
-            self.settings.value("renderOutsideTiles", True, type=bool)
-        )
+        self.chkRenderOutsideTiles.setChecked(settings.render_outside_tiles)
+        self.chkTMSConvention.setChecked(settings.use_tms_convention)
+        self.chkMBTilesCompression.setChecked(settings.use_mbtiles_compression)
+        self.chkWriteJson.setChecked(settings.write_json_metadata)
+        self.chkWriteOverview.setChecked(settings.write_overview)
+        self.chkWriteMapurl.setChecked(settings.write_mapurl)
+        self.chkWriteViewer.setChecked(settings.write_leaflet_viewer)
 
         self.progressBar.setVisible(False)
 
@@ -386,7 +367,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.__save_settings()
 
-        self.workThread = tilingthread.TilingThread(
+        self.work_thread = TilingThread(
             tiles,
             layers,
             writer_mode,
@@ -395,7 +376,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             max_zoom,
             self.tile_size_spinbox.value(),
             self.spnQuality.value(),
-            self.spin_box_dpi.value(),
+            self.spinbox_dpi.value(),
             self.cmbFormat.currentText(),
             output_path,
             self.leRootDir.text(),
@@ -409,16 +390,16 @@ class QTilesDialog(QDialog, FORM_CLASS):
             write_viewer,
         )
 
-        self.workThread.rangeChanged.connect(self.setProgressRange)
-        self.workThread.updateProgress.connect(self.updateProgress)
-        self.workThread.processFinished.connect(self.processFinished)
-        self.workThread.processInterrupted.connect(self.processInterrupted)
-        self.btnOk.setEnabled(False)
-        self.btnClose.setText(self.tr("Cancel"))
+        self.work_thread.rangeChanged.connect(self.setProgressRange)
+        self.work_thread.updateProgress.connect(self.updateProgress)
+        self.work_thread.processFinished.connect(self.processFinished)
+        self.work_thread.processInterrupted.connect(self.processInterrupted)
+        self.button_run.setEnabled(False)
+        self.button_close.setText(self.tr("Cancel"))
         self.buttonBox.rejected.disconnect(self.reject)
-        self.btnClose.clicked.connect(self.stopProcessing)
+        self.button_close.clicked.connect(self.stopProcessing)
         self.progressBar.setVisible(True)
-        self.workThread.start()
+        self.work_thread.start()
 
     def __confirm_continue_threshold(self, tiles_count_threshold: int) -> bool:
         """
@@ -478,9 +459,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         Stops the tile generation process if it is running.
         """
-        if self.workThread is not None:
-            self.workThread.stop()
-            self.workThread = None
+        if self.work_thread is not None:
+            self.work_thread.stop()
+            self.work_thread = None
 
     def restoreGui(self) -> None:
         """
@@ -493,9 +474,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.progressBar.setVisible(False)
 
         self.buttonBox.rejected.connect(self.reject)
-        self.btnClose.clicked.disconnect(self.stopProcessing)
-        self.btnClose.setText(self.tr("Close"))
-        self.btnOk.setEnabled(True)
+        self.button_close.clicked.disconnect(self.stopProcessing)
+        self.button_close.setText(self.tr("Close"))
+        self.button_run.setEnabled(True)
 
     def __on_output_format_changed(self, index: int) -> None:
         """
@@ -596,6 +577,11 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.min_zoom_level_spinbox.set_value(max_zoom_level)
 
     def __is_input_parameters_valid(self) -> bool:
+        """
+        Validate user-provided input parameters before starting tile generation.
+
+        :return: ``True`` if all input parameters are valid, ``False`` otherwise.
+        """
         if not self.extent_widget.isValid():
             QMessageBox.warning(
                 self,
@@ -619,30 +605,41 @@ class QTilesDialog(QDialog, FORM_CLASS):
         return True
 
     def __save_settings(self) -> None:
-        self.settings.setValue("rootDir", self.leRootDir.text())
-        self.settings.setValue("minZoom", self.min_zoom_level_spinbox.value())
-        self.settings.setValue("maxZoom", self.max_zoom_level_spinbox.value())
-        self.settings.setValue("tileWidth", self.tile_size_spinbox.value())
-        self.settings.setValue("format", self.cmbFormat.currentIndex())
-        self.settings.setValue("quality", self.spnQuality.value())
-        self.settings.setValue(
-            "enable_antialiasing", self.chkAntialiasing.isChecked()
+        """
+        Persist current dialog state to plugin settings.
+        """
+        settings = QTilesSettings()
+
+        path = Path(self.output_path_file_widget.filePath())
+
+        if path.is_file():
+            settings.last_output_dir = str(path.parent)
+        else:
+            settings.last_output_dir = str(path)
+
+        settings.tileset_name = self.leRootDir.text()
+        settings.tiles_writer_mode = (
+            self.output_format_combo_box.currentIndex()
         )
-        self.settings.setValue(
-            "use_tms_filenames", self.chkTMSConvention.isChecked()
+        settings.min_zoom = self.min_zoom_level_spinbox.value()
+        settings.max_zoom = self.max_zoom_level_spinbox.value()
+        settings.tile_size = self.tile_size_spinbox.value()
+        settings.dpi = self.spinbox_dpi.value()
+        settings.tile_output_format = self.cmbFormat.currentIndex()
+        settings.jpg_quality = self.spnQuality.value()
+        settings.enable_antialiasing = self.chkAntialiasing.isChecked()
+        settings.transparent_background = (
+            self.transparent_background_checkbox.isChecked()
         )
-        self.settings.setValue(
-            "use_mbtiles_compression", self.chkMBTilesCompression.isChecked()
+        settings.render_outside_tiles = self.chkRenderOutsideTiles.isChecked()
+        settings.use_tms_convention = self.chkTMSConvention.isChecked()
+        settings.use_mbtiles_compression = (
+            self.chkMBTilesCompression.isChecked()
         )
-        self.settings.setValue("write_json", self.chkWriteJson.isChecked())
-        self.settings.setValue(
-            "write_overview", self.chkWriteOverview.isChecked()
-        )
-        self.settings.setValue("write_mapurl", self.chkWriteMapurl.isChecked())
-        self.settings.setValue("write_viewer", self.chkWriteViewer.isChecked())
-        self.settings.setValue(
-            "renderOutsideTiles", self.chkRenderOutsideTiles.isChecked()
-        )
+        settings.write_json_metadata = self.chkWriteJson.isChecked()
+        settings.write_overview = self.chkWriteOverview.isChecked()
+        settings.write_mapurl = self.chkWriteMapurl.isChecked()
+        settings.write_leaflet_viewer = self.chkWriteViewer.isChecked()
 
     def __validate_osm_restriction(
         self, layers: List[QgsMapLayer], tiles_count: int

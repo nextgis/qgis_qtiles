@@ -22,7 +22,6 @@
 # MA 02110-1335 USA.
 #
 # ******************************************************************************
-import time
 from pathlib import Path
 from typing import List
 
@@ -43,16 +42,14 @@ from qgis.PyQt.QtCore import (
     pyqtSignal,
 )
 from qgis.PyQt.QtGui import QColor, QImage, QPainter
-from qgis.PyQt.QtWidgets import *
 from qgis.utils import iface
 
+from qtiles import resources_rc  # noqa: F401
+from qtiles.tile import Tile
 from qtiles.writers.enums import TilesWriterMode
 from qtiles.writers.save_tiles_options import SaveTilesOptions
 from qtiles.writers.tiles_artifacts_writer import TilesetArtifactsWriter
 from qtiles.writers.tiles_writer_factory import TilesWriterFactory
-
-from . import resources_rc  # noqa: F401
-from .tile import Tile
 
 
 class TilingThread(QThread):
@@ -124,11 +121,7 @@ class TilingThread(QThread):
         self.min_zoom = min_zoom
         self.max_zoom = max_zoom
         self.output_path = output_path
-        if root_dir:
-            self.root_dir = root_dir
-        else:
-            self.root_dir = "tileset_%s" % str(time.time()).split(".")[0]
-
+        self.root_dir = root_dir
         self.tms_convention = tms_convention
         self.mbtiles_compression = mbtiles_compression
         self.format = format
@@ -297,7 +290,7 @@ class TilingThread(QThread):
         This method processes a tile by rendering it to an image,
         using map settings and transforms.
         """
-        tile_extent = self.projector.transform(tile.toRectangle())
+        tile_extent = self.projector.transform(tile.to_rectangle())
         self.render_settings.setExtent(tile_extent)
 
         self.image.fill(Qt.GlobalColor.transparent)

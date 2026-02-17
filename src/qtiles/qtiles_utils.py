@@ -28,14 +28,13 @@ import math
 from typing import List, Optional
 
 from qgis.core import (
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
     QgsMapLayer,
+    QgsProject,
     QgsRectangle,
 )
 
-from qtiles.compat import (
-    QgsCoordinateReferenceSystem,
-    QgsCoordinateTransform,
-)
 from qtiles.tile import Tile
 
 TILES_COUNT_TRESHOLD = 10000
@@ -81,8 +80,8 @@ def count_tiles(
 
     :returns: A list of tiles to be generated or None if no tiles are required.
     """
-    tile_extent = tile.toRectangle()
-    if not extent.intersects(tile.toRectangle()):
+    tile_extent = tile.to_rectangle()
+    if not extent.intersects(tile_extent):
         return None
 
     tiles = []
@@ -92,6 +91,7 @@ def count_tiles(
                 crs_transform = QgsCoordinateTransform(
                     layer.crs(),
                     QgsCoordinateReferenceSystem.fromEpsgId(4326),
+                    QgsProject.instance(),
                 )
                 if crs_transform.transform(layer.extent()).intersects(
                     tile_extent

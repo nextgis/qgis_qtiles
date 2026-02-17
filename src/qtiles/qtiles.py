@@ -26,22 +26,19 @@
 
 from pathlib import Path
 
-from qgis.core import *
+from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import (
     QCoreApplication,
-    QFileInfo,
     QLocale,
     QSettings,
     QTranslator,
 )
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QMenu, QMessageBox
+from qgis.PyQt.QtWidgets import QAction, QMenu
 
 from qtiles import resources_rc  # noqa: F401
 from qtiles.aboutdialog import AboutDialog
 from qtiles.qtilesdialog import QTilesDialog
-
-from .compat import QGis, qgisUserDatabaseFilePath
 
 
 class QTilesPlugin:
@@ -49,60 +46,25 @@ class QTilesPlugin:
         self.iface = iface
         self.qtiles_dialog = None
 
-        self.qgsVersion = str(QGis.QGIS_VERSION_INT)
+        self.plugin_dir = Path(__file__).parent
 
-        userPluginPath = (
-            QFileInfo(qgisUserDatabaseFilePath()).path()
-            + "/python/plugins/qtiles"
-        )
-        systemPluginPath = (
-            QgsApplication.prefixPath() + "/python/plugins/qtiles"
-        )
-
-        overrideLocale = QSettings().value(
+        override_locale = QSettings().value(
             "locale/overrideFlag", False, type=bool
         )
-        if not overrideLocale:
-            localeFullName = QLocale.system().name()
-        else:
-            localeFullName = QSettings().value("locale/userLocale", "")
 
-        if QFileInfo(userPluginPath).exists():
-            translationPath = (
-                userPluginPath + "/i18n/qtiles_" + localeFullName + ".qm"
-            )
+        if override_locale:
+            locale = QSettings().value("locale/userLocale", "")
         else:
-            translationPath = (
-                systemPluginPath + "/i18n/qtiles_" + localeFullName + ".qm"
-            )
+            locale = QLocale.system().name()
 
-        self.localePath = translationPath
-        if QFileInfo(self.localePath).exists():
+        qm_path = self.plugin_dir / "i18n" / f"qtiles_{locale}.qm"
+
+        if qm_path.exists():
             self.translator = QTranslator()
-            self.translator.load(self.localePath)
+            self.translator.load(str(qm_path))
             QCoreApplication.installTranslator(self.translator)
 
     def initGui(self):
-        if int(self.qgsVersion) < 20000:
-            qgisVersion = (
-                self.qgsVersion[0]
-                + "."
-                + self.qgsVersion[2]
-                + "."
-                + self.qgsVersion[3]
-            )
-            QMessageBox.warning(
-                self.iface.mainWindow(),
-                QCoreApplication.translate("QTiles", "Error"),
-                QCoreApplication.translate("QTiles", "QGIS %s detected.\n")
-                % qgisVersion
-                + QCoreApplication.translate(
-                    "QTiles",
-                    "This version of QTiles requires at least QGIS 2.0. Plugin will not be enabled.",
-                ),
-            )
-            return None
-
         self.__action_run = QAction(
             QCoreApplication.translate("QTiles", "QTiles"),
             self.iface.mainWindow(),

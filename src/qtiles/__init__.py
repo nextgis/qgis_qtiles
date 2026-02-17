@@ -26,7 +26,62 @@
 # ******************************************************************************
 
 
-def classFactory(iface):
-    from .qtiles import QTilesPlugin
+from typing import TYPE_CHECKING
 
-    return QTilesPlugin(iface)
+from qgis.core import QgsRuntimeProfiler
+
+from qtiles.core.exceptions import QTilesReloadAfterUpdateWarning
+from qtiles.core.settings import QTilesSettings
+from qtiles.qtiles_interface import (
+    QTilesInterface,
+)
+
+if TYPE_CHECKING:
+    from qgis.gui import QgisInterface
+
+
+def classFactory(_iface: "QgisInterface") -> QTilesInterface:
+    """Create and return an instance of the QTiles plugin.
+
+    :param _iface: QGIS interface instance passed by QGIS at plugin load.
+    :type _iface: QgisInterface
+    :returns: An instance of QTilesInterface (plugin or stub).
+    :rtype: QTilesInterface
+    """
+    settings = QTilesSettings()
+
+    try:
+        with QgsRuntimeProfiler.profile("Import plugin"):
+            from qtiles.qtiles import QTiles
+
+        plugin = QTiles()
+        settings.did_last_launch_fail = False
+
+    except Exception as error:
+        import copy
+
+        from qgis.PyQt.QtCore import QTimer
+
+        from qtiles.qtiles_plugin_stub import (
+            QTilesPluginStub,
+        )
+
+        error_copy = copy.deepcopy(error)
+        exception = error_copy
+
+        if not settings.did_last_launch_fail:
+            # Sometimes after an update that changes the plugin structure,
+            # the plugin may fail to load. Restarting QGIS helps.
+            exception = QTilesReloadAfterUpdateWarning()
+            exception.__cause__ = error_copy
+
+        settings.did_last_launch_fail = True
+
+        plugin = QTilesPluginStub()
+
+        def display_exception() -> None:
+            plugin.notifier.display_exception(exception)
+
+        QTimer.singleShot(0, display_exception)
+
+    return plugin

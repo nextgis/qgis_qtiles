@@ -5,8 +5,7 @@ from typing import ClassVar
 from qgis.core import QgsProject, QgsSettings
 from qgis.PyQt.QtCore import QSettings
 
-COMPANY_NAME = "NextGIS"
-PLUGIN_NAME = "QTiles"
+from qtiles.core.constants import COMPANY_NAME, PLUGIN_NAME
 
 
 class QTilesSettings:
@@ -39,6 +38,12 @@ class QTilesSettings:
     KEY_WRITE_MAPURL = f"{COMPANY_NAME}/{PLUGIN_NAME}/writeMapurl"
     KEY_WRITE_LEAFLET_VIEWER = (
         f"{COMPANY_NAME}/{PLUGIN_NAME}/writeLeafletViewer"
+    )
+    KEY_IS_DEBUG_LOGS_ENABLED = (
+        f"{COMPANY_NAME}/{PLUGIN_NAME}/other/debugLogsEnabled"
+    )
+    KEY_DID_LAST_LAUNCH_FAIL = (
+        f"{COMPANY_NAME}/{PLUGIN_NAME}/other/didLastLaunchFail"
     )
 
     __is_updated: ClassVar[bool] = False
@@ -263,6 +268,32 @@ class QTilesSettings:
     @write_leaflet_viewer.setter
     def write_leaflet_viewer(self, value: bool) -> None:
         self.__settings.setValue(self.KEY_WRITE_LEAFLET_VIEWER, value)
+
+    @property
+    def is_debug_logs_enabled(self) -> bool:
+        """Check if debug logs are enabled."""
+        return self.__settings.value(
+            self.KEY_IS_DEBUG_LOGS_ENABLED,
+            defaultValue=True,
+            type=bool,
+        )
+
+    @is_debug_logs_enabled.setter
+    def is_debug_logs_enabled(self, value: bool) -> None:
+        self.__settings.setValue(self.KEY_IS_DEBUG_LOGS_ENABLED, value)
+
+    @property
+    def did_last_launch_fail(self) -> bool:
+        """Checks whether the last plugin launch failed."""
+        return self.__settings.value(
+            self.KEY_DID_LAST_LAUNCH_FAIL,
+            defaultValue=False,
+            type=bool,
+        )
+
+    @did_last_launch_fail.setter
+    def did_last_launch_fail(self, value: bool) -> None:
+        self.__settings.setValue(self.KEY_DID_LAST_LAUNCH_FAIL, value)
 
     @classmethod
     def __update_settings(cls) -> None:

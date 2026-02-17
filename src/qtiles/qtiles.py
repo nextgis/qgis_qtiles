@@ -23,50 +23,99 @@
 #
 # ******************************************************************************
 
-
+import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 
-from qgis.core import QgsApplication
+from osgeo import gdal
+from qgis.core import Qgis, QgsApplication
+from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import (
+    QT_VERSION_STR,
     QCoreApplication,
-    QLocale,
-    QSettings,
-    QTranslator,
+    QObject,
+    QSysInfo,
 )
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QMenu
+from qgis.utils import iface
 
 from qtiles import resources_rc  # noqa: F401
 from qtiles.aboutdialog import AboutDialog
+from qtiles.core import utils
+from qtiles.core.constants import PACKAGE_NAME, PLUGIN_NAME
+from qtiles.core.logging import logger
+from qtiles.notifier.message_bar_notifier import MessageBarNotifier
+from qtiles.qtiles_interface import (
+    QTilesInterface,
+)
 from qtiles.qtilesdialog import QTilesDialog
 
+if TYPE_CHECKING:
+    from qtiles.notifier.notifier_interface import (
+        NotifierInterface,
+    )
 
-class QTilesPlugin:
-    def __init__(self, iface):
+assert isinstance(iface, QgisInterface)
+
+
+class QTiles(QTilesInterface):
+    """QGIS Plugin Implementation."""
+
+    __notifier: Optional[MessageBarNotifier]
+
+    def __init__(self, parent: Optional[QObject] = None) -> None:
+        """Initialize the plugin instance.
+
+        :param parent: Optional parent QObject.
+        :type parent: Optional[QObject]
+        """
+        super().__init__(parent)
+        metadata_file = self.path / "metadata.txt"
+
+        logger.debug("<b>✓ Plugin created</b>")
+        logger.debug(f"<b>ⓘ OS:</b> {QSysInfo().prettyProductName()}")
+        logger.debug(f"<b>ⓘ Qt version:</b> {QT_VERSION_STR}")
+        logger.debug(f"<b>ⓘ QGIS version:</b> {Qgis.version()}")
+        logger.debug(f"<b>ⓘ Python version:</b> {sys.version}")
+        logger.debug(f"<b>ⓘ GDAL version:</b> {gdal.__version__}")
+        logger.debug(f"<b>ⓘ Plugin version:</b> {self.version}")
+        logger.debug(
+            f"<b>ⓘ Plugin path:</b> {self.path}"
+            + (
+                f" -> {metadata_file.resolve().parent}"
+                if metadata_file.is_symlink()
+                else ""
+            )
+        )
+
         self.iface = iface
         self.qtiles_dialog = None
 
-        self.plugin_dir = Path(__file__).parent
+        self.__notifier = None
 
-        override_locale = QSettings().value(
-            "locale/overrideFlag", False, type=bool
+    @property
+    def notifier(self) -> "NotifierInterface":
+        """Return the notifier for displaying messages to the user.
+
+        :returns: Notifier interface instance.
+        :rtype: NotifierInterface
+        :raises AssertionError: If notifier is not initialized.
+        """
+        assert self.__notifier is not None, "Notifier is not initialized"
+        return self.__notifier
+
+    def _load(self) -> None:
+        """
+        Initialize the QTiles plugin GUI.
+        """
+        self._add_translator(
+            self.path / "i18n" / f"{PACKAGE_NAME}_{utils.locale()}.qm",
         )
+        self.__notifier = MessageBarNotifier(self)
 
-        if override_locale:
-            locale = QSettings().value("locale/userLocale", "")
-        else:
-            locale = QLocale.system().name()
-
-        qm_path = self.plugin_dir / "i18n" / f"qtiles_{locale}.qm"
-
-        if qm_path.exists():
-            self.translator = QTranslator()
-            self.translator.load(str(qm_path))
-            QCoreApplication.installTranslator(self.translator)
-
-    def initGui(self):
         self.__action_run = QAction(
-            QCoreApplication.translate("QTiles", "QTiles"),
+            PLUGIN_NAME,
             self.iface.mainWindow(),
         )
         self.__action_run.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
@@ -89,9 +138,7 @@ class QTilesPlugin:
         self.__action_about.setWhatsThis("About QTiles")
         self.__action_about.triggered.connect(self.about)
 
-        self.__qtiles_menu = QMenu(
-            QCoreApplication.translate("QTiles", "QTiles")
-        )
+        self.__qtiles_menu = QMenu(PLUGIN_NAME)
         self.__qtiles_menu.setIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
 
         self.__qtiles_menu.addAction(self.__action_run)
@@ -112,14 +159,17 @@ class QTilesPlugin:
 
         self.__show_help_action = QAction(
             QIcon(":/plugins/qtiles/icons/qtiles.svg"),
-            "QTiles",
+            PLUGIN_NAME,
         )
         self.__show_help_action.triggered.connect(self.about)
         self.__plugin_help_menu = self.iface.pluginHelpMenu()
         assert self.__plugin_help_menu is not None
         self.__plugin_help_menu.addAction(self.__show_help_action)
 
-    def unload(self):
+    def _unload(self) -> None:
+        """
+        Unload the QTiles plugin interface.
+        """
         self.iface.unregisterMainWindowAction(self.__action_run)
 
         raster_menu = self.iface.rasterMenu()
@@ -142,6 +192,10 @@ class QTilesPlugin:
             self.__plugin_help_menu.removeAction(self.__show_help_action)
         self.__show_help_action.deleteLater()
         self.__show_help_action = None
+
+        if self.__notifier is not None:
+            self.__notifier.deleteLater()
+            self.__notifier = None
 
     def run(self) -> None:
         """

@@ -1,0 +1,3 @@
+PACKAGE_NAME = "qtiles"
+PLUGIN_NAME = "QTiles"
+COMPANY_NAME = "NextGIS"

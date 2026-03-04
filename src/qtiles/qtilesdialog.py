@@ -225,12 +225,14 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         settings = QTilesSettings()
 
-        self.output_path_file_widget.setDefaultRoot(settings.last_output_dir)
-
         tileset_name = settings.tileset_name
         if not tileset_name:
             project_name = QgsProject.instance().baseName()
             tileset_name = project_name if project_name else ""
+
+        self.output_path_file_widget.setDefaultRoot(
+            settings.last_output_dir + f"/{tileset_name}"
+        )
 
         self.leRootDir.setText(tileset_name)
 

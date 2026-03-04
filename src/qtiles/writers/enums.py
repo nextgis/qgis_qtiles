@@ -34,6 +34,7 @@ class TilesWriterMode(Enum):
         :returns: File extension including the leading dot
         """
         file_extension_mapping = {
+            TilesWriterMode.DIR: "",
             TilesWriterMode.ZIP: ".zip",
             TilesWriterMode.MBTILES: ".mbtiles",
             TilesWriterMode.PMTILES: ".pmtiles",

@@ -777,7 +777,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self,
             self.tr("Output path exists"),
             message,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButtons()
+            | QMessageBox.StandardButton.Yes
+            | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
 
@@ -946,26 +948,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
             return
 
         current_path = Path(current_path_str)
+        mode_extension = writer_mode.file_extension
 
-        if writer_mode.is_directory:
-            if current_path.suffix:
-                self.output_path_file_widget.setFilePath(
-                    str(current_path.parent)
-                )
-            return
-
-        extension = writer_mode.file_extension
-
-        if not current_path.suffix:
-            tileset_name = self.leRootDir.text() or "tileset"
-            new_path = current_path / "{name}{ext}".format(
-                name=tileset_name,
-                ext=extension,
-            )
-            self.output_path_file_widget.setFilePath(str(new_path))
-            return
-
-        new_path = current_path.with_suffix("{ext}".format(ext=extension))
+        new_path = current_path.with_suffix(f"{mode_extension}")
         self.output_path_file_widget.setFilePath(str(new_path))
 
     def _show_message(

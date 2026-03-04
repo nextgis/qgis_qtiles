@@ -30,11 +30,11 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 if TYPE_CHECKING:
     from qgis.gui import QgsInterface
 
-from qgis.core import QgsApplication, QgsMapLayer
+from qgis.core import Qgis, QgsApplication, QgsMapLayer, QgsProject
 from qgis.gui import QgsFileWidget, QgsGui
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSize, Qt, pyqtSlot
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtGui import QCloseEvent, QIcon
 from qgis.PyQt.QtWidgets import (
     QComboBox,
     QDialog,
@@ -47,6 +47,7 @@ from qgis.PyQt.QtWidgets import (
 from qtiles import qtiles_utils as utils
 from qtiles.aboutdialog import AboutDialog
 from qtiles.core.settings import QTilesSettings
+from qtiles.notifier.message_bar_notifier import MessageBarNotifier
 from qtiles.restrictions import OpenStreetMapRestriction
 from qtiles.tile import Tile
 from qtiles.tilingthread import TilingThread
@@ -88,8 +89,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
         )
 
         self.button_run = self.buttonBox.addButton(
-            self.tr("Run"), QDialogButtonBox.ButtonRole.AcceptRole
+            self.tr("Run"), QDialogButtonBox.ButtonRole.ActionRole
         )
+        self.button_run.clicked.connect(self._run_tiling)
 
         self.min_zoom_level_spinbox.value_changed.connect(
             self.__on_min_zoom_level_changed
@@ -107,27 +109,23 @@ class QTilesDialog(QDialog, FORM_CLASS):
             QDialogButtonBox.StandardButton.Close
         )
 
-        self.cmbFormat.activated.connect(self.formatChanged)
+        self.cmbFormat.currentIndexChanged.connect(
+            self._on_tile_image_format_changed
+        )
 
         self.about_button.clicked.connect(self.__show_about)
 
         self.manageGui()
 
-    def formatChanged(self) -> None:
+    def _on_tile_image_format_changed(self) -> None:
         """
-        Updates the GUI based on the selected output format.
+        Update UI state according to selected tile image format.
+        """
+        is_jpg = self.cmbFormat.currentData() == "jpg"
 
-        This method enables or disables certain input fields depending on
-        whether the selected format is JPG or another format.
-        """
-        if self.cmbFormat.currentText() == "JPG":
-            self.spnQuality.setEnabled(True)
-            self.transparent_background_checkbox.setEnabled(False)
-            self.transparent_background_checkbox.setChecked(False)
-        else:
-            self.spnQuality.setEnabled(False)
-            self.transparent_background_checkbox.setEnabled(True)
-            self.transparent_background_checkbox.setChecked(True)
+        self.spnQuality.setEnabled(is_jpg)
+        self.transparent_background_checkbox.setEnabled(not is_jpg)
+        self.transparent_background_checkbox.setChecked(not is_jpg)
 
     def manageGui(self) -> None:
         """
@@ -143,10 +141,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         file_widget_line_edit = self.output_path_file_widget.lineEdit()
 
-        preffered_policy = QSizePolicy(
+        preferred_policy = QSizePolicy(
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
         )
-        file_widget_line_edit.setSizePolicy(preffered_policy)
+        file_widget_line_edit.setSizePolicy(preferred_policy)
 
         self.output_path_file_widget.setConfirmOverwrite(False)
         file_widget_line_edit.setReadOnly(True)
@@ -155,32 +153,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.tr("Select output path…")
         )
 
-        self.__populate_output_format_combo_box()
-
-        settings = QTilesSettings()
-
-        self.output_path_file_widget.setDefaultRoot(settings.last_output_dir)
-        self.leRootDir.setText(settings.tileset_name)
-        self.output_format_combo_box.setCurrentIndex(
-            settings.tiles_writer_mode
-        )
-        self.min_zoom_level_spinbox.set_value(settings.min_zoom)
-        self.max_zoom_level_spinbox.set_value(settings.max_zoom)
-        self.tile_size_spinbox.setValue(settings.tile_size)
-        self.spinbox_dpi.setValue(settings.dpi)
-        self.cmbFormat.setCurrentIndex(settings.tile_output_format)
-        self.spnQuality.setValue(settings.jpg_quality)
-        self.chkAntialiasing.setChecked(settings.enable_antialiasing)
-        self.transparent_background_checkbox.setChecked(
-            settings.transparent_background
-        )
-        self.chkRenderOutsideTiles.setChecked(settings.render_outside_tiles)
-        self.chkTMSConvention.setChecked(settings.use_tms_convention)
-        self.chkMBTilesCompression.setChecked(settings.use_mbtiles_compression)
-        self.chkWriteJson.setChecked(settings.write_json_metadata)
-        self.chkWriteOverview.setChecked(settings.write_overview)
-        self.chkWriteMapurl.setChecked(settings.write_mapurl)
-        self.chkWriteViewer.setChecked(settings.write_leaflet_viewer)
+        self._populate_output_format_combo_box()
+        self._populate_tile_image_format_combo_data()
 
         self.progressBar.setVisible(False)
 
@@ -243,7 +217,48 @@ class QTilesDialog(QDialog, FORM_CLASS):
             )
         )
 
-        self.formatChanged()
+        self._load_settings_to_ui()
+
+    def _load_settings_to_ui(self) -> None:
+        """
+        Load persisted plugin settings into UI widgets.
+        """
+        settings = QTilesSettings()
+
+        self.output_path_file_widget.setDefaultRoot(settings.last_output_dir)
+
+        tileset_name = settings.tileset_name
+        if not tileset_name:
+            project_name = QgsProject.instance().baseName()
+            tileset_name = project_name if project_name else ""
+
+        self.leRootDir.setText(tileset_name)
+
+        self.output_format_combo_box.setCurrentIndex(
+            settings.tiles_writer_mode
+        )
+
+        self.min_zoom_level_spinbox.set_value(settings.min_zoom)
+        self.max_zoom_level_spinbox.set_value(settings.max_zoom)
+        self.tile_size_spinbox.setValue(settings.tile_size)
+        self.spinbox_dpi.setValue(settings.dpi)
+
+        self.cmbFormat.setCurrentIndex(settings.tile_output_format)
+        self.spnQuality.setValue(settings.jpg_quality)
+
+        self.chkAntialiasing.setChecked(settings.enable_antialiasing)
+        self.transparent_background_checkbox.setChecked(
+            settings.transparent_background
+        )
+        self.chkRenderOutsideTiles.setChecked(settings.render_outside_tiles)
+        self.chkTMSConvention.setChecked(settings.use_tms_convention)
+        self.chkMBTilesCompression.setChecked(settings.use_mbtiles_compression)
+        self.chkWriteJson.setChecked(settings.write_json_metadata)
+        self.chkWriteOverview.setChecked(settings.write_overview)
+        self.chkWriteMapurl.setChecked(settings.write_mapurl)
+        self.chkWriteViewer.setChecked(settings.write_leaflet_viewer)
+
+        self._on_tile_image_format_changed()
 
     @pyqtSlot()
     def __show_about(self) -> None:
@@ -254,13 +269,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         about_dialog = AboutDialog(package_name)
         about_dialog.exec()
 
-    def reject(self) -> None:
-        """
-        Closes the dialog without saving changes.
-        """
-        super().reject()
-
-    def accept(self) -> None:
+    def _run_tiling(self) -> None:
         """
         Validates user input and starts the tile generation process.
         """
@@ -444,6 +453,12 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         Restores the GUI state after the tile generation process is interrupted.
         """
+        self._show_message(
+            self.tr("Tile generation was cancelled."),
+            Qgis.MessageLevel.Warning,
+            duration=5,
+        )
+
         self.restoreGui()
 
     @pyqtSlot()
@@ -453,15 +468,30 @@ class QTilesDialog(QDialog, FORM_CLASS):
         the tile generation process when it is completed.
         """
         self.stopProcessing()
+
+        self._show_message(
+            self.tr("Tile generation completed successfully."),
+            Qgis.MessageLevel.Success,
+            duration=5,
+        )
+
         self.restoreGui()
 
     def stopProcessing(self) -> None:
         """
         Stops the tile generation process if it is running.
         """
-        if self.work_thread is not None:
-            self.work_thread.stop()
+        if self.work_thread is None:
+            return
+
+        if not self.work_thread.isRunning():
             self.work_thread = None
+            return
+
+        self.work_thread.stop()
+        self.work_thread = None
+
+        self._cleanup_incomplete_tileset()
 
     def restoreGui(self) -> None:
         """
@@ -477,6 +507,39 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.button_close.clicked.disconnect(self.stopProcessing)
         self.button_close.setText(self.tr("Close"))
         self.button_run.setEnabled(True)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """
+        Handle dialog close requests.
+
+        :param event: Qt close event instance.
+        """
+        if self.work_thread is None:
+            super().closeEvent(event)
+            return
+
+        if not self.work_thread.isRunning():
+            super().closeEvent(event)
+            return
+
+        reply = QMessageBox.question(
+            self,
+            self.tr("Tile generation in progress"),
+            self.tr(
+                "Tile generation is still running.\n"
+                "Do you want to cancel it and close the dialog?"
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            event.ignore()
+            return
+
+        self.stopProcessing()
+        event.accept()
+        super().closeEvent(event)
 
     def __on_output_format_changed(self, index: int) -> None:
         """
@@ -497,9 +560,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.chkWriteViewer.setEnabled(False)
 
         self.chkMBTilesCompression.setEnabled(False)
-
-        self.tile_size_spinbox.setEnabled(True)
-
         self.chkTMSConvention.setEnabled(True)
 
         if writer_mode.is_directory:
@@ -525,9 +585,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
             return
 
         if writer_mode is TilesWriterMode.NGM:
-            self.tile_size_spinbox.setValue(256)
-            self.tile_size_spinbox.setEnabled(False)
-
             self.chkWriteOverview.setChecked(False)
             self.chkWriteOverview.setEnabled(False)
 
@@ -612,7 +669,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         path = Path(self.output_path_file_widget.filePath())
 
-        if path.is_file():
+        if path.suffix:
             settings.last_output_dir = str(path.parent)
         else:
             settings.last_output_dir = str(path)
@@ -640,6 +697,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
         settings.write_overview = self.chkWriteOverview.isChecked()
         settings.write_mapurl = self.chkWriteMapurl.isChecked()
         settings.write_leaflet_viewer = self.chkWriteViewer.isChecked()
+
+        self._load_settings_to_ui()
 
     def __validate_osm_restriction(
         self, layers: List[QgsMapLayer], tiles_count: int
@@ -796,7 +855,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         else:
             self.hide()
 
-    def __populate_output_format_combo_box(self) -> None:
+    def _populate_output_format_combo_box(self) -> None:
         """
         Populate the output format combo box with supported tiles writer modes.
         """
@@ -814,28 +873,50 @@ class QTilesDialog(QDialog, FORM_CLASS):
         }
 
         for writer_mode, label in writer_modes.items():
-            self.output_format_combo_box.addItem(label, writer_mode)
+            self._add_output_format_item(writer_mode, label)
 
-            if writer_mode is TilesWriterMode.NGM:
-                index: int = self.output_format_combo_box.count() - 1
+    def _add_output_format_item(
+        self,
+        writer_mode: TilesWriterMode,
+        label: str,
+    ) -> None:
+        """
+        Add a single output format item to the combo box
+        with optional per-mode customization.
+        """
+        combo_box = self.output_format_combo_box
+        combo_box.addItem(label, writer_mode)
 
-                self.output_format_combo_box.setItemIcon(
-                    index,
-                    QIcon(":/plugins/qtiles/icons/ngm_logo.svg"),
-                )
+        if writer_mode is TilesWriterMode.NGM:
+            index: int = combo_box.count() - 1
 
-                font_metrics = self.output_format_combo_box.fontMetrics()
-                icon_size = font_metrics.height()
+            combo_box.setItemIcon(
+                index,
+                QIcon(":/plugins/qtiles/icons/ngm_logo.svg"),
+            )
 
-                self.output_format_combo_box.setIconSize(
-                    QSize(icon_size, icon_size)
-                )
+            font_metrics = combo_box.fontMetrics()
+            icon_size = font_metrics.height()
 
-                self.output_format_combo_box.setItemData(
-                    index,
-                    self.tr("Archive format for NextGIS Mobile (.ngrc)"),
-                    Qt.ItemDataRole.ToolTipRole,
-                )
+            combo_box.setIconSize(QSize(icon_size, icon_size))
+
+            combo_box.setItemData(
+                index,
+                self.tr("Archive format for NextGIS Mobile (.ngrc)"),
+                Qt.ItemDataRole.ToolTipRole,
+            )
+
+    def _populate_tile_image_format_combo_data(self) -> None:
+        """
+        Populate tile image format combo box with stable text and item data.
+        """
+        tile_image_formats = (
+            ("PNG", "png"),
+            ("JPG", "jpg"),
+        )
+
+        for text, data in tile_image_formats:
+            self.cmbFormat.addItem(text, data)
 
     def __configure_output_path_file_widget(
         self, writer_mode: TilesWriterMode
@@ -845,8 +926,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         :param writer_mode: Selected tiles writer mode.
         """
-        self.output_path_file_widget.setFilePath("")
-
         if writer_mode.is_directory:
             self.output_path_file_widget.setStorageMode(
                 QgsFileWidget.StorageMode.GetDirectory
@@ -858,4 +937,94 @@ class QTilesDialog(QDialog, FORM_CLASS):
             )
             self.output_path_file_widget.setFilter(
                 writer_mode.file_dialog_filter or ""
+            )
+
+        current_path_str = self.output_path_file_widget.filePath()
+        if not current_path_str:
+            return
+
+        current_path = Path(current_path_str)
+
+        if writer_mode.is_directory:
+            if current_path.suffix:
+                self.output_path_file_widget.setFilePath(
+                    str(current_path.parent)
+                )
+            return
+
+        extension = writer_mode.file_extension
+
+        if not current_path.suffix:
+            tileset_name = self.leRootDir.text() or "tileset"
+            new_path = current_path / "{name}{ext}".format(
+                name=tileset_name,
+                ext=extension,
+            )
+            self.output_path_file_widget.setFilePath(str(new_path))
+            return
+
+        new_path = current_path.with_suffix("{ext}".format(ext=extension))
+        self.output_path_file_widget.setFilePath(str(new_path))
+
+    def _show_message(
+        self,
+        text: str,
+        level: Qgis.MessageLevel = Qgis.MessageLevel.Info,
+        duration: int = -1,
+    ) -> None:
+        """
+        Show a message in the dialog message bar.
+
+        :param text: Message text.
+        :param level: QGIS message level.
+        :param duration: Duration in seconds. Use 0 for persistent messages.
+        """
+        self.message_bar.clearWidgets()
+        self.message_bar.pushMessage(text, level, duration)
+
+    def _cleanup_incomplete_tileset(self) -> None:
+        """
+        Remove incomplete tileset output if generation was cancelled.
+
+        Shows a notification only if cleanup fails.
+        """
+        writer_mode: Optional[TilesWriterMode] = (
+            self.output_format_combo_box.currentData()
+        )
+
+        if writer_mode is None:
+            return
+
+        output_path_str = self.output_path_file_widget.filePath()
+        if not output_path_str:
+            return
+
+        output_path = Path(output_path_str)
+        tileset_name = self.leRootDir.text()
+
+        if writer_mode.is_directory:
+            target_path = output_path / tileset_name
+        else:
+            target_path = output_path
+
+        if not target_path.exists():
+            return
+
+        try:
+            if target_path.is_dir():
+                shutil.rmtree(target_path)
+            else:
+                target_path.unlink()
+
+        except Exception as error:
+            notifier = MessageBarNotifier(self)
+
+            notifier.display_message(
+                self.tr(
+                    "Failed to remove incomplete tileset:\n{path}\n\nError: {error}"
+                ).format(
+                    path=str(target_path),
+                    error=str(error),
+                ),
+                level=Qgis.MessageLevel.Warning,
             )

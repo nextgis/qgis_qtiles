@@ -217,5 +217,5 @@ class QTiles(QTilesInterface):
 
     def about(self):
         package_name = str(Path(__file__).parent.name)
-        d = AboutDialog(package_name)
-        d.exec()
+        about_dialog = AboutDialog(package_name)
+        about_dialog.exec()

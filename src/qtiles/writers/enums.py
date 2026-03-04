@@ -40,7 +40,7 @@ class TilesWriterMode(Enum):
             TilesWriterMode.NGM: ".ngrc",
         }
 
-        return file_extension_mapping.get(self)
+        return file_extension_mapping[self]
 
     @property
     def is_directory(self) -> bool:
@@ -69,4 +69,4 @@ class TilesWriterMode(Enum):
             TilesWriterMode.NGM: self.tr("NextGIS Mobile archive (*.ngrc)"),
         }
 
-        return file_dialog_filter_mapping.get(self)
+        return file_dialog_filter_mapping[self]

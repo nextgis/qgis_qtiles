@@ -81,6 +81,8 @@ class NGMArchiveTilesWriter(AbstractTilesWriter):
         level["x"].append(tile.x)
         level["y"].append(tile.y)
 
+        self.__levels[tile.z] = level
+
     def finalize(self) -> None:
         """
         Finalizes the NGM archive by writing metadata and

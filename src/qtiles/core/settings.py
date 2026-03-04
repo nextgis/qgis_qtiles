@@ -2,7 +2,7 @@ import platform
 from pathlib import Path
 from typing import ClassVar
 
-from qgis.core import QgsProject, QgsSettings
+from qgis.core import QgsSettings
 from qgis.PyQt.QtCore import QSettings
 
 from qtiles.core.constants import COMPANY_NAME, PLUGIN_NAME
@@ -67,27 +67,12 @@ class QTilesSettings:
 
     @property
     def tileset_name(self) -> str:
-        """Get the current tileset name.
-
-        Priority:
-        1. Explicitly saved setting
-        2. Current QGIS project name (if exists)
-        3. Fallback default ("Mapnik")
-        """
-        value = self.__settings.value(
+        """Get the current tileset name."""
+        return self.__settings.value(
             self.KEY_TILESET_NAME,
             defaultValue=None,
             type=str,
         )
-
-        if value:
-            return value
-
-        project_name = QgsProject.instance().baseName()
-        if project_name:
-            return project_name
-
-        return "Mapnik"
 
     @tileset_name.setter
     def tileset_name(self, value: str) -> None:
@@ -174,7 +159,7 @@ class QTilesSettings:
     def enable_antialiasing(self) -> bool:
         """Render lines with antialiasing."""
         return self.__settings.value(
-            self.KEY_ENABLE_ANTIALIASING, defaultValue=False, type=bool
+            self.KEY_ENABLE_ANTIALIASING, defaultValue=True, type=bool
         )
 
     @enable_antialiasing.setter
@@ -196,7 +181,7 @@ class QTilesSettings:
     def render_outside_tiles(self) -> bool:
         """Render all tiles within target extent, even if empty."""
         return self.__settings.value(
-            self.KEY_RENDER_OUTSIDE_TILES, defaultValue=True, type=bool
+            self.KEY_RENDER_OUTSIDE_TILES, defaultValue=False, type=bool
         )
 
     @render_outside_tiles.setter

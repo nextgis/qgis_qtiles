@@ -223,6 +223,7 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
             "main_url": main_url,
             "data_url": main_url.replace("://", "://data."),
             "get_involved_url": f"https://nextgis.com/redirect/{locale}/ak45prp5?{utm}",
+            "community_url": f"https://community.nextgis.com/",
             "utm": f"?{utm}",
             "speaks_russian": str(speaks_russian),
         }
@@ -235,6 +236,7 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
         titles = {
             "developers_title": self.tr("Developers"),
             "homepage_title": self.tr("Homepage"),
+            "community_title": self.tr("Join the community"),
             "user_guide": self.tr("User Guide"),
             "report_title": self.tr("Please report bugs at"),
             "report_end": report_end,
@@ -258,6 +260,7 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
         description += """
             <p><b>{developers_title}:</b> <a href="{main_url}/{utm}">{authors}</a></p>
             <p><b>{homepage_title}:</b> <a href="{homepage_url}">{homepage_url}</a></p>
+            <p><b>{community_title}:</b> <a href="{community_url}/{utm}">{community_url}</a></p>
             <p><b>{report_title}</b> <a href="{tracker_url}">{bugtracker_title}</a> {report_end}</p>
         """
 

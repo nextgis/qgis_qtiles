@@ -223,7 +223,7 @@ class AboutDialog(QDialog, Ui_AboutDialogBase):
             "main_url": main_url,
             "data_url": main_url.replace("://", "://data."),
             "get_involved_url": f"https://nextgis.com/redirect/{locale}/ak45prp5?{utm}",
-            "community_url": f"https://community.nextgis.com/",
+            "community_url": f"https://community.nextgis.com",
             "utm": f"?{utm}",
             "speaks_russian": str(speaks_russian),
         }

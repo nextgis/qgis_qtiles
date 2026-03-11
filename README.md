@@ -70,7 +70,7 @@ The easiest way to install the plugin is through the QGIS Plugin Manager.
 2. Search for **QTiles**
 3. Click **Install Plugin**
 
-After installation the plugin will appear in the **Raster** menu and toolbar.
+After installation the plugin will appear in the **Raster** menu and **QTiles** toolbar.
 
 ## Usage
 

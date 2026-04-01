@@ -1,5 +1,6 @@
 import sqlite3
 from pathlib import Path
+from typing import Optional
 
 from qgis.core import QgsApplication, QgsRectangle
 from qgis.PyQt.QtCore import QBuffer, QByteArray
@@ -172,28 +173,60 @@ class MBTilesWriter(AbstractTilesWriter):
 
         :returns: None
         """
-        self.__connection.commit()
+        connection = self.__connection
+        cursor = self.__cursor
 
-        if self.__compression:
-            mbutils.compression_prepare(self.__cursor, self.__connection)
+        if connection is None or cursor is None:
+            return
 
-            self.__cursor.execute("SELECT COUNT(zoom_level) FROM tiles;")
-            total_tiles = self.__cursor.fetchone()[0]
+        try:
+            connection.commit()
 
-            mbutils.compression_do(
-                self.__cursor,
-                self.__connection,
-                total_tiles,
-                silent=False,
-            )
-            mbutils.compression_finalize(
-                self.__cursor,
-                self.__connection,
-                silent=False,
-            )
-            self.__connection.commit()
+            if self.__compression:
+                mbutils.compression_prepare(cursor, connection)
 
-        mbutils.optimize_database(self.__connection, silent=False)
-        self.__connection.close()
+                cursor.execute("SELECT COUNT(zoom_level) FROM tiles;")
+                total_tiles = cursor.fetchone()[0]
+
+                mbutils.compression_do(
+                    cursor,
+                    connection,
+                    total_tiles,
+                    silent=False,
+                )
+                mbutils.compression_finalize(
+                    cursor,
+                    connection,
+                    silent=False,
+                )
+                connection.commit()
+
+            mbutils.optimize_database(connection, silent=False)
+        finally:
+            self.__close_resources()
+
+    def cancel(self) -> None:
+        """
+        Cancels MBTiles writing and closes the database connection.
+
+        :returns: None
+        """
+        self.__close_resources()
+
+    def __close_resources(self) -> None:
+        """
+        Closes any open MBTiles cursor and database connection.
+
+        :returns: None
+        """
+        cursor: Optional[sqlite3.Cursor] = self.__cursor
+        connection: Optional[sqlite3.Connection] = self.__connection
 
         self.__cursor = None
+        self.__connection = None
+
+        if cursor is not None:
+            cursor.close()
+
+        if connection is not None:
+            connection.close()

@@ -1,7 +1,7 @@
 import json
 import zipfile
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QIODevice, QTemporaryFile
@@ -128,7 +128,19 @@ class NGMArchiveTilesWriter(AbstractTilesWriter):
         try:
             self.__zip_file.close()
         finally:
-            self.__temp_file.remove()
+            self.__remove_temporary_file()
+
+    def cancel(self) -> None:
+        """
+        Cancels archive writing and releases temporary resources.
+
+        :returns: None
+        """
+        if self.__zip_file is not None:
+            self.__zip_file.close()
+            self.__zip_file = None
+
+        self.__remove_temporary_file()
 
     def __write_metadata(self) -> None:
         """
@@ -171,3 +183,16 @@ class NGMArchiveTilesWriter(AbstractTilesWriter):
         json_bytes = json.dumps(archive_info).encode("utf-8")
         json_name = f"{self.__root_dir}.json"
         self.__zip_file.writestr(json_name, json_bytes)
+
+    def __remove_temporary_file(self) -> None:
+        """
+        Removes the temporary file used for tile encoding.
+
+        :returns: None
+        """
+        temp_file: Optional[QTemporaryFile] = self.__temp_file
+        if temp_file is None:
+            return
+
+        temp_file.remove()
+        self.__temp_file = None

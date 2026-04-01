@@ -1,5 +1,6 @@
 import zipfile
 from pathlib import Path
+from typing import Optional
 
 from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QIODevice, QTemporaryFile
@@ -110,4 +111,29 @@ class ZipTilesWriter(AbstractTilesWriter):
         :returns: None
         """
         self.__zip_file.close()
-        self.__temp_file.remove()
+        self.__remove_temporary_file()
+
+    def cancel(self) -> None:
+        """
+        Cancels ZIP archive writing and releases temporary resources.
+
+        :returns: None
+        """
+        if self.__zip_file is not None:
+            self.__zip_file.close()
+            self.__zip_file = None
+
+        self.__remove_temporary_file()
+
+    def __remove_temporary_file(self) -> None:
+        """
+        Removes the temporary file used for tile encoding.
+
+        :returns: None
+        """
+        temp_file: Optional[QTemporaryFile] = self.__temp_file
+        if temp_file is None:
+            return
+
+        temp_file.remove()
+        self.__temp_file = None

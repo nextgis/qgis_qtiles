@@ -77,3 +77,11 @@ class DirectoryTilesWriter(AbstractTilesWriter):
         There is no need to do anything for the directory writer.
         """
         pass
+
+    def cancel(self) -> None:
+        """
+        Cancels tile writing.
+
+        There are no persistent resources to release for directory output.
+        """
+        pass

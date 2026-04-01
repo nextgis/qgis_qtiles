@@ -240,6 +240,10 @@ class TilingThread(QThread):
             self.error = wrapped_error
             self.processError.emit()
             return
+        finally:
+            if self.interrupted or self.error is not None:
+                self._cancel_writer()
+            self.writer = None
 
         if self.interrupted:
             self.processInterrupted.emit()
@@ -272,35 +276,35 @@ class TilingThread(QThread):
 
         self.writer = TilesWriterFactory.create(self.writer_mode, save_options)
 
+        if self._is_stop_requested():
+            self.interrupted = True
+            return
+
         self.rangeChanged.emit(
             self.tr("Rendering: %v from %m (%p%)"), len(self.tiles)
         )
         for tile in self.tiles:
-            self.render(tile)
-            self.updateProgress.emit()
-            self.mutex.lock()
-            stop_me = self.stopMe
-            self.mutex.unlock()
-            if stop_me == 1:
+            if self._is_stop_requested():
                 self.interrupted = True
                 return
 
+            self.render(tile)
+            self.updateProgress.emit()
+
+        if self._is_stop_requested():
+            self.interrupted = True
+            return
+
         self.writer.finalize()
 
-        self.mutex.lock()
-        stop_me = self.stopMe
-        self.mutex.unlock()
-        if stop_me == 1:
+        if self._is_stop_requested():
             self.interrupted = True
             return
 
         artifacts_writer = TilesetArtifactsWriter(save_options)
         artifacts_writer.write()
 
-        self.mutex.lock()
-        stop_me = self.stopMe
-        self.mutex.unlock()
-        if stop_me == 1:
+        if self._is_stop_requested():
             self.interrupted = True
             return
 
@@ -315,6 +319,31 @@ class TilingThread(QThread):
         self.stopMe = 1
         self.mutex.unlock()
         QThread.wait(self)
+
+    def _is_stop_requested(self) -> bool:
+        """
+        Checks whether the thread was requested to stop.
+
+        :returns: True if cancellation was requested, otherwise False.
+        """
+        self.mutex.lock()
+        stop_me = self.stopMe
+        self.mutex.unlock()
+        return stop_me == 1
+
+    def _cancel_writer(self) -> None:
+        """
+        Cancels the active writer and releases its resources.
+
+        :returns: None
+        """
+        if self.writer is None:
+            return
+
+        try:
+            self.writer.cancel()
+        except Exception:
+            logger.exception("Failed to cancel tiles writer.")
 
     def render(self, tile: Tile) -> None:
         """

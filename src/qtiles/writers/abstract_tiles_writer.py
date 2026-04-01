@@ -45,3 +45,12 @@ class AbstractTilesWriter(ABC):
         :returns: None.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def cancel(self) -> None:
+        """
+        Cancels writing and releases any partially opened resources.
+
+        :returns: None.
+        """
+        raise NotImplementedError

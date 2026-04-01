@@ -267,3 +267,43 @@ class QTilesUiLoadError(QTilesError):
             user_message=user_message,
             detail=detail,
         )
+
+
+class TileGenerationError(QTilesError):
+    """Critical error raised while generating a tile set."""
+
+    def __init__(
+        self,
+        log_message: Optional[str] = None,
+        *,
+        user_message: Optional[str] = None,
+        detail: Optional[str] = None,
+    ) -> None:
+        default_message = QgsApplication.translate(
+            "Exceptions", "Failed to generate the tile set."
+        )
+        super().__init__(
+            log_message=log_message or default_message,
+            user_message=user_message or default_message,
+            detail=detail,
+        )
+
+
+class TileGenerationWarning(QTilesWarning):
+    """Non-critical warning raised while generating a tile set."""
+
+    def __init__(
+        self,
+        log_message: Optional[str] = None,
+        *,
+        user_message: Optional[str] = None,
+        detail: Optional[str] = None,
+    ) -> None:
+        default_message = QgsApplication.translate(
+            "Exceptions", "The tile set was generated with warnings."
+        )
+        super().__init__(
+            log_message=log_message or default_message,
+            user_message=user_message or default_message,
+            detail=detail,
+        )

@@ -1,11 +1,13 @@
 import zipfile
 from pathlib import Path
 
+from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QIODevice, QTemporaryFile
 from qgis.PyQt.QtGui import QImage
 
 from qtiles.tile import Tile
 from qtiles.writers.abstract_tiles_writer import AbstractTilesWriter
+from qtiles.writers.utils import ensure_operation_succeeded
 
 
 class ZipTilesWriter(AbstractTilesWriter):
@@ -37,7 +39,19 @@ class ZipTilesWriter(AbstractTilesWriter):
 
         self.__temp_file = QTemporaryFile()
         self.__temp_file.setAutoRemove(False)
-        self.__temp_file.open(QIODevice.OpenModeFlag.WriteOnly)
+        # fmt: off
+        ensure_operation_succeeded(
+            self.__temp_file.open(QIODevice.OpenModeFlag.WriteOnly),
+            log_message="Failed to create temporary file for ZIP tiles",
+            user_message=QgsApplication.translate(
+                "QTiles", "Failed to prepare tile archive output."
+            ),
+            detail=QgsApplication.translate(
+                "QTiles",
+                "Could not create a temporary file used for ZIP export."
+            ),
+        )
+        # fmt: on
         self.__temp_file_name = self.__temp_file.fileName()
         self.__temp_file.close()
 
@@ -69,7 +83,24 @@ class ZipTilesWriter(AbstractTilesWriter):
             f"{tile.y}.{image_format.lower()}"
         )
 
-        image.save(self.__temp_file_name, image_format, quality)
+        # fmt: off
+        ensure_operation_succeeded(
+            image.save(self.__temp_file_name, image_format, quality),
+            log_message="Failed to encode tile image for ZIP archive",
+            user_message=QgsApplication.translate(
+                "QTiles", "Failed to write one of the generated tiles."
+            ),
+            detail=QgsApplication.translate(
+                "QTiles",
+                "Tile {z}/{x}/{y} could not be encoded before writing "
+                "to ZIP archive."
+            ).format(
+                z=tile.z,
+                x=tile.x,
+                y=tile.y,
+            ),
+        )
+        # fmt: on
         self.__zip_file.write(self.__temp_file_name, arcname=tile_path)
 
     def finalize(self) -> None:

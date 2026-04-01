@@ -1,7 +1,36 @@
 from pathlib import Path
 from string import Template
+from typing import Type
 
+from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QFile, QIODevice
+
+from qtiles.core.exceptions import (
+    TileGenerationError,
+    TileGenerationWarning,
+)
+from qtiles.core.logging import logger
+
+
+def ensure_operation_succeeded(
+    is_successful: bool,
+    *,
+    log_message: str,
+    user_message: str,
+    detail: str,
+    warning: bool = False,
+) -> None:
+    """Raise a tile generation issue when an operation reports failure."""
+    if is_successful:
+        return
+
+    issue_class: Type[Exception]
+    issue_class = TileGenerationWarning if warning else TileGenerationError
+    raise issue_class(
+        log_message=log_message,
+        user_message=user_message,
+        detail=detail,
+    )
 
 
 def copy_resource(qrc_path: str, target: Path) -> None:
@@ -15,14 +44,37 @@ def copy_resource(qrc_path: str, target: Path) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
 
     file = QFile(qrc_path)
-    if not file.open(QIODevice.OpenModeFlag.ReadOnly):
-        return
+    # fmt: off
+    ensure_operation_succeeded(
+        file.open(QIODevice.OpenModeFlag.ReadOnly),
+        log_message=f"Failed to open viewer resource: {qrc_path}",
+        user_message=QgsApplication.translate(
+            "utils", "Viewer files were not fully generated."
+        ),
+        detail=QgsApplication.translate(
+            "utils",
+            "Could not read the embedded viewer resource '{path}'."
+        ).format(path=qrc_path),
+        warning=True,
+    )
+    # fmt: on
 
     data = file.readAll()
-    with open(str(target), "wb") as resource_file:
-        resource_file.write(bytes(data))
-
     file.close()
+
+    try:
+        with open(str(target), "wb") as resource_file:
+            resource_file.write(bytes(data))
+    except IOError as error:
+        raise TileGenerationWarning(
+            log_message=f"Failed to write viewer resource to disk: {target}",
+            user_message=QgsApplication.translate(
+                "utils", "Viewer files were not fully generated."
+            ),
+            detail=QgsApplication.translate(
+                "utils", "Could not write the viewer resource to '{path}'."
+            ).format(path=target, error=str(error)),
+        ) from error
 
 
 def create_viewer_directory(viewer_dir: Path) -> None:
@@ -48,7 +100,12 @@ def create_viewer_directory(viewer_dir: Path) -> None:
     ]
 
     for src, dest in resources:
-        copy_resource(f":/plugins/qtiles/resources/{src}", viewer_dir / dest)
+        try:
+            copy_resource(
+                f":/plugins/qtiles/resources/{src}", viewer_dir / dest
+            )
+        except TileGenerationWarning as warning:
+            logger.exception(warning.log_message)
 
 
 class MyTemplate(Template):

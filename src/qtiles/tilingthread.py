@@ -23,9 +23,10 @@
 #
 # ******************************************************************************
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from qgis.core import (
+    QgsApplication,
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
     QgsLabelingEngineSettings,
@@ -45,6 +46,8 @@ from qgis.PyQt.QtGui import QColor, QImage, QPainter
 from qgis.utils import iface
 
 from qtiles import resources_rc  # noqa: F401
+from qtiles.core.exceptions import TileGenerationError, TileGenerationWarning
+from qtiles.core.logging import logger
 from qtiles.tile import Tile
 from qtiles.writers.enums import TilesWriterMode
 from qtiles.writers.save_tiles_options import SaveTilesOptions
@@ -61,6 +64,7 @@ class TilingThread(QThread):
     updateProgress = pyqtSignal()
     processFinished = pyqtSignal()
     processInterrupted = pyqtSignal()
+    processError = pyqtSignal()
 
     def __init__(
         self,
@@ -112,7 +116,6 @@ class TilingThread(QThread):
         """
         super().__init__()
         self.mutex = QMutex()
-        self.confirmMutex = QMutex()
         self.stopMe = 0
         self.interrupted = False
         self.tiles = tiles
@@ -131,8 +134,10 @@ class TilingThread(QThread):
         self.overview = overview
         self.mapurl = map_url
         self.viewer = viewer
+        self.writer = None
+        self.error: Optional[TileGenerationError] = None
+        self.warning: Optional[TileGenerationWarning] = None
 
-        self.interrupted = False
         self.layersId = []
         for layer in layers:
             self.layersId.append(layer.id())
@@ -214,6 +219,38 @@ class TilingThread(QThread):
         self.stopMe = 0
         self.mutex.unlock()
 
+        self.interrupted = False
+        self.error = None
+        self.warning = None
+
+        try:
+            self._run_generation()
+        except TileGenerationWarning as warning:
+            self.warning = warning
+        except TileGenerationError as error:
+            self.error = error
+            self.processError.emit()
+            return
+        except Exception as error:
+            wrapped_error = TileGenerationError(
+                log_message="Unexpected error during tile generation.",
+                user_message=self.tr("Failed to generate the tile set."),
+            )
+            wrapped_error.__cause__ = error
+            self.error = wrapped_error
+            self.processError.emit()
+            return
+
+        if self.interrupted:
+            self.processInterrupted.emit()
+            return
+
+        self.processFinished.emit()
+
+    def _run_generation(self) -> None:
+        """
+        Execute tile rendering and artifact generation.
+        """
         overview_map_settings = QgsMapSettings(self.render_settings)
 
         save_options = SaveTilesOptions(
@@ -235,22 +272,9 @@ class TilingThread(QThread):
 
         self.writer = TilesWriterFactory.create(self.writer_mode, save_options)
 
-        self.rangeChanged.emit(self.tr("Searching tiles..."), 0)
-
-        if self.interrupted:
-            self.tiles.clear()
-            self.processInterrupted.emit()
-            return
-
         self.rangeChanged.emit(
             self.tr("Rendering: %v from %m (%p%)"), len(self.tiles)
         )
-
-        self.confirmMutex.lock()
-        if self.interrupted:
-            self.processInterrupted.emit()
-            return
-
         for tile in self.tiles:
             self.render(tile)
             self.updateProgress.emit()
@@ -259,17 +283,12 @@ class TilingThread(QThread):
             self.mutex.unlock()
             if s == 1:
                 self.interrupted = True
-                break
+                return
 
         self.writer.finalize()
 
         artifacts_writer = TilesetArtifactsWriter(save_options)
         artifacts_writer.write()
-
-        if not self.interrupted:
-            self.processFinished.emit()
-        else:
-            self.processInterrupted.emit()
 
     def stop(self) -> None:
         """

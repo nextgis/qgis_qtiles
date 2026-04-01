@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 if TYPE_CHECKING:
-    from qgis.gui import QgsInterface
+    from qgis.gui import QgisInterface
 
 from qgis.core import Qgis, QgsApplication, QgsMapLayer, QgsProject
 from qgis.gui import QgsFileWidget, QgsGui
@@ -46,6 +46,7 @@ from qgis.PyQt.QtWidgets import (
 
 from qtiles import qtiles_utils as utils
 from qtiles.aboutdialog import AboutDialog
+from qtiles.core.exceptions import TileGenerationWarning
 from qtiles.core.settings import QTilesSettings
 from qtiles.notifier.message_bar_notifier import MessageBarNotifier
 from qtiles.restrictions import OpenStreetMapRestriction
@@ -64,7 +65,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
     and generating map tiles from a QGIS project.
     """
 
-    def __init__(self, iface: "QgsInterface") -> None:
+    def __init__(self, iface: "QgisInterface") -> None:
         """
         Initializes the QTilesDialog with the given QGIS interface.
 
@@ -405,10 +406,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.work_thread.updateProgress.connect(self.updateProgress)
         self.work_thread.processFinished.connect(self.processFinished)
         self.work_thread.processInterrupted.connect(self.processInterrupted)
+        self.work_thread.processError.connect(self.processError)
         self.button_run.setEnabled(False)
         self.button_close.setText(self.tr("Cancel"))
-        self.buttonBox.rejected.disconnect(self.reject)
-        self.button_close.clicked.connect(self.stopProcessing)
         self.progressBar.setVisible(True)
         self.work_thread.start()
 
@@ -455,6 +455,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         Restores the GUI state after the tile generation process is interrupted.
         """
+        self.stopProcessingAndCleanupResults()
+
         self._show_message(
             self.tr("Tile generation was cancelled."),
             Qgis.MessageLevel.Warning,
@@ -469,31 +471,64 @@ class QTilesDialog(QDialog, FORM_CLASS):
         Restores the GUI state and stops
         the tile generation process when it is completed.
         """
-        self.stopProcessing()
+        work_thread = self.work_thread
+        warning = work_thread.warning if work_thread is not None else None
 
-        self._show_message(
-            self.tr("Tile generation completed successfully."),
-            Qgis.MessageLevel.Success,
-            duration=5,
-        )
+        self._finalize_processing(cleanup_output=False)
+
+        if isinstance(warning, TileGenerationWarning):
+            self._show_message(
+                warning.user_message,
+                Qgis.MessageLevel.Warning,
+                duration=5,
+            )
+        else:
+            self._show_message(
+                self.tr("Tile generation completed successfully."),
+                Qgis.MessageLevel.Success,
+                duration=5,
+            )
 
         self.restoreGui()
 
-    def stopProcessing(self) -> None:
+    @pyqtSlot()
+    def processError(self) -> None:
+        """
+        Restores the GUI state and reports a tile generation error.
+        """
+        work_thread = self.work_thread
+
+        self.stopProcessingAndCleanupResults()
+        self.restoreGui()
+
+        if work_thread is None or work_thread.error is None:
+            return
+
+        notifier = MessageBarNotifier(self)
+        notifier.display_exception(work_thread.error)
+
+    def stopProcessingAndCleanupResults(self) -> None:
+        """
+        Stops the tile generation process and removes incomplete output.
+        """
+        self._finalize_processing(cleanup_output=True)
+
+    def _finalize_processing(self, cleanup_output: bool) -> None:
         """
         Stops the tile generation process if it is running.
+
+        :param cleanup_output: Whether incomplete output should be removed.
         """
         if self.work_thread is None:
             return
 
-        if not self.work_thread.isRunning():
-            self.work_thread = None
-            return
+        if self.work_thread.isRunning():
+            self.work_thread.stop()
 
-        self.work_thread.stop()
         self.work_thread = None
 
-        self._cleanup_incomplete_tileset()
+        if cleanup_output:
+            self._cleanup_incomplete_tileset()
 
     def restoreGui(self) -> None:
         """
@@ -505,23 +540,17 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.progressBar.setValue(0)
         self.progressBar.setVisible(False)
 
-        self.buttonBox.rejected.connect(self.reject)
-        self.button_close.clicked.disconnect(self.stopProcessing)
         self.button_close.setText(self.tr("Close"))
         self.button_run.setEnabled(True)
 
-    def closeEvent(self, event: QCloseEvent) -> None:
+    def reject(self) -> None:
         """
         Handle dialog close requests.
 
         :param event: Qt close event instance.
         """
-        if self.work_thread is None:
-            super().closeEvent(event)
-            return
-
-        if not self.work_thread.isRunning():
-            super().closeEvent(event)
+        if self.work_thread is None or not self.work_thread.isRunning():
+            super().reject()
             return
 
         reply = QMessageBox.question(
@@ -536,12 +565,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
         )
 
         if reply != QMessageBox.StandardButton.Yes:
-            event.ignore()
             return
 
-        self.stopProcessing()
-        event.accept()
-        super().closeEvent(event)
+        self.stopProcessingAndCleanupResults()
+        super().reject()
 
     def __on_output_format_changed(self, index: int) -> None:
         """

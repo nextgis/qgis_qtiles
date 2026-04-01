@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from qgis.core import QgsRectangle
+from qgis.core import QgsApplication, QgsRectangle
 from qgis.PyQt.QtCore import QBuffer, QByteArray, QIODevice
 from qgis.PyQt.QtGui import QImage
 
@@ -8,6 +8,7 @@ from qtiles.external.pmtiles.tile import Compression, TileType, zxy_to_tileid
 from qtiles.external.pmtiles.writer import Writer
 from qtiles.tile import Tile
 from qtiles.writers.abstract_tiles_writer import AbstractTilesWriter
+from qtiles.writers.utils import ensure_operation_succeeded
 
 
 class PMTilesWriter(AbstractTilesWriter):
@@ -74,8 +75,42 @@ class PMTilesWriter(AbstractTilesWriter):
         """
         data = QByteArray()
         buffer = QBuffer(data)
-        buffer.open(QIODevice.OpenModeFlag.WriteOnly)
-        image.save(buffer, image_format, quality)
+        # fmt: off
+        ensure_operation_succeeded(
+            buffer.open(QIODevice.OpenModeFlag.WriteOnly),
+            log_message="Failed to open PMTiles buffer for tile encoding",
+            user_message=QgsApplication.translate(
+                "QTiles", "Failed to write one of the generated tiles."
+            ),
+            detail=QgsApplication.translate(
+                "QTiles",
+                "Could not allocate an in-memory buffer for PMTiles tile "
+                "{z}/{x}/{y}."
+            ).format(
+                z=tile.z,
+                x=tile.x,
+                y=tile.y,
+            ),
+        )
+        # fmt: on
+        # fmt: off
+        ensure_operation_succeeded(
+            image.save(buffer, image_format, quality),
+            log_message="Failed to encode tile image for PMTiles",
+            user_message=QgsApplication.translate(
+                "QTiles", "Failed to write one of the generated tiles."
+            ),
+            detail=QgsApplication.translate(
+                "QTiles",
+                "Tile {z}/{x}/{y} could not be encoded before writing "
+                "to PMTiles."
+            ).format(
+                z=tile.z,
+                x=tile.x,
+                y=tile.y,
+            ),
+        )
+        # fmt: on
         buffer.close()
 
         tile_id = zxy_to_tileid(tile.z, tile.x, tile.y)

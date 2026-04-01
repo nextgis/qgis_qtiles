@@ -1,13 +1,14 @@
 import sqlite3
 from pathlib import Path
 
-from qgis.core import QgsRectangle
+from qgis.core import QgsApplication, QgsRectangle
 from qgis.PyQt.QtCore import QBuffer, QByteArray
 from qgis.PyQt.QtGui import QImage
 
 from qtiles.external.mbutil import mbutils
 from qtiles.tile import Tile
 from qtiles.writers.abstract_tiles_writer import AbstractTilesWriter
+from qtiles.writers.utils import ensure_operation_succeeded
 
 
 class MBTilesWriter(AbstractTilesWriter):
@@ -104,9 +105,43 @@ class MBTilesWriter(AbstractTilesWriter):
         """
         data = QByteArray()
         buffer = QBuffer(data)
-        buffer.open(QBuffer.OpenModeFlag.WriteOnly)
+        # fmt: off
+        ensure_operation_succeeded(
+            buffer.open(QBuffer.OpenModeFlag.WriteOnly),
+            log_message="Failed to open MBTiles buffer for tile encoding",
+            user_message=QgsApplication.translate(
+                "QTiles", "Failed to write one of the generated tiles."
+            ),
+            detail=QgsApplication.translate(
+                "QTiles",
+                "Could not allocate an in-memory buffer for MBTiles tile "
+                "{z}/{x}/{y}."
+            ).format(
+                z=tile.z,
+                x=tile.x,
+                y=tile.y,
+            ),
+        )
+        # fmt: on
 
-        image.save(buffer, image_format, quality)
+        # fmt: off
+        ensure_operation_succeeded(
+            image.save(buffer, image_format, quality),
+            log_message="Failed to encode tile image for MBTiles",
+            user_message=QgsApplication.translate(
+                "QTiles", "Failed to write one of the generated tiles."
+            ),
+            detail=QgsApplication.translate(
+                "QTiles",
+                "Tile {z}/{x}/{y} could not be encoded before writing "
+                "to MBTiles."
+            ).format(
+                z=tile.z,
+                x=tile.x,
+                y=tile.y,
+            ),
+        )
+        # fmt: on
 
         self.__cursor.execute(
             """

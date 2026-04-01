@@ -1,9 +1,11 @@
 from pathlib import Path
 
+from qgis.core import QgsApplication
 from qgis.PyQt.QtGui import QImage
 
 from qtiles.tile import Tile
 from qtiles.writers.abstract_tiles_writer import AbstractTilesWriter
+from qtiles.writers.utils import ensure_operation_succeeded
 
 
 class DirectoryTilesWriter(AbstractTilesWriter):
@@ -49,7 +51,24 @@ class DirectoryTilesWriter(AbstractTilesWriter):
         dir_path.mkdir(parents=True, exist_ok=True)
 
         tile_file = dir_path / f"{tile.y}.{image_format.lower()}"
-        image.save(str(tile_file), image_format, quality)
+        # fmt: off
+        ensure_operation_succeeded(
+            image.save(str(tile_file), image_format, quality),
+            log_message=f"Failed to save tile to disk: {tile_file}",
+            user_message=QgsApplication.translate(
+                "QTiles", "Failed to write one of the generated tiles."
+            ),
+            detail=QgsApplication.translate(
+                "QTiles",
+                "Tile {z}/{x}/{y} could not be saved to '{path}'."
+            ).format(
+                z=tile.z,
+                x=tile.x,
+                y=tile.y,
+                path=tile_file,
+            ),
+        )
+        # fmt: on
 
     def finalize(self) -> None:
         """

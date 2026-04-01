@@ -279,16 +279,30 @@ class TilingThread(QThread):
             self.render(tile)
             self.updateProgress.emit()
             self.mutex.lock()
-            s = self.stopMe
+            stop_me = self.stopMe
             self.mutex.unlock()
-            if s == 1:
+            if stop_me == 1:
                 self.interrupted = True
                 return
 
         self.writer.finalize()
 
+        self.mutex.lock()
+        stop_me = self.stopMe
+        self.mutex.unlock()
+        if stop_me == 1:
+            self.interrupted = True
+            return
+
         artifacts_writer = TilesetArtifactsWriter(save_options)
         artifacts_writer.write()
+
+        self.mutex.lock()
+        stop_me = self.stopMe
+        self.mutex.unlock()
+        if stop_me == 1:
+            self.interrupted = True
+            return
 
     def stop(self) -> None:
         """

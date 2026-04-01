@@ -81,6 +81,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         self.setWindowIcon(QIcon(":/plugins/qtiles/icons/qtiles.svg"))
 
+        self.notifier = MessageBarNotifier(self, self.message_bar)
+
         self.output_format_combo_box.currentIndexChanged.connect(
             self.__on_output_format_changed
         )
@@ -276,13 +278,15 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         Validates user input and starts the tile generation process.
         """
+        self.notifier.dismiss_all()
+
         output_path_str = self.output_path_file_widget.filePath()
 
         if not output_path_str:
-            QMessageBox.warning(
-                self,
-                self.tr("Output not set"),
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 self.tr("Output path is not set. Please specify a path."),
+                level=Qgis.MessageLevel.Warning,
             )
             return
 
@@ -319,15 +323,14 @@ class QTilesDialog(QDialog, FORM_CLASS):
         )
 
         if tiles is None:
-            QMessageBox.warning(
-                self,
-                self.tr("Error"),
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 self.tr(
                     "The current map extent does not intersect with the tiles. "
                     "Please check the extent and zoom level. "
                     "This could be caused by an invalid or out-of-bounds extent."
                 ),
-                QMessageBox.StandardButton.Ok,
+                level=Qgis.MessageLevel.Warning,
             )
             return
 
@@ -457,10 +460,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         self.stopProcessingAndCleanupResults()
 
-        self._show_message(
+        self.notifier.dismiss_all()
+        self.notifier.display_message(
             self.tr("Tile generation was cancelled."),
-            Qgis.MessageLevel.Warning,
-            duration=5,
+            level=Qgis.MessageLevel.Warning,
         )
 
         self.restoreGui()
@@ -477,16 +480,16 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self._finalize_processing(cleanup_output=False)
 
         if isinstance(warning, TileGenerationWarning):
-            self._show_message(
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 warning.user_message,
-                Qgis.MessageLevel.Warning,
-                duration=5,
+                level=Qgis.MessageLevel.Warning,
             )
         else:
-            self._show_message(
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 self.tr("Tile generation completed successfully."),
-                Qgis.MessageLevel.Success,
-                duration=5,
+                level=Qgis.MessageLevel.Success,
             )
 
         self.restoreGui()
@@ -504,8 +507,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
         if work_thread is None or work_thread.error is None:
             return
 
-        notifier = MessageBarNotifier(self)
-        notifier.display_exception(work_thread.error)
+        self.notifier.dismiss_all()
+        self.notifier.display_exception(work_thread.error)
 
     def stopProcessingAndCleanupResults(self) -> None:
         """
@@ -669,22 +672,22 @@ class QTilesDialog(QDialog, FORM_CLASS):
         :return: ``True`` if all input parameters are valid, ``False`` otherwise.
         """
         if not self.extent_widget.isValid():
-            QMessageBox.warning(
-                self,
-                self.tr("Extent not set"),
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 self.tr("Please specify a valid map extent."),
+                level=Qgis.MessageLevel.Warning,
             )
             return False
 
         min_zoom = self.min_zoom_level_spinbox.value()
         max_zoom = self.max_zoom_level_spinbox.value()
         if min_zoom > max_zoom:
-            QMessageBox.warning(
-                self,
-                self.tr("Wrong zoom"),
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 self.tr(
                     "Maximum zoom value is lower than minimum. Please correct this and try again."
                 ),
+                level=Qgis.MessageLevel.Warning,
             )
             return False
 
@@ -751,11 +754,10 @@ class QTilesDialog(QDialog, FORM_CLASS):
             return layers
 
         if len(skipped_layers) == len(layers):
-            QMessageBox.warning(
-                self,
-                self.tr("OpenStreetMap Layer Restriction"),
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 message,
-                QMessageBox.StandardButton.Ok,
+                level=Qgis.MessageLevel.Warning,
             )
             return None
 
@@ -804,9 +806,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self,
             self.tr("Output path exists"),
             message,
-            QMessageBox.StandardButtons()
-            | QMessageBox.StandardButton.Yes
-            | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
 
@@ -820,14 +820,14 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 output_path.unlink()
             return True
         except Exception as error:
-            QMessageBox.critical(
-                self,
-                self.tr("Cannot overwrite"),
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 self.tr(
                     "Failed to overwrite {desc}:\n{path}\n\nError: {err}"
                 ).format(
                     desc=description, path=str(output_path), err=str(error)
                 ),
+                level=Qgis.MessageLevel.Critical,
             )
             return False
 
@@ -842,25 +842,25 @@ class QTilesDialog(QDialog, FORM_CLASS):
         forbidden_chars = {"/", "\\", ":", "*", "?", '"', "<", ">", "|"}
 
         if not tileset_name.strip():
-            QMessageBox.warning(
-                self,
-                self.tr("Invalid tileset name"),
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 self.tr(
                     "Tileset name cannot be empty. Please specify a name."
                 ),
+                level=Qgis.MessageLevel.Warning,
             )
             return False
 
         if tileset_name in forbidden_names or any(
             char in tileset_name for char in forbidden_chars
         ):
-            QMessageBox.warning(
-                self,
-                self.tr("Invalid tileset name"),
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 self.tr(
                     "Tileset name contains forbidden characters or reserved names. "
                     "Please choose a different name."
                 ),
+                level=Qgis.MessageLevel.Warning,
             )
             return False
 
@@ -980,22 +980,6 @@ class QTilesDialog(QDialog, FORM_CLASS):
         new_path = current_path.with_suffix(f"{mode_extension}")
         self.output_path_file_widget.setFilePath(str(new_path))
 
-    def _show_message(
-        self,
-        text: str,
-        level: Qgis.MessageLevel = Qgis.MessageLevel.Info,
-        duration: int = -1,
-    ) -> None:
-        """
-        Show a message in the dialog message bar.
-
-        :param text: Message text.
-        :param level: QGIS message level.
-        :param duration: Duration in seconds. Use 0 for persistent messages.
-        """
-        self.message_bar.clearWidgets()
-        self.message_bar.pushMessage(text, level, duration)
-
     def _cleanup_incomplete_tileset(self) -> None:
         """
         Remove incomplete tileset output if generation was cancelled.
@@ -1031,9 +1015,8 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 target_path.unlink()
 
         except Exception as error:
-            notifier = MessageBarNotifier(self)
-
-            notifier.display_message(
+            self.notifier.dismiss_all()
+            self.notifier.display_message(
                 self.tr(
                     "Failed to remove incomplete tileset:\n{path}\n\nError: {error}"
                 ).format(

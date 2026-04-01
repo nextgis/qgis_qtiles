@@ -3,6 +3,7 @@ import uuid
 from typing import TYPE_CHECKING, List, Optional
 
 from qgis.core import Qgis
+from qgis.gui import QgsMessageBar, QgsMessageBarItem
 from qgis.PyQt.QtCore import QObject, QUrl
 from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QMessageBox, QPushButton, QWidget
@@ -44,12 +45,18 @@ class MessageBarNotifier(NotifierInterface):
     Provides methods to show messages and exceptions using QGIS message bar.
     """
 
-    def __init__(self, parent: Optional[QObject]) -> None:
+    def __init__(
+        self,
+        parent: Optional[QObject],
+        message_bar: Optional[QgsMessageBar] = None,
+    ) -> None:
         """Initialize MessageBarNotifier with an optional parent QObject.
 
         :param parent: The parent QObject for this notifier.
+        :param message_bar: Custom QGIS message bar. Falls back to iface.messageBar().
         """
         super().__init__(parent)
+        self._message_bar = message_bar or iface.messageBar()
 
     def __del__(self) -> None:
         """Dismiss all messages on object deletion."""
@@ -72,8 +79,10 @@ class MessageBarNotifier(NotifierInterface):
         """
         custom_widgets = widgets if widgets else []
 
-        message_bar = iface.messageBar()
+        message_bar = self._message_bar
         widget = message_bar.createMessage(PLUGIN_NAME, message)
+        if widget is None:
+            raise RuntimeError("Failed to create QGIS message bar item")
 
         for custom_widget in custom_widgets:
             custom_widget.setParent(widget)
@@ -106,8 +115,10 @@ class MessageBarNotifier(NotifierInterface):
 
         message = error.user_message.rstrip(".") + "."
 
-        message_bar = iface.messageBar()
+        message_bar = self._message_bar
         widget = message_bar.createMessage(PLUGIN_NAME, message)
+        if widget is None:
+            raise RuntimeError("Failed to create QGIS message bar item")
 
         if not isinstance(error, Warning):
             self._add_error_buttons(error, widget)
@@ -134,22 +145,24 @@ class MessageBarNotifier(NotifierInterface):
 
         :param message_id: The identifier of the message to dismiss.
         """
-        for notification in iface.messageBar().items():
+        for notification in self._message_bar.items():
             if (
                 notification.objectName() != "QTilesMessageBarItem"
                 or notification.property("QTilesMessageId") != message_id
             ):
                 continue
-            iface.messageBar().popWidget(notification)
+            self._message_bar.popWidget(notification)
 
     def dismiss_all(self) -> None:
         """Dismiss all currently displayed messages."""
-        for notification in iface.messageBar().items():
+        for notification in self._message_bar.items():
             if notification.objectName() != "QTilesMessageBarItem":
                 continue
-            iface.messageBar().popWidget(notification)
+            self._message_bar.popWidget(notification)
 
-    def _add_error_buttons(self, error: QTilesError, widget: QWidget) -> None:
+    def _add_error_buttons(
+        self, error: QTilesError, item: QgsMessageBarItem
+    ) -> None:
         def show_details() -> None:
             user_message = error.user_message.rstrip(".")
             user_message = re.sub(
@@ -159,11 +172,13 @@ class MessageBarNotifier(NotifierInterface):
                 iface.mainWindow(), user_message, error.detail or ""
             )
 
+        widget = item
+
         if error.try_again is not None:
 
             def try_again() -> None:
                 error.try_again()
-                iface.messageBar().popWidget(widget)
+                self._message_bar.popWidget(item)
 
             button = QPushButton(self.tr("Try again"))
             button.pressed.connect(try_again)

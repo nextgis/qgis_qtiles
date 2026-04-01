@@ -94,7 +94,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.button_run = self.buttonBox.addButton(
             self.tr("Run"), QDialogButtonBox.ButtonRole.ActionRole
         )
-        self.button_run.clicked.connect(self._run_tiling)
+        self.button_run.clicked.connect(self._on_run_button_clicked)
 
         self.min_zoom_level_spinbox.value_changed.connect(
             self.__on_min_zoom_level_changed
@@ -119,6 +119,16 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.about_button.clicked.connect(self.__show_about)
 
         self.manageGui()
+
+    def _on_run_button_clicked(self) -> None:
+        """
+        Start tile generation or cancel the running process.
+        """
+        if self.work_thread is not None and self.work_thread.isRunning():
+            self.work_thread.stop()
+            return
+
+        self._run_tiling()
 
     def _on_tile_image_format_changed(self) -> None:
         """
@@ -410,8 +420,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.work_thread.processFinished.connect(self.processFinished)
         self.work_thread.processInterrupted.connect(self.processInterrupted)
         self.work_thread.processError.connect(self.processError)
-        self.button_run.setEnabled(False)
-        self.button_close.setText(self.tr("Cancel"))
+        self.button_run.setText(self.tr("Cancel"))
         self.progressBar.setVisible(True)
         self.work_thread.start()
 
@@ -543,8 +552,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
         self.progressBar.setValue(0)
         self.progressBar.setVisible(False)
 
-        self.button_close.setText(self.tr("Close"))
-        self.button_run.setEnabled(True)
+        self.button_run.setText(self.tr("Run"))
 
     def reject(self) -> None:
         """

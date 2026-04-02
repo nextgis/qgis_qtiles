@@ -21,13 +21,15 @@ class NGMArchiveTilesWriter(AbstractTilesWriter):
     properties.
     """
 
+    __archive_root_dir = "Mapnik"
+
     def __init__(self, *, output_path: Path, root_dir: str) -> None:
         """
         Initializes the NGM archive writer.
 
         :param output_path: Path to the NGM archive file.
         :type output_path: Path
-        :param root_dir: tile set name stored in metadata.
+        :param root_dir: Tile set name
         :type root_dir: str
         """
         self.__output_path = output_path
@@ -83,7 +85,7 @@ class NGMArchiveTilesWriter(AbstractTilesWriter):
         :returns: None
         """
         tile_path = (
-            f"{self.__root_dir}/"
+            f"{self.__archive_root_dir}/"
             f"{tile.z}/"
             f"{tile.x}/"
             f"{tile.y}.{image_format.lower()}"
@@ -181,7 +183,7 @@ class NGMArchiveTilesWriter(AbstractTilesWriter):
             )
 
         json_bytes = json.dumps(archive_info).encode("utf-8")
-        json_name = f"{self.__root_dir}.json"
+        json_name = f"{self.__archive_root_dir}.json"
         self.__zip_file.writestr(json_name, json_bytes)
 
     def __remove_temporary_file(self) -> None:

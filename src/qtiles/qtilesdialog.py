@@ -40,16 +40,23 @@ from qgis.PyQt.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QMessageBox,
+    QPushButton,
     QSizePolicy,
     QToolButton,
+    QWidget,
 )
 
 from qtiles import qtiles_utils as utils
 from qtiles.aboutdialog import AboutDialog
-from qtiles.core.exceptions import TileGenerationError, TileGenerationWarning
+from qtiles.core.exceptions import (
+    QTilesError,
+    TileGenerationError,
+    TileGenerationWarning,
+)
 from qtiles.core.settings import QTilesSettings
 from qtiles.notifier.message_bar_notifier import MessageBarNotifier
 from qtiles.restrictions import OpenStreetMapRestriction
+from qtiles.shared.filesystem import reveal_in_file_manager
 from qtiles.tile import Tile
 from qtiles.tilingthread import TilingThread
 from qtiles.writers.enums import TilesWriterMode
@@ -515,6 +522,7 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.notifier.display_message(
                 self.tr("Tile generation completed successfully."),
                 level=Qgis.MessageLevel.Success,
+                widgets=self._create_output_actions(),
             )
 
         self.restoreGui()
@@ -1010,24 +1018,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
 
         Shows a notification only if cleanup fails.
         """
-        writer_mode: Optional[TilesWriterMode] = (
-            self.output_format_combo_box.currentData()
-        )
-
-        if writer_mode is None:
+        target_path = self._get_tileset_output_path()
+        if target_path is None:
             return
-
-        output_path_str = self.output_path_file_widget.filePath()
-        if not output_path_str:
-            return
-
-        output_path = Path(output_path_str)
-        tileset_name = self.leRootDir.text()
-
-        if writer_mode.is_directory:
-            target_path = output_path / tileset_name
-        else:
-            target_path = output_path
 
         if not target_path.exists():
             return
@@ -1049,3 +1042,61 @@ class QTilesDialog(QDialog, FORM_CLASS):
                 ),
                 level=Qgis.MessageLevel.Warning,
             )
+
+    def _create_output_actions(self) -> List[QWidget]:
+        """
+        Build action buttons for a successfully generated tileset.
+        """
+        output_path = self._get_tileset_output_path()
+        if output_path is None:
+            return []
+
+        open_button = QPushButton(self.tr("Show in File Manager"))
+        open_button.pressed.connect(self._open_output_in_file_manager)
+
+        return [open_button]
+
+    def _open_output_in_file_manager(self) -> None:
+        """
+        Reveal the generated tileset in the system file manager.
+        """
+        output_path = self._get_tileset_output_path()
+        if output_path is None or not output_path.exists():
+            self.notifier.display_message(
+                self.tr("Generated output could not be found."),
+                level=Qgis.MessageLevel.Warning,
+            )
+            return
+
+        try:
+            reveal_in_file_manager(output_path)
+        except Exception as error:
+            error = QTilesError(
+                log_message="Failed to open output in file manager.",
+                user_message=self.tr(
+                    "Failed to open output in file manager. Please try to locate it manually at:\n{path}"
+                ).format(path=str(output_path)),
+            )
+            error.__cause__ = error
+            self.notifier.display_exception(error)
+
+    def _get_tileset_output_path(self) -> Optional[Path]:
+        """
+        Return the final tileset path based on the selected writer mode.
+        """
+        writer_mode: Optional[TilesWriterMode] = (
+            self.output_format_combo_box.currentData()
+        )
+        if writer_mode is None:
+            return None
+
+        output_path_str = self.output_path_file_widget.filePath()
+        if not output_path_str:
+            return None
+
+        output_path = Path(output_path_str)
+        tileset_name = self.leRootDir.text()
+        if writer_mode.is_directory:
+            return output_path / tileset_name
+
+        return output_path

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from qgis.core import QgsMapLayer
+from qgis.core import QgsMapLayer, QgsProviderRegistry
 from qgis.PyQt.QtCore import QCoreApplication, QUrl
 
 
@@ -57,7 +57,7 @@ class OpenStreetMapRestriction(LayerRestriction):
         if layer.providerType().lower() != "wms":
             return False
 
-        metadata = layer.providerMetadata()
+        metadata = QgsProviderRegistry.instance().providerMetadata("wms")
         uri = metadata.decodeUri(layer.source())
         url = QUrl(uri.get("url", ""))
         host = url.host().lower()

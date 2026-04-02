@@ -46,7 +46,7 @@ from qgis.PyQt.QtWidgets import (
 
 from qtiles import qtiles_utils as utils
 from qtiles.aboutdialog import AboutDialog
-from qtiles.core.exceptions import TileGenerationWarning
+from qtiles.core.exceptions import TileGenerationError, TileGenerationWarning
 from qtiles.core.settings import QTilesSettings
 from qtiles.notifier.message_bar_notifier import MessageBarNotifier
 from qtiles.restrictions import OpenStreetMapRestriction
@@ -288,6 +288,22 @@ class QTilesDialog(QDialog, FORM_CLASS):
         """
         Validates user input and starts the tile generation process.
         """
+        try:
+            self.notifier.dismiss_all()
+            self._start_tiling()
+        except Exception as error:
+            tiling_error = TileGenerationError(
+                log_message="Failed to prepare tile generation.",
+                user_message=self.tr(
+                    "Failed to start tile generation. Please check the input settings and try again."
+                ),
+            )
+            tiling_error.__cause__ = error
+            tiling_error.try_again = self._run_tiling
+            self.notifier.dismiss_all()
+            self.notifier.display_exception(tiling_error)
+
+    def _start_tiling(self) -> None:
         self.notifier.dismiss_all()
 
         output_path_str = self.output_path_file_widget.filePath()

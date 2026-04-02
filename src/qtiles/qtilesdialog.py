@@ -655,6 +655,9 @@ class QTilesDialog(QDialog, FORM_CLASS):
             self.chkWriteJson.setChecked(False)
             self.chkWriteJson.setEnabled(False)
 
+            self.chkTMSConvention.setChecked(False)
+            self.chkTMSConvention.setEnabled(False)
+
     @pyqtSlot(int)
     def __on_min_zoom_level_changed(self, min_zoom_level: int) -> None:
         """
